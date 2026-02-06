@@ -101,7 +101,7 @@ public:
         const char* homeDir = getenv("HOME");
         if (!homeDir) return;
         
-        fs::path targetDir = fs::path(homeDir) / "projects/MWmuscleWrapper/examples";
+        fs::path targetDir = fs::path(homeDir) / "projects/MWmuscleWrapper/examples/results";
         
         // Ordner erstellen falls nicht existent
         if (!fs::exists(targetDir)) {
