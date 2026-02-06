@@ -3,34 +3,39 @@
 #include <QDebug>
 
 casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    using namespace casadi;
-
-    // 1. Parameter entpacken
+    /* using namespace casadi;
     MX p_center = q(Slice(0, 3));
-    /* MX v1 = q(Slice(3, 6));
-    MX v2 = q(Slice(6, 9));
-    MX v3 = q(Slice(9, 12)); */
+    //MX v1 = q(Slice(3, 6));
+    //MX v2 = q(Slice(6, 9));
+    //MX v3 = q(Slice(9, 12)); 
     MX v1 = MX::vertcat({q(3), q(6), q(9)}); 
     MX v2 = MX::vertcat({q(4), q(7), q(10)}); 
     MX v3 = MX::vertcat({q(5), q(8), q(11)});
-
-    // 2. Relativvektor
     MX x_rel = gamma - p_center;
-
-    // 3. Projektionen
     MX proj1 = MX::mtimes(x_rel.T(), v1);
     MX proj2 = MX::mtimes(x_rel.T(), v2);
     MX proj3 = MX::mtimes(x_rel.T(), v3);
-
-    // 4. Gradient berechnen
-    // G = 2 * (proj / axis^2) * axis_vector
     MX g1 = (2.0 * proj1 / (A * A)) * v1;
     MX g2 = (2.0 * proj2 / (B * B)) * v2;
     MX g3 = (2.0 * proj3 / (C * C)) * v3;
-
     MX grad = g1 + g2 + g3;
-
-    return grad;
+    return grad; */
+    
+    using namespace casadi;
+    MX p_center = q(Slice(0, 3));
+    MX p_rot    = q(Slice(3, 12));
+    // 2. Matrix wiederherstellen
+    // R_transposed enthält die lokalen Achsen als ZEILEN (wenn in C++ Zeilenweise gefüllt wurde).
+    // Das ist mathematisch R^T.
+    MX R_transposed = MX::reshape(p_rot, 3, 3);
+    MX x_rel = gamma - p_center;
+    MX x_loc = MX::mtimes(R_transposed, x_rel);
+    MX g_loc_x = (2.0 * x_loc(0)) / (A * A);
+    MX g_loc_y = (2.0 * x_loc(1)) / (B * B);
+    MX g_loc_z = (2.0 * x_loc(2)) / (C * C); 
+    MX grad_loc = MX::vertcat({g_loc_x, g_loc_y, g_loc_z});
+    MX grad_global = MX::mtimes(R_transposed.T(), grad_loc);
+    return grad_global;
     
 }
     

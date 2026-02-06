@@ -26,7 +26,7 @@ struct SimSettings {
     int discretization = 7;
     std::string casadiParametrization = "local";
     std::string solverMethod = "VPP"; // "VPP", "VPPenalty", "Exp"
-    bool bUseConstraintJacobian = false;
+    bool bUseManualJacobian = false;
     bool dynamicReparametrization = true;
     bool bShowDiscretization = false;
     bool bShowSolverInVisualization = false;
@@ -70,7 +70,7 @@ public:
             else if (key == "discretization") ss >> settings.discretization;
             else if (key == "casadiParametrization") ss >> settings.casadiParametrization;
             else if (key == "solverMethod") ss >> settings.solverMethod;
-            else if (key == "bUseConstraintJacobian") ss >> settings.bUseConstraintJacobian;
+            else if (key == "bUseManualJacobian") ss >> settings.bUseManualJacobian;
             else if (key == "dynamicReparametrization") ss >> settings.dynamicReparametrization;
             else if (key == "bShowDiscretization") ss >> settings.bShowDiscretization;
             else if (key == "bShowSolverInVisualization") ss >> settings.bShowSolverInVisualization;
@@ -88,7 +88,7 @@ public:
         qDebug() << "   discretization:" << settings.discretization;
         qDebug() << "   casadiParametrization:" << QString::fromStdString(settings.casadiParametrization);
         qDebug() << "   solverMethod:" << QString::fromStdString(settings.solverMethod);
-        qDebug() << "   bUseConstraintJacobian:" << settings.bUseConstraintJacobian;
+        qDebug() << "   bUseManualJacobian:" << settings.bUseManualJacobian;
         qDebug() << "   dynamicReparametrization:" << settings.dynamicReparametrization;
         qDebug() << "   bShowDiscretization:" << settings.bShowDiscretization;
         qDebug() << "   bShowSolverInVisualization:" << settings.bShowSolverInVisualization;

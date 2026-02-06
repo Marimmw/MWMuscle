@@ -13,18 +13,15 @@
 
 
 std::vector<double> MAXJOINTANGLES = {90.0, 100.0, 90.0}; // MCP, PIP, DIP
-MWMath::RotMatrix3x3 FINGERSTARTORIENTATION = MWMath::axisAngle(MWMath::Point3D(0,0,1), 10.0); // Startorientierung des Fingermodells
-MWMath::Point3D ROTAXIS = MWMath::Point3D(0,1,1).normed(); // Rotationsachse für Fingerbeugung
+MWMath::RotMatrix3x3 FINGERSTARTORIENTATION = MWMath::axisAngle(MWMath::Point3D(0,1,0), 90.0); // Startorientierung des Fingermodells
+MWMath::Point3D ROTAXIS = MWMath::Point3D(0,1,0).normed(); // Rotationsachse für Fingerbeugung
 double ROTENDANBGLE = 90.0; // Endwinkel der Beugung
 
 double PUSHA = 0.25, PUSHB = 0.4, PUSHC = 0.7; // Halbachsen des Pushers (Kugel)
 MWMath::Point3D MOVEDIR = MWMath::Point3D(0, -1, 0).normed(); // Verschiebung des Fingermodells beim Drücken
 MWMath::Point3D STARTP = MWMath::Point3D(0.0, 0.2, -0.0);//MWMath::Point3D(0.0, 0.5, -0.5); // Startpunkt des Drückers
-double MOVEDIST = 0.0; // Distanz, die der Drücker bewegt wird
+double MOVEDIST = 1.0; // Distanz, die der Drücker bewegt wird
 
-// WICHTIG: Forward Declaration oder Header Inklusion
-// #include "simpleSimulation/SSBody.h"
-// #include "simpleSimulation/SSJoint.h"
 
 void updateSceneMovement(std::string sceneName, std::vector<std::shared_ptr<SSMesh>>& meshes, double progress){
     if (sceneName == "ELLIPSOID_PUSH_THROUGH" || sceneName == "TORUS_PUSH_THROUGH") {
@@ -555,7 +552,7 @@ int main(int argc, char** argv)
     std::vector<CasadiSystem*> systems;
     for (auto* mus : musclePtrs) {
         std::vector<SSMuscle*> singleMuscleList = {mus};
-        systems.push_back(new CasadiSystem(singleMuscleList, objFunc, cfg.solverMethod, cfg.casadiParametrization, cfg.bUseConstraintJacobian));
+        systems.push_back(new CasadiSystem(singleMuscleList, objFunc, cfg.solverMethod, cfg.casadiParametrization, cfg.bUseManualJacobian));
         //systems.back()->CasadiSystemName = "CasSys_" + mus->Name;
         // qDebug() << "MUSCLE POINTS" << mus->MNodes.size();
     }
@@ -751,7 +748,7 @@ int main(int argc, char** argv)
     for (int t = 0; t < numTimeSteps; ++t) {
         std::vector<std::string> stepText;
         stepText.push_back("Scene: " + currentScene);
-        stepText.push_back(std::string("OwnConstraintJacobian: ") + (cfg.bUseConstraintJacobian ? "Yes" : "No"));
+        stepText.push_back(std::string("OwnConstraintJacobian: ") + (cfg.bUseManualJacobian ? "Yes" : "No"));
         stepText.push_back("Time (s): " + QString::number(duration.count()/1000.0).toStdString());
         stepText.push_back("casadiParametrization: " + cfg.casadiParametrization);
         stepText.push_back(std::string("dynamicReparametrization: ") + (cfg.dynamicReparametrization ? "Yes" : "No"));
