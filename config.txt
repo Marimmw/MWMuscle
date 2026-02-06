@@ -1,0 +1,24 @@
+# Simulation Configuration File
+# Format: KEY VALUE(S)
+
+# Geometry
+MAXJOINTANGLES 90.0 100.0 90.0
+bFingerIsEllipsoid 1
+bCreateJointMeshes 0
+
+# Muscles (Default points, or list separated by space)
+muscleNumPoints 40 10
+
+# Scene & Time
+currentScene ELLIPSOID_PUSH_THROUGH
+numTimeSteps 20
+objFunc 0
+discretization 11
+dynamicReparametrization 0
+bShowDiscretization 0
+bShowSolverInVisualization 1
+
+# Solver Settings
+casadiParametrization global
+solverMethod NONE
+bUseConstraintJacobian 0

@@ -1,0 +1,188 @@
+{
+    "model_definition": {
+        "bodies": [
+            {
+                "mesh_params": [
+                    {
+                        "color": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "params": [
+                            0.2,
+                            0.1,
+                            0.1
+                        ],
+                        "pos_rel": [
+                            0,
+                            0,
+                            0
+                        ],
+                        "rot_angle_deg": 0,
+                        "rot_axis": [
+                            1,
+                            0,
+                            0
+                        ],
+                        "segments": 36,
+                        "type": "Ellipsoid"
+                    }
+                ],
+                "name": "NewBody",
+                "parent_name": "New_Joint",
+                "position_to_parent": [
+                    0.2,
+                    0,
+                    0
+                ],
+                "reference_point_local": [
+                    0,
+                    0,
+                    0
+                ],
+                "rotation_angle_to_parent_deg": 0,
+                "rotation_axis_to_parent": [
+                    0,
+                    0,
+                    1
+                ],
+                "type": "Body"
+            }
+        ],
+        "joints": [
+            {
+                "joint_start_end_values": [
+                    [
+                        0,
+                        90
+                    ]
+                ],
+                "joint_state_degrees": [
+                    0
+                ],
+                "mesh_params": [
+                    {
+                        "color": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "params": [
+                            0.1,
+                            0.1,
+                            0.2
+                        ],
+                        "pos_rel": [
+                            0,
+                            0,
+                            0
+                        ],
+                        "rot_angle_deg": 0,
+                        "rot_axis": [
+                            1,
+                            0,
+                            0
+                        ],
+                        "segments": 36,
+                        "type": "Ellipsoid"
+                    }
+                ],
+                "name": "New_Joint",
+                "parent_name": "World",
+                "pos_to_parent": [
+                    0,
+                    0,
+                    0
+                ],
+                "rot_angle_deg": 0,
+                "rot_axis": [
+                    0,
+                    0,
+                    1
+                ],
+                "rotation_axis_list": [
+                    [
+                        0,
+                        0,
+                        1
+                    ]
+                ],
+                "type": "Joint",
+                "type_name": "Revolute"
+            }
+        ],
+        "muscles": [
+            {
+                "insertion_body": "World",
+                "insertion_local": [
+                    -1,
+                    0,
+                    0
+                ],
+                "name": "Unnamed_Muscle",
+                "origin_body": "World",
+                "origin_local": [
+                    1,
+                    0,
+                    0
+                ],
+                "points_count": 20
+            }
+        ]
+    },
+    "simulation_data": {
+        "joints": {
+            "New_Joint": [
+                [
+                    0
+                ],
+                [
+                    9
+                ],
+                [
+                    18
+                ],
+                [
+                    27
+                ],
+                [
+                    36
+                ],
+                [
+                    45
+                ],
+                [
+                    54
+                ],
+                [
+                    63
+                ],
+                [
+                    72
+                ],
+                [
+                    81
+                ],
+                [
+                    90
+                ]
+            ]
+        },
+        "muscles": {
+            "Unnamed_Muscle": [
+            ]
+        }
+    },
+    "system_metadata": {
+        "autoLocalisationViaBody": true,
+        "computeAllMuscleInOnce": false,
+        "hessian_approximation": "limited-memory",
+        "joint_steps": 10,
+        "linear_solver": "mumps",
+        "max_iter": 2000,
+        "print_level": 5,
+        "summizeAllPhi": false,
+        "tol": 1e-08
+    }
+}

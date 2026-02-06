@@ -1,0 +1,95 @@
+#pragma once
+
+#include <casadi/casadi.hpp>
+#include "utils/MWMath.h"
+
+#include "simpleSimulation/SSTissue.h"
+
+#include <cmath>
+#include <string>
+#include <vector>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+
+class SSMesh : public SSTissue {
+public:
+    SSMesh() = default;
+    virtual ~SSMesh() {};
+    bool bIsAttractor = false;
+    bool bIsViaPoint = false;
+    double MViaPointTolerance = 0.0; // Nur relevant, wenn bIsVia
+    bool bIsJointMesh = false;
+    
+
+    // MWMath::Point3D PositionGlobal = MWMath::Point3D(0.0, 0.0, 0.0);
+    // MWMath::RotMatrix3x3 OrientationGlobal = MWMath::RotMatrix3x3();
+    // MWMath::Point3D MeshColor = MWMath::Point3D(0.7, 0.7, 0.7); // RGB Werte zwischen 0 und 1
+    std::vector<MWMath::Point3D> MeshPointsGlobal; // Globale Punkte des Meshes
+    std::vector<MWMath::RotMatrix3x3> allRMatrixGlobal; // Alle Rotationsmatrizen für alle Simulationsschritte
+    std::vector<MWMath::Point3D> GlobalDiscreteMeshPoints;
+    std::vector<MWMath::Point3D> AllScalerStepLists;
+
+    virtual casadi::MX constraintJacobian(casadi::MX gamma, casadi::MX q) = 0;
+    virtual casadi::MX constraintDistance(casadi::MX gamma, casadi::MX q) = 0;
+
+    virtual casadi::MX constraintJacobianLocal(casadi::MX gamma, casadi::MX q) {return casadi::MX();};
+    virtual casadi::MX constraintDistanceLocal(casadi::MX gamma, casadi::MX q) {return casadi::MX();};
+
+    virtual void getCasadiParentGPOs(casadi::MX& pos, casadi::MX& ori) override;
+    virtual double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) {return 0.0;};
+    virtual void discretizeMesh(int discrCount) {return;};
+
+};
+
+class SSEllipsoidMesh : public SSMesh {
+public:
+    SSEllipsoidMesh(double a, double b, double c) : A(a), B(b), C(c) {MViaPointTolerance = std::max({a, b, c}); }
+    ~SSEllipsoidMesh() override = default;
+
+    casadi::MX constraintJacobian(casadi::MX gamma, casadi::MX q) override;
+    casadi::MX constraintDistance(casadi::MX gamma, casadi::MX q) override;
+
+    virtual casadi::MX constraintJacobianLocal(casadi::MX gamma, casadi::MX q) override;
+    virtual casadi::MX constraintDistanceLocal(casadi::MX gamma, casadi::MX q) override;
+
+    double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) override;
+    virtual void discretizeMesh(int discrCount) override;
+    double A;
+    double B;
+    double C;
+private:
+};
+
+class SSCylinderMesh : public SSMesh {
+public:
+    SSCylinderMesh(double r, double h) : Radius(r), Height(h) {MViaPointTolerance = r; }
+    ~SSCylinderMesh() override = default;   
+
+    casadi::MX constraintJacobian(casadi::MX gamma, casadi::MX q) override;
+    casadi::MX constraintDistance(casadi::MX gamma, casadi::MX q) override;
+    double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) override;
+    double Radius;
+    double Height;
+private:
+};
+
+class SSTorusMesh : public SSMesh {
+public:
+    SSTorusMesh(double R, double r) : R(R), r(r) {MViaPointTolerance = R+r; }
+    ~SSTorusMesh() override = default;   
+
+    casadi::MX constraintJacobian(casadi::MX gamma, casadi::MX q) override;
+    casadi::MX constraintDistance(casadi::MX gamma, casadi::MX q) override;
+    double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) override;
+    double R;
+    double r;
+
+    double A = 1.0;
+    double B = 1.0;
+    double C = 1.0;
+private:
+};
+
