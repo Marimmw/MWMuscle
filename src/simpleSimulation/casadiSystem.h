@@ -21,7 +21,7 @@ class CasadiSystem {
 public:
     // Konstruktor setzt jetzt direkt das System auf
     CasadiSystem(std::vector<SSMuscle*> muscles, int objType = 0, std::string version="new", std::string parametrizationType="global",
-                    bool bUseCasGradient = false);
+                    bool bUseCasGradient = false, bool bSumPhiEta = false);
     std::string CasadiSystemName;
     std::vector<std::string> SolverConvergenceMessages;
     std::vector<int> SolverConvergenceSteps;
@@ -34,21 +34,11 @@ public:
     void setupCasadi();
     void solveStepX();
 
-    void setupCasadiOld() {return; } // --- IGNORE ---;
-
-    void setupCasadiVPP();
-    void setupCasadiVPPenalty();
-    void setupCasadiEXP();
-
-    void solveStepPenalty();
-    void solveStepEXP();
+    void solveStepSum();
+    void setupCasadiSum();
     
     void solveStep();
-    void solveStepOld() {return; } // --- IGNORE ---;
 
-
-    void setupCasadiLocal();
-    void solveStepLocal();
 
 
 private:
@@ -77,7 +67,7 @@ private:
     std::vector<SSMesh*> generic_meshes;
     bool globalComputation = true;
     int objType; // 0 = no(=0). min Length
-    bool bSumPhiEta = false;
+    bool bSumPhiEta;
     bool bUseWarmstartEtas = false;
     int maxIterations = 1000;
     double maxTol = 1e-5;

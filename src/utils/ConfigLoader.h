@@ -30,6 +30,7 @@ struct SimSettings {
     bool dynamicReparametrization = true;
     bool bShowDiscretization = false;
     bool bShowSolverInVisualization = false;
+    bool bSumPhiEta = false;
 };
 
 class ConfigManager {
@@ -74,7 +75,7 @@ public:
             else if (key == "dynamicReparametrization") ss >> settings.dynamicReparametrization;
             else if (key == "bShowDiscretization") ss >> settings.bShowDiscretization;
             else if (key == "bShowSolverInVisualization") ss >> settings.bShowSolverInVisualization;
-
+            else if (key == "bSumPhiEta") ss >> settings.bSumPhiEta;
         }
 
         qDebug() << "-------------- CONFIG --------------";
@@ -92,6 +93,7 @@ public:
         qDebug() << "   dynamicReparametrization:" << settings.dynamicReparametrization;
         qDebug() << "   bShowDiscretization:" << settings.bShowDiscretization;
         qDebug() << "   bShowSolverInVisualization:" << settings.bShowSolverInVisualization;
+        qDebug() << "   bSumPhiEta:" << settings.bSumPhiEta;
         qDebug() << "------------------------------------";
         return settings;
     }

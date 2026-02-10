@@ -90,6 +90,15 @@ namespace MWMath {
                 m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
         }
 
+        // Matrix * Point3D
+        Point3D operator*(const Point3D& p) const {
+            return {
+                m[0][0]*p.x + m[0][1]*p.y + m[0][2]*p.z,
+                m[1][0]*p.x + m[1][1]*p.y + m[1][2]*p.z,
+                m[2][0]*p.x + m[2][1]*p.y + m[2][2]*p.z
+            };
+        }
+
         // Matrix * Matrix
         RotMatrix3x3 operator*(const RotMatrix3x3& other) const {
             RotMatrix3x3 result;

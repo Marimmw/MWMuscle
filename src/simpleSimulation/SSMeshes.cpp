@@ -1,7 +1,9 @@
 #include "SSMeshes.h"
 
 #include <QDebug>
+#include <QString>
 
+// ELLIPSOID
 casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
     /* using namespace casadi;
     MX p_center = q(Slice(0, 3));
@@ -39,7 +41,6 @@ casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
     
 }
     
-
 casadi::MX SSEllipsoidMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
     using namespace casadi;
     // 1. Parameter entpacken
@@ -234,6 +235,7 @@ void SSEllipsoidMesh::discretizeMesh(int discrCount)
     }
 }
 
+// CYLINDER
 casadi::MX SSCylinderMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
     casadi::MX phi = q(casadi::Slice(0, 3));
     casadi::MX d1  = q(casadi::Slice(3, 6));
@@ -337,7 +339,7 @@ casadi::MX SSTorusMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
 }
 
 */
-//////// VERSUCH SKALIERUNG DES TORUS ////////
+// SCALED TORUS
 casadi::MX SSTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
     casadi::MX phi = q(casadi::Slice(0, 3));
     casadi::MX d1  = q(casadi::Slice(3, 6));
@@ -349,6 +351,9 @@ casadi::MX SSTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
     casadi::MX dot1 = casadi::MX::dot(diff, d1) / A;
     casadi::MX dot2 = casadi::MX::dot(diff, d2) / B;
     casadi::MX dot3 = casadi::MX::dot(diff, d3) / C;
+    /* casadi::MX dot1 = casadi::MX::dot(diff, d1);
+    casadi::MX dot2 = casadi::MX::dot(diff, d2);
+    casadi::MX dot3 = casadi::MX::dot(diff, d3); */
 
     // Wir nutzen die Einheits-Torus-Gleichung (R und r beziehen sich auf den skalierten Raum)
     // dist = (dot1^2 + dot2^2 + dot3^2 + R^2 - r^2)^2 - 4*R^2*(dot1^2 + dot2^2)
@@ -399,12 +404,74 @@ double SSTorusMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool signedD
     // Das verhindert, dass der Solver "denkt", er sei schon vorbei, obwohl er noch im Mesh ist.
     double min_scale = std::min({A, B, C});
     return d_model * min_scale; */
-    MWMath::Point3D diff = pGlobal - PositionGlobal;
-    MWMath::Point3D pLoc = OrientationGlobal.transposed().transform(diff);
-    // Fallback: Wenn keine diskreten Punkte vorhanden sind, verwenden wir den Abstand zum Zentrum
-    return std::sqrt(pLoc.x * pLoc.x + pLoc.y * pLoc.y + pLoc.z * pLoc.z);
+    if (GlobalDiscreteMeshPoints.empty()) {
+        MWMath::Point3D diff = pGlobal - PositionGlobal;
+        MWMath::Point3D pLoc = OrientationGlobal.transposed().transform(diff);
+        // Fallback: Wenn keine diskreten Punkte vorhanden sind, verwenden wir den Abstand zum Zentrum
+        return std::sqrt(pLoc.x * pLoc.x + pLoc.y * pLoc.y + pLoc.z * pLoc.z);
+    }
+    else{
+        double minDistSq = std::numeric_limits<double>::max();
+            for (const auto& discMeshP : GlobalDiscreteMeshPoints) {
+                double distSq = MWMath::distance(pGlobal, discMeshP);
+                if (distSq < minDistSq) {
+                    minDistSq = distSq;
+                }
+            }
+            return minDistSq;
+    }
 }
 
+void SSTorusMesh::discretizeMesh(int discrCount)
+{
+    // Sicherheitscheck
+    if (discrCount < 4) discrCount = 4;
+
+    // 1. Größe berechnen
+    // Wir laufen 2x im Kreis (Ring und Rohr), daher discrCount * discrCount Punkte
+    int expectedSize = discrCount * discrCount;
+    
+    if(GlobalDiscreteMeshPoints.empty() || GlobalDiscreteMeshPoints.size() != expectedSize){
+        GlobalDiscreteMeshPoints.resize(expectedSize);
+    }
+
+    // 2. Schleifen über die Winkel
+    for (int i = 0; i < discrCount; ++i) {
+        
+        // Winkel u: "Longitude" (Läuft um den großen Ring / Z-Achse)
+        double u = (2.0 * M_PI * (double)i) / (double)discrCount;
+        double cos_u = std::cos(u);
+        double sin_u = std::sin(u);
+
+        for (int j = 0; j < discrCount; ++j) {
+            
+            // Winkel v: "Latitude" (Läuft um den Querschnitt des Rohrs)
+            double v = (2.0 * M_PI * (double)j) / (double)discrCount;
+            
+            // --- Parametrisierung des Torus (liegend in XY-Ebene) ---
+            // x = (R + r*cos(v)) * cos(u)
+            // y = (R + r*cos(v)) * sin(u)
+            // z = r * sin(v)
+            
+            // Abstand vom Torus-Zentrum zum Punkt im Rohr-Querschnitt (in der XY-Ebene)
+            double crossSectionRadius = R + r * std::cos(v);
+
+            double xLoc = crossSectionRadius * cos_u;
+            double yLoc = crossSectionRadius * sin_u;
+            double zLoc = r * std::sin(v);
+
+            // Lokaler Punkt
+            MWMath::Point3D pLoc(xLoc, yLoc, zLoc);
+
+            // Transformation in Weltkoordinaten
+            // WICHTIG: OrientationGlobal sorgt dafür, dass der Torus im Raum richtig gedreht ist
+            MWMath::Point3D pGlob = PositionGlobal + OrientationGlobal.transform(pLoc);
+            
+            // Speichern (linearisiertes 2D Array)
+            GlobalDiscreteMeshPoints[i * discrCount + j] = pGlob;
+        }
+    }
+}
 
 ////// UNSCALED TORUS //////
 /* 
@@ -509,4 +576,22 @@ void SSMesh::getCasadiParentGPOs(casadi::MX &pos, casadi::MX &ori)
         pos = casadi::MX::vertcat({positionGlobal.x, positionGlobal.y, positionGlobal.z});
         ori = casadi::MX::zeros(3,3);
         for (int i=0;i<3;i++){for (int j=0;j<3;j++){ori(i,j) = orientationGlobal.m[i][j];}}
+}
+
+void SSMesh::updateMeshPosAndRot() {
+    // Aktualisiere globale Position und Rotation basierend auf Parent
+    // qDebug() << "Updating Mesh Position: " <<  QString::fromStdString(Name);
+    if (Parent) {
+        // qDebug() << "  old: Pos: " << QString::fromStdString(PositionGlobal.print()) << ", Ori: " << QString::fromStdString(OrientationGlobal.print());
+        OrientationGlobal = Parent->OrientationGlobal * Orientation2ParentRel;
+        PositionGlobal = Parent->PositionGlobal + OrientationGlobal.transform(Position2ParentRelInParentFrame);
+        if (Name == "_"){
+            qDebug() << "    " << this->Name.c_str() << ": Pos: " << QString::fromStdString(PositionGlobal.print()) << ", Ori: " << QString::fromStdString(OrientationGlobal.print());
+        }
+    } else {
+        PositionGlobal = Position2ParentRelInParentFrame; // Falls kein Parent, dann ist die lokale Position die globale
+        OrientationGlobal = Orientation2ParentRel; // Falls kein Parent, dann ist die lokale Rotation die globale
+    }
+
+    
 };

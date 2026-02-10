@@ -42,6 +42,8 @@ public:
     virtual double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) {return 0.0;};
     virtual void discretizeMesh(int discrCount) {return;};
 
+    void updateMeshPosAndRot();
+
 };
 
 class SSEllipsoidMesh : public SSMesh {
@@ -86,6 +88,8 @@ public:
     double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) override;
     double R;
     double r;
+
+    virtual void discretizeMesh(int discrCount) override;
 
     double A = 1.0;
     double B = 1.0;

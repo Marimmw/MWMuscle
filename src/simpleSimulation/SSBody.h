@@ -18,6 +18,10 @@ public:
         
         if (Parent) {
             Parent->Children.push_back(std::shared_ptr<SSTissue>(this)); // Achtung: Shared Ptr Management hier ist tricky, besser extern machen!
+            SystemLayer = Parent->SystemLayer + 1; // Child ist eine Schicht tiefer als Parent
+        }
+        else{
+            SystemLayer = 0; // Root ist Schicht 0
         }
     }
     ~SSBody() override = default;
@@ -51,6 +55,10 @@ public:
         CurrentAngles = 0.0; // Start bei 0
         if (Parent) {
             Parent->Children.push_back(std::shared_ptr<SSTissue>(this)); // Achtung: Shared Ptr Management hier ist tricky, besser extern machen!
+            SystemLayer = Parent->SystemLayer + 1; // Child ist eine Schicht tiefer als Parent
+        }
+        else{
+            SystemLayer = 0; // Root ist Schicht 0
         }
     }
     ~SSJoint() override = default;

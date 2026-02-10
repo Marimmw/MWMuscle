@@ -3,6 +3,8 @@
 
 int SSBody::update(int step)
 {
+    qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Body: " <<  QString::fromStdString(Name);
+
     // 1. Parent-Transformation anwenden
     if (Parent) {
         // Position
@@ -16,9 +18,10 @@ int SSBody::update(int step)
     }
     for (auto& mesh : Meshes) {
         // Mesh-Position und -Orientierung aktualisieren
-        mesh->OrientationGlobal = OrientationGlobal * mesh->Orientation2ParentRel;
-        mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame);
-        
+        /* mesh->OrientationGlobal = OrientationGlobal * mesh->Orientation2ParentRel;
+        mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame); */
+        mesh->updateMeshPosAndRot();
+        qDebug() << QString("   ").repeated(SystemLayer) << "|      " << " Mesh: " << QString::fromStdString(mesh->Name);
     }
     
     for (auto& child : Children) {
@@ -33,6 +36,7 @@ int SSBody::update(int step)
 
 int SSJoint::update(int step)
 {  
+    qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Joint: " <<  QString::fromStdString(Name);
     MWMath::RotMatrix3x3 jointRotation = MWMath::RotMatrix3x3();
     MWMath::RotMatrix3x3 jointHalfRotation = MWMath::RotMatrix3x3();
     
@@ -63,8 +67,9 @@ int SSJoint::update(int step)
     for (auto& mesh : Meshes) {
         if (mesh->bIsJointMesh) {
             // Gelenk-Mesh um die halbe Rotation drehen
-            mesh->OrientationGlobal = JointHalfRotation * mesh->Orientation2ParentRel;
-            mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame);
+            /* mesh->OrientationGlobal = JointHalfRotation * mesh->Orientation2ParentRel;
+            mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame); */
+            mesh->updateMeshPosAndRot();
         }
     }
     return 0;

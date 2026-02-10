@@ -7,18 +7,19 @@ bFingerIsEllipsoid 1
 bCreateJointMeshes 0
 
 # Muscles (Default points, or list separated by space)
-muscleNumPoints 20 10
+muscleNumPoints 25 10
 
 # Scene & Time
-currentScene TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 20
+currentScene FINGER_SIMPLE #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
+numTimeSteps 15
 objFunc 0
 discretization 11
-dynamicReparametrization 0
-bShowDiscretization 0
+dynamicReparametrization 1
+bShowDiscretization 1
 bShowSolverInVisualization 1
 
 # Solver Settings
 casadiParametrization global
 solverMethod NONE
 bUseManualJacobian 0
+bSumPhiEta 1
