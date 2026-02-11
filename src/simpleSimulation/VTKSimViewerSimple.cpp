@@ -1,4 +1,5 @@
 #include "VTKSimViewerSimple.h"
+#include <QKeyEvent>
 
 
 VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector<MWMath::Point3D>>>& muscleResults, 
@@ -200,7 +201,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
         m_otherPointActors.push_back(timeStepActors);
     }
 
-    if (ShowCoordinateSystems)
+    /* if (ShowCoordinateSystems > -1)
     {    // ---------------------------------------------------------
         // 7. Mesh Coordinate Systems (Pro Mesh)
         // ---------------------------------------------------------
@@ -227,7 +228,39 @@ void VTKSimViewerSimple::setupVtkPipeline() {
         m_worldAxes->SetCylinderRadius(0.02);
         m_worldAxes->SetAxisLabels(1); // X, Y, Z Labels anzeigen
         m_renderer->AddActor(m_worldAxes);
+    } */
+    m_meshAxesActors.clear();
+    for (size_t i = 0; i < m_meshes.size(); ++i) {
+        auto axes = vtkSmartPointer<vtkAxesActor>::New();
+        axes->SetTotalLength(0.5, 0.5, 0.5); 
+        axes->SetShaftTypeToLine(); 
+        axes->SetAxisLabels(0); 
+
+        // Initiale Sichtbarkeit basierend auf ShowCoordinateSystems
+        axes->SetVisibility(ShowCoordinateSystems == 2); 
+
+        m_renderer->AddActor(axes);
+        m_meshAxesActors.push_back(axes);
     }
+    m_worldAxes = vtkSmartPointer<vtkAxesActor>::New();
+    m_worldAxes->SetTotalLength(1.0, 1.0, 1.0); // Länge der Achsen
+    m_worldAxes->SetShaftTypeToCylinder();
+    m_worldAxes->SetCylinderRadius(0.02);
+    m_worldAxes->SetAxisLabels(1); // X, Y, Z Labels anzeigen
+    m_renderer->AddActor(m_worldAxes);
+    
+    // ---------------------------------------------------------
+    // 6. World Coordinate System (Ursprung) - IMMER ERSTELLEN
+    // ---------------------------------------------------------
+    /* m_worldAxes = vtkSmartPointer<vtkAxesActor>::New();
+    m_worldAxes->SetTotalLength(1.0, 1.0, 1.0); 
+    m_worldAxes->SetShaftTypeToCylinder();
+    m_worldAxes->SetCylinderRadius(0.02);
+    m_worldAxes->SetAxisLabels(1);
+    m_renderer->AddActor(m_worldAxes);
+    
+    // Initiale Sichtbarkeit basierend auf ShowCoordinateSystems
+    m_worldAxes->SetVisibility(ShowCoordinateSystems >= 1); */
     
 
     // 1. Vector zu einem String mit Zeilenumbrüchen (\n) zusammenfügen
@@ -372,13 +405,20 @@ void VTKSimViewerSimple::updateStep(int step) {
         }
 
         // --- NEU: Achsenkreuz für dieses Mesh updaten ---
-        if (ShowCoordinateSystems && i < m_meshAxesActors.size()) {
+        /* if (ShowCoordinateSystems && i < m_meshAxesActors.size()) {
             if (step < (int)m_meshes[i]->allRMatrixGlobal.size()) {
                 // Wir nutzen denselben Helper wie für das Mesh!
                 // Das Achsenkreuz bewegt sich exakt mit dem Mesh mit.
                 updateMeshTransform(m_meshAxesActors[i], 
                                   m_meshes[i]->allRMatrixGlobal[step], 
                                   m_meshes[i]->MeshPointsGlobal[step]);
+            }
+        } */
+        if (i < m_meshAxesActors.size() && m_meshAxesActors[i]) {
+            if (step < (int)m_meshes[i]->allRMatrixGlobal.size()) {
+                updateMeshTransform(m_meshAxesActors[i], 
+                                m_meshes[i]->allRMatrixGlobal[step], 
+                                m_meshes[i]->MeshPointsGlobal[step]);
             }
         }
     }
@@ -550,6 +590,46 @@ void VTKSimViewerSimple::updateStep(int step) {
         m_textActor->GetTextProperty()->SetColor(r, g, b);
     }
     
+    m_vtkWidget->renderWindow()->Render();
+}
+
+void VTKSimViewerSimple::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_C) {
+        toggleCoordinateSystems();
+    } else {
+        // Andere Events an die Basisklasse weiterleiten
+        QDialog::keyPressEvent(event);
+    }
+}
+
+void VTKSimViewerSimple::toggleCoordinateSystems()
+{
+    // Modus weiterschalten: 0 -> 1 -> 2 -> 0
+    ShowCoordinateSystems = (ShowCoordinateSystems + 1) % 3;
+
+    // Feedback im Debug
+    QString modeStr;
+    if (ShowCoordinateSystems == 0) modeStr = "NONE";
+    else if (ShowCoordinateSystems == 1) modeStr = "WORLD ONLY";
+    else modeStr = "ALL (WORLD + MESHES)";
+    //qDebug() << "Coordinate Systems Mode:" << modeStr;
+
+    // --- 1. Welt-Achsenkreuz ---
+    if (m_worldAxes) {
+        // Sichtbar wenn Modus >= 1
+        m_worldAxes->SetVisibility(ShowCoordinateSystems >= 1);
+    }
+
+    // --- 2. Mesh-Achsenkreuze ---
+    for (auto& axes : m_meshAxesActors) {
+        if (axes) {
+            // Sichtbar nur wenn Modus == 2 (Alles)
+            axes->SetVisibility(ShowCoordinateSystems == 2);
+        }
+    }
+
+    // Render erzwingen, damit man es sofort sieht
     m_vtkWidget->renderWindow()->Render();
 }
 

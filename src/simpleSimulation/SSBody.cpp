@@ -67,10 +67,11 @@ int SSJoint::update(int step)
     for (auto& mesh : Meshes) {
         if (mesh->bIsJointMesh) {
             // Gelenk-Mesh um die halbe Rotation drehen
-            /* mesh->OrientationGlobal = JointHalfRotation * mesh->Orientation2ParentRel;
-            mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame); */
-            mesh->updateMeshPosAndRot();
+            
         }
+        mesh->OrientationGlobal = JointHalfRotation * mesh->Orientation2ParentRel;
+        mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame);
+        //mesh->updateMeshPosAndRot();
     }
     return 0;
 }

@@ -1,5 +1,7 @@
 #include "SSMeshes.h"
 
+#include "simpleSimulation/SSBody.h"
+
 #include <QDebug>
 #include <QString>
 
@@ -560,6 +562,15 @@ casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
     return grad;
 }
  */
+
+void SSMesh::InitializeMesh()
+{
+    if (Parent){
+        Parent->Meshes.push_back(shared_from_this());
+        qDebug() << "Mesh " << QString::fromStdString(Name) << " added to Parent " << QString::fromStdString(Parent->Name);
+    } // Füge dieses Mesh der Liste des Parents hinzu
+
+}
 
 void SSMesh::getCasadiParentGPOs(casadi::MX &pos, casadi::MX &ori)
 {

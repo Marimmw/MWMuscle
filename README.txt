@@ -17,6 +17,8 @@ Git push
 5. git commit -m "update.........."
 6. git push origin dev
 
+0. git reset
+
 UMITTELBAR
 -> 
 

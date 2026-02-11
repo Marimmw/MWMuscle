@@ -730,7 +730,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         muscles.push_back(flexor);
         
     }
-    else if(currentScene == "FINGER_SIMPLE"){
+    else if(currentScene == "FINGER_SIMPLE2"){
         // --- PARAMETER ---
         double handLength = 1.8;
         std::vector<double> fLength = {0.3482 * handLength, 0.2027 * handLength, 0.1175 * handLength, 0.0882 * handLength};
@@ -854,6 +854,142 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         flexor->updateMusclePointsParents();
         muscles.push_back(flexor);
     }
+    else if (currentScene == "FINGER_SIMPLE4"){
+        // --- PARAMETER ---
+        double handLength = 1.8;
+        std::vector<double> fLength = {0.3482 * handLength, 0.2027 * handLength, 0.1175 * handLength, 0.0882 * handLength};
+        double L1 = fLength[0]; // Länge Segment 1
+        double L2 = fLength[1]; // Länge Segment 2
+        double L3 = fLength[2]; // Länge Segment 3
+        double L4 = fLength[3]; // Länge Segment 4
+        std::vector<double> width = {0.15, 0.1, 0.07, 0.05}; // Dicke
+        std::vector<double> relTorusPos = {0.6, 0.42, 0.35};
+        std::vector<double> relTorusR = {1.85, 1.9, 2.3};
+        std::vector<double> relTorusr = {1.0, 1.0, 1.2};
+
+        // 1. ROOT
+        rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0,0,0), MWMath::RotMatrix3x3(), nullptr);
+        tissues.push_back(rootSystem);
+
+        // ==============================================================================
+        // SEGMENT 1 (Proximal) - Fixiert an Root
+        // ==============================================================================
+        auto body1 = std::make_shared<SSBody>("Body_Seg1", MWMath::Point3D(0,0,0), MWMath::RotMatrix3x3(), rootSystem);
+        tissues.push_back(body1);
+        // Mesh 1
+        auto mesh1 = std::make_shared<SSEllipsoidMesh>(width[0], width[0], L1, "Mesh_Seg1", body1, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(mesh1);
+        // Torus 1
+        auto mTorus1 = std::make_shared<SSTorusMesh>(mesh1->B * relTorusR[0], mesh1->B * relTorusr[0], 
+             "Torus1", body1, MWMath::Point3D(0, 0, L1 * relTorusPos[0]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(1, 0, 0));
+        meshes.push_back(mTorus1);
+
+        MWMath::Point3D jointPosRel1 = MWMath::Point3D(L1, 0, 0);
+        auto joint = std::make_shared<SSJoint>("Joint_1", 
+                                             jointPosRel1,           // Wo sitzt das Gelenk relativ zum Parent?
+                                             MWMath::RotMatrix3x3(),// Initiale Rotation
+                                             body1,                 // Parent Body
+                                             45.0,                  // Max Winkel
+                                             MWMath::Point3D(0,1,0),// Drehachse: Negative Z-Achse!
+                                             numTimeSteps);
+        tissues.push_back(joint);
+
+        auto jMesh1 = std::make_shared<SSEllipsoidMesh>(width[0]*1.1, width[0]*1.1, width[0]*1.1, "Mesh_Joint1", joint, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(jMesh1);
+        
+
+
+        // ==============================================================================
+        // SEGMENT 2 (Distal) - Hängt am Joint
+        // ==============================================================================
+        auto body2 = std::make_shared<SSBody>("Body_Seg2", MWMath::Point3D(L2,0,0), MWMath::RotMatrix3x3(), joint);
+        tissues.push_back(body2);
+        auto mesh2 = std::make_shared<SSEllipsoidMesh>(width[1], width[1], L2, 
+             "Mesh_Seg2", body2, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.0, 0.8, 0.0));
+        meshes.push_back(mesh2);
+        // Torus 2
+        auto mTorus2 = std::make_shared<SSTorusMesh>(mesh2->B * relTorusR[1], mesh2->B * relTorusr[1], 
+             "Torus2", body2, MWMath::Point3D(0, 0, L2 * relTorusPos[1]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.8, 0.8, 0));
+        meshes.push_back(mTorus2);
+
+
+        MWMath::Point3D jointPosRel2 = MWMath::Point3D(L2, 0, 0);
+        auto joint2 = std::make_shared<SSJoint>("Joint_2", 
+                                             jointPosRel2,           // Wo sitzt das Gelenk relativ zum Parent?
+                                             MWMath::RotMatrix3x3(),// Initiale Rotation
+                                             body2,                 // Parent Body
+                                             100.0,                  // Max Winkel
+                                             MWMath::Point3D(0,0,-1),// Drehachse: Negative Z-Achse!
+                                             numTimeSteps);
+        tissues.push_back(joint2);
+
+        auto jMesh2 = std::make_shared<SSEllipsoidMesh>(width[1]*1.1, width[1]*1.1, width[1]*1.1, "Mesh_Joint2", joint2, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(jMesh2);
+
+        // SEGMENT 3
+        auto body3 = std::make_shared<SSBody>("Body_Seg3", MWMath::Point3D(L3,0,0), MWMath::RotMatrix3x3(), joint2);
+        tissues.push_back(body3);
+        // Mesh 3
+        auto mesh3 = std::make_shared<SSEllipsoidMesh>(width[2], width[2], L3, 
+             "Mesh_Seg3", body3, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 90.0), 
+             MWMath::Point3D(0.0, 0.8, 0.8));
+        meshes.push_back(mesh3);
+        // Torus 3
+        auto mTorus3 = std::make_shared<SSTorusMesh>(mesh3->B * relTorusR[2], mesh3->B * relTorusr[2], 
+             "Torus3", body3, MWMath::Point3D(0, 0, L3 * relTorusPos[2]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0, 0, 0.8));
+        meshes.push_back(mTorus3);
+
+
+        MWMath::Point3D jointPosRel3 = MWMath::Point3D(L3, 0, 0);
+        auto joint3 = std::make_shared<SSJoint>("Joint_3", 
+                                             jointPosRel3,           // Wo sitzt das Gelenk relativ zum Parent?
+                                             MWMath::RotMatrix3x3(),// Initiale Rotation
+                                             body3,                 // Parent Body
+                                             90.0,                  // Max Winkel
+                                             MWMath::Point3D(0,0,-1),// Drehachse: Negative Z-Achse!
+                                             numTimeSteps);
+        tissues.push_back(joint3);
+
+        auto jMesh3 = std::make_shared<SSEllipsoidMesh>(width[2]*1.1, width[2]*1.1, width[2]*1.1, "Mesh_Joint3", joint3, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(jMesh3);
+
+        // SEGMENT 4
+        auto body4 = std::make_shared<SSBody>("Body_Seg4", MWMath::Point3D(L4,0,0), MWMath::RotMatrix3x3(), joint3);
+        tissues.push_back(body4);
+        // Mesh 4
+        auto mesh4 = std::make_shared<SSEllipsoidMesh>(width[3], width[3], L4, 
+             "Mesh_Seg4", body4, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({0,1,0}, 90.0), 
+             MWMath::Point3D(0.9, 0.5, 0.3));
+        meshes.push_back(mesh4);
+
+        // ==============================================================================
+        // INITIALES UPDATE
+        // ==============================================================================
+        // Damit alle Matrizen einmal berechnet werden (wichtig für Muskel-Punkte)
+        for (auto& m : meshes) {m->InitializeMesh();}
+        rootSystem->update(0); 
+
+
+        // ==============================================================================
+        // MUSKEL
+        // ==============================================================================
+        int numPoints = 25;
+        MWMath::Point3D startOffset = MWMath::Point3D(0.0, -mesh1->B * 1.1, 0.0);
+        MWMath::Point3D endOffset = MWMath::Point3D(0.0, -mesh4->B * 1.1, 0.0);
+        SSMuscle* flexor = new SSMuscle("Flexor", numPoints, 
+            mesh1.get(), startOffset, 
+            mesh4.get(), endOffset);
+
+        // Alle Hindernisse
+        for(auto& m : meshes) {
+             flexor->meshPtrs.push_back(m.get());
+        }
+
+        flexor->createMusclePoints();
+        flexor->updateMusclePointsParents();
+        muscles.push_back(flexor);
+    }
+
 }
 
 
@@ -922,7 +1058,7 @@ int main(int argc, char** argv)
 
         
         // MOVE MESHES / UPDATE SCENE
-        if (currentScene == "NONE" || currentScene == "FINGER_SIMPLE") {  
+        if (currentScene == "NONE" || currentScene == "FINGER_SIMPLE2" || currentScene == "FINGER_SIMPLE4") {  
             if (rootSystem) {
                 // Ein einziger Aufruf aktualisiert den gesamten Baum!
                 rootSystem->update(t); 

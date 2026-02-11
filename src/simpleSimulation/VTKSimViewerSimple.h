@@ -61,10 +61,11 @@ public:
                        const std::vector<std::vector<std::string>>& solverInfoText,
                        QWidget* parent = nullptr);
     void exportAllStepsToImages(std::string outputFolder);
-    bool ShowCoordinateSystems = true;
+    int ShowCoordinateSystems = 2; // 0 = none, 1 = only world, 3 = all
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 private slots:
     void updateStep(int step);
     
@@ -72,6 +73,7 @@ private:
     void setupVtkPipeline();
     void updateMeshTransform(vtkProp3D* actor, const MWMath::RotMatrix3x3& R, const MWMath::Point3D& pos);
     
+    void toggleCoordinateSystems();
 
     // Daten-Referenzen (für mehrere Muskeln)
     const std::vector<std::vector<std::vector<MWMath::Point3D>>>& m_muscleResults;      // [muskel][timestep][punkt]
