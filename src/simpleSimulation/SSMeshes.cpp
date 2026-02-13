@@ -568,6 +568,12 @@ void SSMesh::InitializeMesh()
     if (Parent){
         Parent->Meshes.push_back(shared_from_this());
         qDebug() << "Mesh " << QString::fromStdString(Name) << " added to Parent " << QString::fromStdString(Parent->Name);
+        
+        if (dynamic_cast<SSJoint*>(Parent.get()))// != nullptr && dynamic_cast<SSTorusMesh*>(shared_from_this().get()) == nullptr)
+        {
+            //qDebug() << "  -> Parent is a Joint.";
+            bIsJointMesh = true;
+        }
     } // Füge dieses Mesh der Liste des Parents hinzu
 
 }

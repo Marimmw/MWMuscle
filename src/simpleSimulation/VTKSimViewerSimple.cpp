@@ -45,7 +45,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
 
     // Step-Text Actor (HUD)
     m_stepTextActor = vtkSmartPointer<vtkTextActor>::New();
-    m_stepTextActor->SetInput("Step: 0"); // Initial
+    m_stepTextActor->SetInput(("Step: 0 / " + std::to_string(m_angles.size() - 1)).c_str()); // Initial
     m_stepTextActor->GetTextProperty()->SetFontSize(24);
     m_stepTextActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0); // Weiß
     m_stepTextActor->SetDisplayPosition(20, 30); // oben links (Pixel)
@@ -373,7 +373,7 @@ void VTKSimViewerSimple::updateMeshTransform(vtkProp3D* actor, const MWMath::Rot
 void VTKSimViewerSimple::updateStep(int step) {
 
     if (m_stepTextActor) {
-        std::string stepStr = "Step: " + std::to_string(step);
+        std::string stepStr = "Step: " + std::to_string(step) + " / " + std::to_string(m_angles.size() - 1).c_str();
         m_stepTextActor->SetInput(stepStr.c_str());
     }
 
@@ -597,7 +597,20 @@ void VTKSimViewerSimple::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_C) {
         toggleCoordinateSystems();
-    } else {
+    } 
+    else if (event->key() == Qt::Key_Right) {
+        // Einen Schritt vorwärts (Slider-Maximum beachten)
+        if (m_slider->value() < m_slider->maximum()) {
+            m_slider->setValue(m_slider->value() + 1);
+        }
+    } 
+    else if (event->key() == Qt::Key_Left) {
+        // Einen Schritt zurück (Slider-Minimum beachten)
+        if (m_slider->value() > m_slider->minimum()) {
+            m_slider->setValue(m_slider->value() - 1);
+        }
+    }
+    else {
         // Andere Events an die Basisklasse weiterleiten
         QDialog::keyPressEvent(event);
     }

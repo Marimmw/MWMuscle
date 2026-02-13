@@ -36,6 +36,7 @@ void CasadiSystem::setupCasadiSum()
     for (size_t m = 0; m < m_muscles.size(); ++m) {
         SSMuscle* mus = m_muscles[m];
         int num_inner = mus->MNodes.size() - 2;
+        int K = mus->MNodes.size();
         int num_wrap = mus->meshPtrs.size();
         int num_eta_per_node = num_wrap;
 
@@ -95,7 +96,7 @@ void CasadiSystem::setupCasadiSum()
             all_g = MX::vertcat({all_g, sum_h_eta});
 
             // EULER-LAGRANGE GLEICHUNG (3 Komponenten für x, y, z)
-            MX eq_el = (- g_prev + 2.0*g_k - g_next)*num_inner - total_contact_force;
+            MX eq_el = (- g_prev + 2.0*g_k - g_next)*K - (1.0/K)*total_contact_force;
             all_g = MX::vertcat({all_g, eq_el});
         }
     }
@@ -106,7 +107,7 @@ void CasadiSystem::setupCasadiSum()
     opts["ipopt.max_iter"] = maxIterations;
     opts["ipopt.tol"] = maxTol;
     opts["ipopt.linear_solver"] = "mumps";
-    opts["ipopt.hessian_approximation"] = "limited-memory";
+    opts["ipopt.hessian_approximation"] = "limited-memory"; // "limited-memory" or "exact"
     std::string filename = "../examples/results/solver_log_" + CasadiSystemName + ".txt";
     opts["ipopt.output_file"] = filename; 
     opts["ipopt.file_print_level"] = 5;
@@ -144,7 +145,12 @@ void CasadiSystem::solveStepSum() {
         
         if (mus->lastEtas.size() == (size_t)num_etas_total && bUseWarmstartEtas) {
             qDebug() << "    Warmstart etas:" << QString::fromStdString(mus->Name);
-            x0_all.insert(x0_all.end(), mus->lastEtas.begin(), mus->lastEtas.end());
+            std::vector<double> scaledEtas;
+            for (double eta : mus->lastEtas) {
+                double scaledEta = eta * WarmstartEtaScaling;
+                scaledEtas.push_back(scaledEta);
+            }
+            x0_all.insert(x0_all.end(), scaledEtas.begin(), scaledEtas.end());
         } else {
             qDebug() << "    No warmstart etas:" << QString::fromStdString(mus->Name);
             for (int e = 0; e < num_etas_total; ++e) x0_all.push_back(0.0);

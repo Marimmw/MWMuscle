@@ -190,6 +190,45 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle)
     std::cout << "[Export] Muskel-Log gespeichert: " << fs::absolute(fullPath) << std::endl;
 }
 
+
+void backupSourceCode() {
+    // 1. Pfad zur aktuellen Quelldatei (wird vom Compiler gesetzt)
+    fs::path sourceFile = __FILE__; 
+    
+    // 2. Zielordner definieren (relativ zum Ausführungsort / build ordner)
+    // Passe diesen Pfad an, falls dein build-Ordner woanders liegt
+    fs::path targetDir = "../examples/results";
+
+    // Ordner erstellen, falls nicht existent
+    if (!fs::exists(targetDir)) {
+        try {
+            fs::create_directories(targetDir);
+        } catch (const fs::filesystem_error& e) {
+            std::cerr << "Fehler beim Erstellen des Backup-Ordners: " << e.what() << std::endl;
+            return;
+        }
+    }
+
+    // 3. Zeitstempel generieren (damit man die Dateien unterscheiden kann)
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d_%H-%M-%S");
+    
+    // Neuer Dateiname: main_2023-10-27_14-30-00.cpp
+    std::string filename = "_main_.cpp";
+    fs::path targetPath = targetDir / filename;
+
+    // 4. Kopieren
+    try {
+        fs::copy_file(sourceFile, targetPath, fs::copy_options::overwrite_existing);
+        std::cout << "--> Backup von main.cpp gespeichert unter: " << targetPath << std::endl;
+    } catch (const fs::filesystem_error& e) {
+        std::cerr << "--> Fehler beim Backup des Source Codes: " << e.what() << std::endl;
+    }
+}
+
 inline void exportParameterLog(const std::vector<std::vector<double>>& values, 
                         const std::vector<std::vector<std::string>>& descriptions, 
                         const std::string& filename = "parameter_log.txt") 

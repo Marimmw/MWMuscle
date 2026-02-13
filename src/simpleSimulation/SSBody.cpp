@@ -3,7 +3,7 @@
 
 int SSBody::update(int step)
 {
-    qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Body: " <<  QString::fromStdString(Name);
+    if (step == 0) qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Body: " <<  QString::fromStdString(Name);
 
     // 1. Parent-Transformation anwenden
     if (Parent) {
@@ -21,7 +21,7 @@ int SSBody::update(int step)
         /* mesh->OrientationGlobal = OrientationGlobal * mesh->Orientation2ParentRel;
         mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame); */
         mesh->updateMeshPosAndRot();
-        qDebug() << QString("   ").repeated(SystemLayer) << "|      " << " Mesh: " << QString::fromStdString(mesh->Name);
+        if (step == 0) qDebug() << QString("   ").repeated(SystemLayer) << "|      " << " Mesh: " << QString::fromStdString(mesh->Name);
     }
     
     for (auto& child : Children) {
@@ -36,7 +36,7 @@ int SSBody::update(int step)
 
 int SSJoint::update(int step)
 {  
-    qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Joint: " <<  QString::fromStdString(Name);
+    if (step == 0) qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Joint: " <<  QString::fromStdString(Name);
     MWMath::RotMatrix3x3 jointRotation = MWMath::RotMatrix3x3();
     MWMath::RotMatrix3x3 jointHalfRotation = MWMath::RotMatrix3x3();
     

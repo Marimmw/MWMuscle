@@ -7,14 +7,14 @@ bFingerIsEllipsoid 1
 bCreateJointMeshes 0
 
 # Muscles (Default points, or list separated by space)
-muscleNumPoints 50 10
+muscleNumPoints 20 10
 
 # Scene & Time
-currentScene FINGER_SIMPLE4 #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 3
+currentScene OFINGER_SIMPLE_BigTorus_2DJoint #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
+numTimeSteps 50
 objFunc 0
 discretization 11
-dynamicReparametrization 1
+dynamicReparametrization 0
 bShowDiscretization 0
 bShowSolverInVisualization 1
 

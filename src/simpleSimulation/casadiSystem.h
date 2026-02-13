@@ -62,14 +62,15 @@ private:
 
 
     int M; // Anzahl Muskeln
-    int K; // unused currently // Anzahl Segmente (Punkte = K+1)
+    //int K; // unused currently // Anzahl Segmente (Punkte = K+1)
     SSMesh* generic_mesh; //SSEllipsoidMesh* ellipsoid;
     std::vector<SSMesh*> generic_meshes;
     bool globalComputation = true;
     int objType; // 0 = no(=0). min Length
     bool bSumPhiEta;
     bool bUseWarmstartEtas = false;
-    int maxIterations = 1000;
+    double WarmstartEtaScaling = 1.0;
+    int maxIterations = 2000;
     double maxTol = 1e-5;
     double ELTolerance = 0.0;
     //std::string hessianApproximation = "limited-memory"; // "limited-memory" or "exact"

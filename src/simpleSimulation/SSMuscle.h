@@ -96,7 +96,7 @@ public:
 
     // DEBUG prints
     bool bParentDebug = false;
-    bool bMeshDistanceDebug = true;
+    bool bMeshDistanceDebug = false;
 
     std::vector<std::vector<MWMath::Point3D>> allOptimizedPoints; // Alle optimierten Punkte für alle Simulationsschritte
     void createMusclePoints();
