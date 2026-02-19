@@ -11,12 +11,12 @@ VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector
                            const std::vector<double>& angles,
                             const std::vector<std::vector<MWMath::Point3D>>& otherPointsWithColors,
                            const std::vector<std::vector<std::string>>& solverInfoText,
+                           double scalerCM,
                             QWidget* parent)
     : QDialog(parent), m_muscleResults(muscleResults), m_meshResults(meshResults), 
       m_initialGuesses(initialGuesses), m_initialGuessColors(initialGuessColors), 
       m_meshes(meshes), m_muscles(muscles), m_angles(angles), m_otherPointsWithColors(otherPointsWithColors),
-      m_solverInfoText(solverInfoText)
-
+      m_solverInfoText(solverInfoText), m_scalerCM(scalerCM)
 {
     setWindowTitle("MW CasADi 3D Analysis - Multi-Muscle System");
     resize(1200, 800);
@@ -27,7 +27,17 @@ VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector
 
     m_slider = new QSlider(Qt::Horizontal);
     m_slider->setRange(0, angles.empty() ? 0 : (int)angles.size() - 1);
-    layout->addWidget(m_slider);
+    auto* bottomLayout = new QHBoxLayout();
+    bottomLayout->addWidget(m_slider);
+
+    m_plotButton = new QPushButton("Generate Plots", this);
+    bottomLayout->addWidget(m_plotButton);
+
+    // Füge den kombinierten unteren Bereich zum Hauptlayout hinzu
+    layout->addLayout(bottomLayout);
+
+    // Verbinde den Klick-Event des Buttons mit unserer neuen Funktion
+    connect(m_plotButton, &QPushButton::clicked, this, &VTKSimViewerSimple::generatePlots);
 
     setupVtkPipeline();
 
@@ -62,7 +72,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
             source->SetThetaResolution(40);
             source->SetPhiResolution(40);
             mapper->SetInputConnection(source->GetOutputPort());
-            actor->SetScale(ell->A, ell->B, ell->C);
+            actor->SetScale(ell->A , ell->B, ell->C);
         } 
         else if (auto cyl = std::dynamic_pointer_cast<SSCylinderMesh>(mesh)) {
             auto source = vtkSmartPointer<vtkCylinderSource>::New();
@@ -90,7 +100,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
             pSource->SetVResolution(60);
             mapper->SetInputConnection(pSource->GetOutputPort());
             
-            actor->SetScale(tor->A, tor->B, tor->C);
+            actor->SetScale(tor->A, tor->B , tor->C);
         }
         
         actor->SetMapper(mapper);
@@ -160,7 +170,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
 
         for (int i = 0; i < numPts; ++i) {
             auto sphere = vtkSmartPointer<vtkSphereSource>::New();
-            sphere->SetRadius(0.01);
+            sphere->SetRadius(0.01*m_scalerCM);
             sphere->SetThetaResolution(16);
             sphere->SetPhiResolution(16);
             
@@ -186,7 +196,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
             const auto& p = ptsAndColors[i];
             const auto& c = ptsAndColors[i + 1];
             auto sphere = vtkSmartPointer<vtkSphereSource>::New();
-            sphere->SetRadius(0.008);
+            sphere->SetRadius(0.008 * m_scalerCM);
             sphere->SetThetaResolution(12);
             sphere->SetPhiResolution(12);
             auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -232,7 +242,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     m_meshAxesActors.clear();
     for (size_t i = 0; i < m_meshes.size(); ++i) {
         auto axes = vtkSmartPointer<vtkAxesActor>::New();
-        axes->SetTotalLength(0.5, 0.5, 0.5); 
+        axes->SetTotalLength(0.5 * m_scalerCM, 0.5 * m_scalerCM, 0.5 * m_scalerCM); 
         axes->SetShaftTypeToLine(); 
         axes->SetAxisLabels(0); 
 
@@ -243,9 +253,9 @@ void VTKSimViewerSimple::setupVtkPipeline() {
         m_meshAxesActors.push_back(axes);
     }
     m_worldAxes = vtkSmartPointer<vtkAxesActor>::New();
-    m_worldAxes->SetTotalLength(1.0, 1.0, 1.0); // Länge der Achsen
+    m_worldAxes->SetTotalLength(1.0 * m_scalerCM, 1.0 * m_scalerCM, 1.0 * m_scalerCM); // Länge der Achsen
     m_worldAxes->SetShaftTypeToCylinder();
-    m_worldAxes->SetCylinderRadius(0.02);
+    m_worldAxes->SetCylinderRadius(0.02 * m_scalerCM);
     m_worldAxes->SetAxisLabels(1); // X, Y, Z Labels anzeigen
     m_renderer->AddActor(m_worldAxes);
     
@@ -644,6 +654,27 @@ void VTKSimViewerSimple::toggleCoordinateSystems()
 
     // Render erzwingen, damit man es sofort sieht
     m_vtkWidget->renderWindow()->Render();
+}
+
+void VTKSimViewerSimple::generatePlots()
+{
+    std::cout << "\n[Python] Starte Plot-Generierung..." << std::endl;
+    
+    // Relativer Pfad zur Python-Executable in der venv
+    // (Geht von 'build' einen Ordner hoch zu '.venv')
+    std::string pythonExec = "../.venv/bin/python3";
+    std::string pythonScript = "../src/pythonScripts/plot_muscle_logs.py";
+    
+    std::string pythonCommand = pythonExec + " " + pythonScript;
+    
+    int retCode = std::system(pythonCommand.c_str());
+    
+    if (retCode == 0) {
+        std::cout << "[Python] PDFs erfolgreich erstellt!" << std::endl;
+    } else {
+        std::cerr << "[Python] Fehler beim Ausführen des Skripts (Code: " << retCode << ")." << std::endl;
+        std::cerr << "         Stelle sicher, dass die .venv existiert und numpy/matplotlib installiert sind." << std::endl;
+    }
 }
 
 

@@ -1,8 +1,8 @@
 #include "casadiSystem.h"
 
-CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta)
+CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas)
     : m_muscles(muscles), objType(objType), Version(version), ParametrizationType(parametrizationType),
-        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta)
+        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas)
 {
     CasadiSystemName = "CasSys_" + (m_muscles.empty() ? "Empty" : m_muscles[0]->Name);
 

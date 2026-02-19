@@ -29,6 +29,12 @@ namespace MWMath {
             return {x * scalar, y * scalar, z * scalar};
         }
 
+        void operator+=(const Point3D& other) {
+            x += other.x;
+            y += other.y;
+            z += other.z;
+        }
+
         Point3D normed() const {
             double len = std::sqrt(x*x + y*y + z*z);
             if (len < 1e-9) return {0, 0, 0};
@@ -111,6 +117,29 @@ namespace MWMath {
                 }
             }
             return result;
+        }
+
+        RotMatrix3x3& operator*=(const RotMatrix3x3& other) {
+        double temp[3][3];
+            // 1. Standard Matrix-Multiplikation in temporären Puffer
+            // Zeile i, Spalte j
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    temp[i][j] = 0.0;
+                    // Skalarprodukt aus Zeile von 'this' und Spalte von 'other'
+                    for (int k = 0; k < 3; ++k) {
+                        temp[i][j] += m[i][k] * other.m[k][j];
+                    }
+                }
+            }
+            // 2. Ergebnis zurück in eigene Matrix kopieren
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    m[i][j] = temp[i][j];
+                }
+            }
+            // Referenz auf sich selbst zurückgeben (für Chaining wie (A *= B) *= C)
+            return *this;
         }
 
         std::string print() const {

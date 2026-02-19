@@ -70,7 +70,7 @@ casadi::MX SSEllipsoidMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
 
     // 4. Ellipsoid-Gleichung: (proj/a)^2 + ... - 1
     // Wir nutzen hier die Member-Variablen A, B, C deiner Klasse
-    qDebug() << "A: " << A << ", B: " << B << ", C: " << C;
+    //qDebug() << "A: " << A << ", B: " << B << ", C: " << C;
     /* MX term1 = (proj1 * proj1) / (A * A);
     MX term2 = (proj2 * proj2) / (B * B);
     MX term3 = (proj3 * proj3) / (C * C); */

@@ -32,6 +32,8 @@
 #include <vtkAxesActor.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
+#include <QHBoxLayout>
+#include <QPushButton>
 
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -59,13 +61,17 @@ public:
                        const std::vector<double>& angles,
                        const std::vector<std::vector<MWMath::Point3D>>& otherPointsWithColors,
                        const std::vector<std::vector<std::string>>& solverInfoText,
+                       double scalerCM = 1.0,
                        QWidget* parent = nullptr);
     void exportAllStepsToImages(std::string outputFolder);
     int ShowCoordinateSystems = 2; // 0 = none, 1 = only world, 3 = all
+    float m_scalerCM; // Skalierungsfaktor für die Darstellung (z.B. 100.0 für cm statt m)
 
 protected:
     void closeEvent(QCloseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
+public slots:  // <--- WICHTIG: Das muss unter slots stehen (oder public, wenn du Qt5/6 nutzt)
+    void generatePlots();
 private slots:
     void updateStep(int step);
     
@@ -93,6 +99,7 @@ private:
     QVTKOpenGLNativeWidget* m_vtkWidget;
     QSlider* m_slider;
     vtkSmartPointer<vtkRenderer> m_renderer;
+    QPushButton* m_plotButton;
     
     // VTK Actors und Daten (für mehrere Muskeln)
     std::vector<vtkSmartPointer<vtkActor>> m_meshActors;                               // [mesh]

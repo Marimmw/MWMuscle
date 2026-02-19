@@ -23,8 +23,13 @@ UMITTELBAR
 -> 
 
 WEITER MIT:
-- lokale berechnung der muskelpunkte
 - "exact" hand model
+- Setup first hand model
+    -> add parametrizatiable finger to hand
+    -> ellipsoids as thick as bone in the middle part
+- Moment Arm conpuation (per muscle or per joint)
+- complex initial guess path through tori(+bodies)
+- evtl scalable torus
 
 
 - universal Joints- ball joint

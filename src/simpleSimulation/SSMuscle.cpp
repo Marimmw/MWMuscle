@@ -409,6 +409,7 @@ void SSMuscle::initializeSimulationMuscle(int &steps)
     MuscleLengthSteps.reserve(steps);
     for (auto& node : MNodes) {
         node.MNodeEtaSteps.reserve(steps);
+        node.MNodePhiSteps.reserve(steps);
         node.MNodeGlobalSteps.reserve(steps);
         node.MNodeLocalSteps.reserve(steps);
         node.MNodeInitialGuessSteps.reserve(steps);
@@ -448,6 +449,11 @@ void SSMuscle::getAllMuscleMNodesStepValues(int totalSteps, std::vector<std::vec
     initialGuessColors.resize(totalSteps);
     etaValues.resize(totalSteps);
 
+    for (size_t k = 0; k < MNodes.size(); ++k) {
+        MNodes[k].MNodePhiSteps.clear();
+        MNodes[k].MNodePhiSteps.resize(totalSteps);
+    }
+
     for (int step = 0; step < totalSteps; ++step) {
         globalPoints[step].resize(MNodes.size());
         localPoints[step].resize(MNodes.size());
@@ -470,6 +476,11 @@ void SSMuscle::getAllMuscleMNodesStepValues(int totalSteps, std::vector<std::vec
             }
             if (step < MNodes[k].MNodeEtaSteps.size()) {
                 etaValues[step][k] = MNodes[k].MNodeEtaSteps[step];
+            }
+            if (step < MNodes[k].MNodePhiSteps.size()) {
+                MNodes[k].MNodePhiSteps[step].resize(meshPtrs.size());
+                std::vector<double> phiOfMNodeAtStep = MNodes[k].computePhiForEachMeshAtStep(step, meshPtrs);
+                MNodes[k].MNodePhiSteps[step] = phiOfMNodeAtStep; // Hier speichern wir die Phi-Werte für alle Meshes für diesen Node und Schritt
             }
         }
     }

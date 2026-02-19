@@ -31,6 +31,7 @@ struct SimSettings {
     bool bShowDiscretization = false;
     bool bShowSolverInVisualization = false;
     bool bSumPhiEta = false;
+    bool bUseWarmstartEtas = true;
 };
 
 class ConfigManager {
@@ -76,6 +77,7 @@ public:
             else if (key == "bShowDiscretization") ss >> settings.bShowDiscretization;
             else if (key == "bShowSolverInVisualization") ss >> settings.bShowSolverInVisualization;
             else if (key == "bSumPhiEta") ss >> settings.bSumPhiEta;
+            else if (key == "bUseWarmstartEtas") ss >> settings.bUseWarmstartEtas;
         }
 
         qDebug() << "-------------- CONFIG --------------";
@@ -94,6 +96,7 @@ public:
         qDebug() << "   bShowDiscretization:" << settings.bShowDiscretization;
         qDebug() << "   bShowSolverInVisualization:" << settings.bShowSolverInVisualization;
         qDebug() << "   bSumPhiEta:" << settings.bSumPhiEta;
+        qDebug() << "   bUseWarmstartEtas:" << settings.bUseWarmstartEtas;
         qDebug() << "------------------------------------";
         return settings;
     }

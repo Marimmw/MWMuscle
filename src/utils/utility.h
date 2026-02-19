@@ -68,7 +68,7 @@ struct BodyResult {
 
 namespace fs = std::filesystem;
 
-inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle) 
+inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std::string units="m") 
 {
     // 0. Sicherheitschecks
     if (!muscle) {
@@ -122,6 +122,15 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle)
     outFile << "MUSCLE LOG: " << muscle->Name << " (System: " << systemName << ")\n";
     outFile << std::string(widthDesc + numSteps * widthVal, '=') << "\n";
     
+    // --- NEU: MESH MAPPING IN DEN HEADER SCHREIBEN ---
+    outFile << "Meshes: ";
+    for (size_t m = 0; m < muscle->meshPtrs.size(); ++m) {
+        if (muscle->meshPtrs[m]) {
+            outFile << m << "=\"" << muscle->meshPtrs[m]->Name << "\" ";
+        }
+    }
+    outFile << "\n";
+    
     outFile << std::left << std::setw(widthDesc) << "Parameter";
     for (size_t s = 0; s < numSteps; ++s) {
         outFile << std::left << std::setw(widthVal) << ("Step " + std::to_string(s));
@@ -139,24 +148,25 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle)
 
         // --- A) POSITION (X, Y, Z) ---
         // Lambda zum Schreiben einer Zeile (spart Code-Duplizierung)
-        auto writeRow = [&](std::string rowName, auto valueGetter) {
+        auto writeRow = [&](std::string rowName, auto valueGetter, std::string unit) {
             outFile << std::left << std::setw(widthDesc) << rowName;
             for (size_t s = 0; s < numSteps; ++s) {
-                // Check, ob Step existiert
                 if (s < node.MNodeGlobalSteps.size()) {
                     double val = valueGetter(s);
-                    outFile << std::fixed << std::setprecision(6) 
-                            << std::left << std::setw(widthVal) << val;
+                    // Zusammenbauen in Stringstream für sauberes Layout
+                    std::stringstream ss;
+                    ss << std::fixed << std::setprecision(6) << val << unit;
+                    outFile << std::left << std::setw(widthVal) << ss.str();
                 } else {
-                    outFile << std::setw(widthVal) << "NaN";
+                    outFile << std::left << std::setw(widthVal) << "NaN";
                 }
             }
             outFile << "\n";
         };
 
-        writeRow(nodePrefix + " Pos X", [&](size_t s){ return node.MNodeGlobalSteps[s].x; });
-        writeRow(nodePrefix + " Pos Y", [&](size_t s){ return node.MNodeGlobalSteps[s].y; });
-        writeRow(nodePrefix + " Pos Z", [&](size_t s){ return node.MNodeGlobalSteps[s].z; });
+        writeRow(nodePrefix + " Pos X", [&](size_t s){ return node.MNodeGlobalSteps[s].x; }, units);
+        writeRow(nodePrefix + " Pos Y", [&](size_t s){ return node.MNodeGlobalSteps[s].y; }, units);
+        writeRow(nodePrefix + " Pos Z", [&](size_t s){ return node.MNodeGlobalSteps[s].z; }, units);
 
         // --- B) ETAS (Falls vorhanden) ---
         // Wir prüfen im ersten Step, wie viele Etas dieser Node hat
@@ -166,7 +176,7 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle)
         }
 
         for (size_t e = 0; e < numEtas; ++e) {
-            std::string etaName = nodePrefix + " Eta " + std::to_string(e);
+            /* std::string etaName = nodePrefix + " Eta " + std::to_string(e);
             
             outFile << std::left << std::setw(widthDesc) << etaName;
             for (size_t s = 0; s < numSteps; ++s) {
@@ -177,6 +187,35 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle)
                             << std::left << std::setw(widthVal) << val;
                 } else {
                     outFile << std::setw(widthVal) << "0.0"; // Fallback
+                }
+            }
+            outFile << "\n"; */
+            // 1. Zeile schreiben: ETA
+            std::string etaName = nodePrefix + " Eta " + std::to_string(e);
+            outFile << std::left << std::setw(widthDesc) << etaName;
+            for (size_t s = 0; s < numSteps; ++s) {
+                if (s < node.MNodeEtaSteps.size() && e < node.MNodeEtaSteps[s].size()) {
+                    double val = node.MNodeEtaSteps[s][e];
+                    outFile << std::scientific << std::setprecision(4) 
+                            << std::left << std::setw(widthVal) << val;
+                } else {
+                    outFile << std::setw(widthVal) << "0.0"; 
+                }
+            }
+            outFile << "\n";
+
+            // 2. Zeile schreiben: PHI (direkt unter dem passenden Eta)
+            std::string phiName = nodePrefix + " Phi " + std::to_string(e);
+            outFile << std::left << std::setw(widthDesc) << phiName;
+            for (size_t s = 0; s < numSteps; ++s) {
+                // Safety Check: Hat dieser Step Phi-Daten für dieses Mesh?
+                if (s < node.MNodePhiSteps.size() && e < node.MNodePhiSteps[s].size()) {
+                    double val = node.MNodePhiSteps[s][e];
+                    std::stringstream ss;
+                    ss << std::fixed << std::setprecision(6) << val << units; // "m" hier anhängen
+                    outFile << std::left << std::setw(widthVal) << ss.str();
+                } else {
+                    outFile << std::setw(widthVal) << "NaN"; 
                 }
             }
             outFile << "\n";
