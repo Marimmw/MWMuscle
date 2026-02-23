@@ -76,9 +76,9 @@ void SSMuscle::updateMusclePointsParents()
                     if (dynamic_cast<SSCylinderMesh*>(m)) {
                         continue;
                     }
-                    if (dynamic_cast<SSTorusMesh*>(m)) {
+                    /* if (dynamic_cast<SSTorusMesh*>(m)) {
                         continue;
-                    }
+                    } */
                     // avoid via point meshes -> because for parent choice the distance to the COM is currently used, and via points (if not moving but near to a joint tend to produce points inside meshes for the next step)
                     /* if (m->bIsViaPoint) {
                         continue;

@@ -10,8 +10,8 @@ bCreateJointMeshes 0
 muscleNumPoints 25 25
 
 # Scene & Time
-currentScene OFINGER_SIMPLE_BigTorus_2DJoint #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 10
+currentScene OFINGER_SIMPLE_OnlyTorusSmall #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
+numTimeSteps 1
 objFunc 0
 discretization 11
 dynamicReparametrization 0
@@ -21,6 +21,6 @@ bShowSolverInVisualization 1
 # Solver Settings
 casadiParametrization global
 solverMethod NONE
-bUseManualJacobian 0
+bUseManualJacobian 1
 bSumPhiEta 1
 bUseWarmstartEtas 1
