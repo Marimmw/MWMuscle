@@ -7,39 +7,30 @@
 
 // ELLIPSOID
 casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    /* using namespace casadi;
-    MX p_center = q(Slice(0, 3));
-    //MX v1 = q(Slice(3, 6));
-    //MX v2 = q(Slice(6, 9));
-    //MX v3 = q(Slice(9, 12)); 
-    MX v1 = MX::vertcat({q(3), q(6), q(9)}); 
-    MX v2 = MX::vertcat({q(4), q(7), q(10)}); 
-    MX v3 = MX::vertcat({q(5), q(8), q(11)});
-    MX x_rel = gamma - p_center;
-    MX proj1 = MX::mtimes(x_rel.T(), v1);
-    MX proj2 = MX::mtimes(x_rel.T(), v2);
-    MX proj3 = MX::mtimes(x_rel.T(), v3);
-    MX g1 = (2.0 * proj1 / (A * A)) * v1;
-    MX g2 = (2.0 * proj2 / (B * B)) * v2;
-    MX g3 = (2.0 * proj3 / (C * C)) * v3;
-    MX grad = g1 + g2 + g3;
-    return grad; */
-    
+    qDebug() << "Using manual Jacobi (Ellipsoid)!";
     using namespace casadi;
+    // 1. Parameter entpacken (Exakt wie in der Distanzfunktion)
     MX p_center = q(Slice(0, 3));
-    MX p_rot    = q(Slice(3, 12));
-    // 2. Matrix wiederherstellen
-    // R_transposed enthält die lokalen Achsen als ZEILEN (wenn in C++ Zeilenweise gefüllt wurde).
-    // Das ist mathematisch R^T.
-    MX R_transposed = MX::reshape(p_rot, 3, 3);
-    MX x_rel = gamma - p_center;
-    MX x_loc = MX::mtimes(R_transposed, x_rel);
-    MX g_loc_x = (2.0 * x_loc(0)) / (A * A);
-    MX g_loc_y = (2.0 * x_loc(1)) / (B * B);
-    MX g_loc_z = (2.0 * x_loc(2)) / (C * C); 
-    MX grad_loc = MX::vertcat({g_loc_x, g_loc_y, g_loc_z});
-    MX grad_global = MX::mtimes(R_transposed.T(), grad_loc);
-    return grad_global;
+    MX p_rot = q(Slice(3, 12));
+    MX R = MX::reshape(p_rot, 3, 3);
+    
+    // 2. Relativvektor im lokalen Koordinatensystem
+    // x_local(0) entspricht ((gamma - phi) * d1)
+    // x_local(1) entspricht ((gamma - phi) * d2)
+    // x_local(2) entspricht ((gamma - phi) * d3)
+    MX x_local = MX::mtimes(R.T(), (gamma - p_center));
+
+    // 3. Direktoren (Achsen) extrahieren -> Das sind die Spalten von R
+    MX d1 = R(Slice(), 0);
+    MX d2 = R(Slice(), 1);
+    MX d3 = R(Slice(), 2);
+
+    // 4. Ellipsoid-Jacobian nach Gleichung (12):
+    MX term1 = (2.0 * x_local(0) / (A * A)) * d1;
+    MX term2 = (2.0 * x_local(1) / (B * B)) * d2;
+    MX term3 = (2.0 * x_local(2) / (C * C)) * d3;
+    
+    return term1 + term2 + term3;
     
 }
     
@@ -271,16 +262,27 @@ double SSCylinderMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool sign
 }
 
 casadi::MX SSCylinderMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    casadi::MX phi = q(casadi::Slice(0, 3));
-    casadi::MX d1  = q(casadi::Slice(3, 6));
-    casadi::MX d2  = q(casadi::Slice(6, 9));
-    casadi::MX diff = gamma - phi;
+    qDebug() << "Using manual Jacobi (Cylinder)!";
+    using namespace casadi;
+    
+    // 1. Parameter entpacken (Exakt wie in der Distanzfunktion)
+    MX p_center = q(Slice(0, 3));
+    MX p_rot = q(Slice(3, 12));
+    MX R = MX::reshape(p_rot, 3, 3);
+    
+    // 2. Relativvektor im lokalen Koordinatensystem
+    MX x_local = MX::mtimes(R.T(), (gamma - p_center));
 
-    // grad = (2/R^2) * ((diff' * d1)*d1 + (diff' * d2)*d2)
-    return (2.0 / (Radius * Radius)) * (
-        casadi::MX::dot(diff, d1) * d1 + 
-        casadi::MX::dot(diff, d2) * d2
-    );
+    // 3. Direktoren (Achsen) extrahieren -> Wir brauchen für den Zylinder nur d1 und d2
+    MX d1 = R(Slice(), 0);
+    MX d2 = R(Slice(), 1);
+
+    // 4. Cylinder-Jacobian nach Gleichung (14):
+    // ACHTUNG: Keine Teilung durch den Radius hier!
+    MX term1 = 2.0 * x_local(0) * d1;
+    MX term2 = 2.0 * x_local(1) * d2;
+    
+    return term1 + term2;
 }
 
 /*
@@ -364,26 +366,40 @@ casadi::MX SSTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
 }
 
 casadi::MX SSTorusMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    casadi::MX phi = q(casadi::Slice(0, 3));
-    casadi::MX d1  = q(casadi::Slice(3, 6));
-    casadi::MX d2  = q(casadi::Slice(6, 9));
-    casadi::MX d3  = q(casadi::Slice(9, 12));
-    casadi::MX diff = gamma - phi;
-
-    // Skalierte Projektionen
-    casadi::MX dot1 = casadi::MX::dot(diff, d1) / A;
-    casadi::MX dot2 = casadi::MX::dot(diff, d2) / B;
-    casadi::MX dot3 = casadi::MX::dot(diff, d3) / C;
-
-    casadi::MX term1 = pow(dot1, 2) + pow(dot2, 2) + pow(dot3, 2) + pow(R, 2) - pow(r, 2);
+    qDebug() << "Using manual Jacobi (Torus)";
+    using namespace casadi;
     
-    // Ableitungen der skalierten Komponenten: d/d_gamma (dot1) = d1 / A
-    casadi::MX der_dot1 = (2.0 * dot1 / A) * d1;
-    casadi::MX der_dot2 = (2.0 * dot2 / B) * d2;
-    casadi::MX der_dot3 = (2.0 * dot3 / C) * d3;
+    // 1. Parameter entpacken
+    MX p_center = q(Slice(0, 3));
+    MX p_rot = q(Slice(3, 12));
+    MX R_mat = MX::reshape(p_rot, 3, 3);
+    
+    // 2. Relativvektor im lokalen Koordinatensystem
+    // x_local(0) = lokales X
+    // x_local(1) = lokales Y
+    // x_local(2) = lokales Z
+    MX x_local = MX::mtimes(R_mat.T(), (gamma - p_center));
 
-    return 2.0 * term1 * (der_dot1 + der_dot2 + der_dot3) - 
-           8.0 * pow(R, 2) * (der_dot1 + der_dot2);
+    // 3. Direktoren (Achsen) extrahieren -> Spalten von R_mat
+    MX d1 = R_mat(Slice(), 0);
+    MX d2 = R_mat(Slice(), 1);
+    MX d3 = R_mat(Slice(), 2);
+
+    // 4. Torus-Jacobian berechnen
+    // Abstand des Punktes zur Z-Achse in der X-Y-Ebene: S = sqrt(x^2 + y^2)
+    // (+ 1e-12 verhindert Division durch 0, falls der Punkt exakt auf der Z-Achse liegt)
+    MX S = MX::sqrt(x_local(0) * x_local(0) + x_local(1) * x_local(1) + 1e-12);
+    
+    // Vorfaktor für die X- und Y-Ableitung: 2 * (1 - R_major / S)
+    // Wir nehmen an, dass R in deiner Klasse der Major-Radius ist (Ring-Radius)
+    MX factor_xy = 2.0 * (1.0 - R / S);
+
+    // Ableitungen in die jeweiligen Richtungen
+    MX term1 = (factor_xy * x_local(0)) * d1;
+    MX term2 = (factor_xy * x_local(1)) * d2;
+    MX term3 = (2.0 * x_local(2)) * d3;
+    
+    return term1 + term2 + term3;
 }
 
 double SSTorusMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance) {

@@ -17,22 +17,28 @@ def clean_val(val_str):
         return np.nan
 
 def parse_muscle_log(filepath):
-    """Liest die Textdatei und extrahiert Eta/Phi für jeden Knoten und Step sowie die Mesh-Namen."""
     with open(filepath, 'r') as f:
         lines = f.readlines()
 
     num_steps = 0
     data = {} 
-    mesh_names = {} # NEU: Wörterbuch für die Mesh-Namen
+    mesh_names = {}
+    solver_results = {}  # NEU
+    max_node_idx = 0
     
     for line in lines:
         line = line.rstrip('\n')
         if not line or line.startswith('='):
             continue
+
+        # NEU: SOLVER RESULTS EINLESEN
+        if line.startswith("SolerResults:") or line.startswith("SolverResults:"):
+            matches = re.findall(r'(\d+)="(.*?)"', line)
+            for s_idx_str, s_msg in matches:
+                solver_results[int(s_idx_str)] = s_msg
+            continue
             
-        # === NEU: MESH-NAMEN EINLESEN ===
         if line.startswith("Meshes:"):
-            # Findet alle Muster wie 0="MeshName"
             matches = re.findall(r'(\d+)="(.*?)"', line)
             for m_idx_str, m_name in matches:
                 mesh_names[int(m_idx_str)] = m_name
@@ -56,10 +62,14 @@ def parse_muscle_log(filepath):
         desc_parts = desc.split()
         if len(desc_parts) >= 4:
             node_idx = int(desc_parts[1])
-            var_type = desc_parts[2] 
+            var_type = desc_parts[2]
+
+            # NEU: max_node_idx tracken
+            if var_type == "Pos":
+                max_node_idx = max(max_node_idx, node_idx)
             
             if var_type in ["Eta", "Phi"]:
-                mesh_idx = int(desc_parts[3]) 
+                mesh_idx = int(desc_parts[3])
                 var_key = var_type.lower()
                 
                 for s in range(num_steps):
@@ -72,10 +82,8 @@ def parse_muscle_log(filepath):
                     else:
                         data[s][var_key][mesh_idx][node_idx] = np.nan
 
-    num_nodes = 0
-    if num_steps > 0 and 'eta' in data[0] and len(data[0]['eta']) > 0:
-        first_mesh = list(data[0]['eta'].keys())[0]
-        num_nodes = max(data[0]['eta'][first_mesh].keys()) + 1
+    # NEU: num_nodes aus Pos-Zeilen
+    num_nodes = max_node_idx + 1 if max_node_idx > 0 else 0
 
     for s in range(num_steps):
         for var_key in ['eta', 'phi']:
@@ -84,18 +92,17 @@ def parse_muscle_log(filepath):
                 arr = [node_dict.get(n, np.nan) for n in range(num_nodes)]
                 data[s][var_key][m_idx] = arr
 
-    # mesh_names wird jetzt mit zurückgegeben
-    return num_steps, num_nodes, data, mesh_names
+    return num_steps, num_nodes, data, mesh_names, solver_results  # NEU: solver_results
 
 def create_pdf_report(input_filepath, output_filepath):
     print(f"Verarbeite: {os.path.basename(input_filepath)}...")
-    num_steps, num_nodes, data, mesh_names = parse_muscle_log(input_filepath)
+    num_steps, num_nodes, data, mesh_names, solver_results = parse_muscle_log(input_filepath)
     
     if num_steps == 0 or num_nodes <= 2:
         print("  -> Keine oder zu wenige gültige Daten gefunden. Überspringe.")
         return
 
-    inner_nodes = np.arange(1, num_nodes - 1)
+    inner_nodes = np.arange(1, num_nodes-1)
     
     mesh_colors = ['darkorange', 'royalblue', 'forestgreen', 'firebrick', 'mediumpurple', 
                    'sienna', 'hotpink', 'gray', 'olive', 'cyan']
@@ -118,7 +125,49 @@ def create_pdf_report(input_filepath, output_filepath):
             
             phi_valid_count = 0
             complementarity_sum = np.zeros(num_nodes)
+
+            msg = solver_results.get(step, "Unknown")
+            msg_color = 'green' if msg == "Solve_Succeeded" else 'red'
             
+            
+            neg_eta_lines = []
+            neg_phi_lines = []
+
+            for idx, m_idx in enumerate(mesh_indices):
+                m_label = mesh_names.get(m_idx, f"M{m_idx}")
+                
+                etas = np.array(data[step]['eta'][m_idx])
+                phis = np.array(data[step]['phi'][m_idx])
+
+                for n in inner_nodes:
+                    eta_val = etas[n]
+                    phi_val = phis[n]
+                    
+                    if not np.isnan(eta_val) and eta_val < 0:
+                        neg_eta_lines.append(f"Node {n:>2} | {m_label:<15} | η = {eta_val:.3e}")
+                    if not np.isnan(phi_val) and phi_val < 0:
+                        neg_phi_lines.append(f"Node {n:>2} | {m_label:<15} | φ = {phi_val:.3e}")
+            # Negative Werte als Textbox in ax_eta
+            if neg_eta_lines:
+                neg_eta_text = "Negative η:\n" + "\n".join(neg_eta_lines)
+                ax_eta.text(0.65, 0.95, neg_eta_text,
+                            transform=ax_eta.transAxes,
+                            fontsize=8, verticalalignment='center',
+                            bbox=dict(boxstyle='round,pad=0.4', facecolor="#ededed", 
+                                      edgecolor='black', alpha=0.9),
+                            fontfamily='monospace', color='black')
+            # Negative Werte als Textbox in ax_phi
+            if neg_phi_lines:
+                neg_phi_text = "Negative φ:\n" + "\n".join(neg_phi_lines)
+                ax_phi.text(0.65, 0.95, neg_phi_text,
+                            transform=ax_phi.transAxes,
+                            fontsize=8, verticalalignment='center',
+                            bbox=dict(boxstyle='round,pad=0.4', facecolor="#ededed",
+                                      edgecolor='black', alpha=0.9),
+                            fontfamily='monospace', color='black')
+
+
+
             for idx, m_idx in enumerate(mesh_indices):
                 c = mesh_colors[idx % len(mesh_colors)]
                 
@@ -149,8 +198,8 @@ def create_pdf_report(input_filepath, output_filepath):
                 lines_phi.append(b2[0])
                 labels_phi.append(b2.get_label())
 
-            l_comp, = ax_comp.plot(inner_nodes, complementarity_sum[1:-1], color='red', linewidth=2.5, 
-                                   linestyle='-', marker='d', markersize=8, markerfacecolor='red',
+            l_comp, = ax_comp.plot(inner_nodes, complementarity_sum[1:-1], color=msg_color, linewidth=2.5, 
+                                   linestyle='-', marker='d', markersize=8, markerfacecolor=msg_color,
                                    zorder=10, label=r'Kompl. Fehler ($\sum \phi \cdot \eta$)')
 
             if phi_valid_count == 0 and step == 0:
@@ -159,18 +208,36 @@ def create_pdf_report(input_filepath, output_filepath):
             for ax in [ax_eta, ax_phi, ax_comp]:
                 ax.set_xticks(inner_nodes)
                 ax.set_xticklabels([f"Node {n}" for n in inner_nodes], rotation=45, ha='center')
-                ax.set_xlim(0.5, num_nodes - 1.5)
+                # xlim von 0.5 bis 23.5 damit Node 1 und Node 23 gut sichtbar sind
+                ax.set_xlim(0.5, num_nodes - 1.5) 
                 ax.grid(True, axis='y', alpha=0.3)
 
-            ax_eta.set_title(rf"Step {step} - Kraft ($\eta$)", fontsize=16, fontweight='bold', pad=10)
+            
+            
+
+            ax_eta.set_title(rf"Step {step} - Kraft ($\eta$)     [{msg}]",
+                             fontsize=16, fontweight='bold', pad=10, color='black')
+            ax_eta.set_title(rf"Step {step} - Kraft ($\eta$)", 
+                 fontsize=16, fontweight='bold', pad=25)
+            ax_eta.text(0.5, 1.01, f"[{msg}]", transform=ax_eta.transAxes,
+                        ha='center', va='bottom', fontsize=13,
+                        color=msg_color, fontweight='bold')
             ax_eta.set_ylabel(r"$\eta$ (Kräfte)", fontsize=12, color='black')
             ax_eta.axhline(0, color='black', linestyle='-', linewidth=1.2, alpha=0.8) 
             
-            ax_phi.set_title(rf"Step {step} - Distanz ($\phi$)", fontsize=16, fontweight='bold', pad=10, color='dimgray')
+            ax_phi.set_title(rf"Step {step} - Distanz ($\phi$)", 
+                 fontsize=16, fontweight='bold', pad=25, color='dimgray')
+            ax_phi.text(0.5, 1.01, f"[{msg}]", transform=ax_phi.transAxes,
+                        ha='center', va='bottom', fontsize=13,
+                        color=msg_color, fontweight='bold')
             ax_phi.set_ylabel(r"$\phi$ in m (Abstand)", fontsize=12, color='black')
             ax_phi.axhline(0, color='red', linestyle='--', linewidth=1.2, alpha=0.8) 
             
-            ax_comp.set_title(rf"Step {step} - Komplementaritätsfehler (muss 0 sein!)", fontsize=16, fontweight='bold', pad=10, color='darkred')
+            ax_comp.set_title(rf"Step {step} - Komplementaritätsfehler (muss 0 sein!)", 
+                  fontsize=16, fontweight='bold', pad=25, color='black')
+            ax_comp.text(0.5, 1.01, f"[{msg}]", transform=ax_comp.transAxes,
+                        ha='center', va='bottom', fontsize=13,
+                        color=msg_color, fontweight='bold')
             ax_comp.set_ylabel(r"$\sum \phi \cdot \eta$", fontsize=12, color='black')
             ax_comp.axhline(0, color='black', linestyle='-', linewidth=1.5, alpha=0.8) 
 
@@ -180,7 +247,7 @@ def create_pdf_report(input_filepath, output_filepath):
             ax_comp.legend([l_comp], [l_comp.get_label()], loc='upper left', bbox_to_anchor=(1.02, 1), borderaxespad=0.)
 
             plt.tight_layout()
-            fig.subplots_adjust(right=0.82, hspace=0.4) 
+            fig.subplots_adjust(right=0.72, hspace=0.4)# fig.subplots_adjust(right=0.82, hspace=0.4) 
             pdf.savefig(fig)
             plt.close(fig)
             

@@ -15,7 +15,7 @@ Git push
 3. git status
 4. git add -A    ODER git add .
 5. git commit -m "update.........."
-6. git push origin dev
+6. git push origin main
 
 0. git reset
 
@@ -30,6 +30,7 @@ WEITER MIT:
 - Moment Arm conpuation (per muscle or per joint)
 - complex initial guess path through tori(+bodies)
 - evtl scalable torus
+- wie viele körper infeasible?
 
 
 - universal Joints- ball joint

@@ -2,11 +2,8 @@
 
 #include <string>
 #include <vector>
-
 #include <iostream>
 #include <fstream>
-#include <vector>
-#include <string>
 #include <iomanip>      // Für std::setw, std::setprecision
 #include <filesystem>   // Braucht C++17 (in CMake sicherstellen!)
 
@@ -68,7 +65,7 @@ struct BodyResult {
 
 namespace fs = std::filesystem;
 
-inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std::string units="m") 
+inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std::vector<std::string> solverResults = {""}, std::string units="m") 
 {
     // 0. Sicherheitschecks
     if (!muscle) {
@@ -114,7 +111,7 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std
 
     // Formatierung
     const int widthDesc = 20; // Breite der Beschreibung
-    const int widthVal  = 15; // Breite der Zahlenwerte
+    const int widthVal  = 22; // Breite der Zahlenwerte
 
     // =========================================================
     // HEADER SCHREIBEN (Step 0   Step 1   Step 2 ...)
@@ -123,6 +120,12 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std
     outFile << std::string(widthDesc + numSteps * widthVal, '=') << "\n";
     
     // --- NEU: MESH MAPPING IN DEN HEADER SCHREIBEN ---
+    outFile << "SolerResults: ";
+    for (size_t s = 0; s < solverResults.size(); ++s) {
+        outFile << s << "=\"" << solverResults[s] << "\" ";
+    }
+    outFile << "\n";
+
     outFile << "Meshes: ";
     for (size_t m = 0; m < muscle->meshPtrs.size(); ++m) {
         if (muscle->meshPtrs[m]) {
@@ -155,7 +158,7 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std
                     double val = valueGetter(s);
                     // Zusammenbauen in Stringstream für sauberes Layout
                     std::stringstream ss;
-                    ss << std::fixed << std::setprecision(6) << val << unit;
+                    ss << std::fixed << std::setprecision(9) << val << unit;
                     outFile << std::left << std::setw(widthVal) << ss.str();
                 } else {
                     outFile << std::left << std::setw(widthVal) << "NaN";
@@ -176,27 +179,14 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std
         }
 
         for (size_t e = 0; e < numEtas; ++e) {
-            /* std::string etaName = nodePrefix + " Eta " + std::to_string(e);
             
-            outFile << std::left << std::setw(widthDesc) << etaName;
-            for (size_t s = 0; s < numSteps; ++s) {
-                // Safety Check: Hat dieser Step auch Daten und ist der Eta-Index gültig?
-                if (s < node.MNodeEtaSteps.size() && e < node.MNodeEtaSteps[s].size()) {
-                    double val = node.MNodeEtaSteps[s][e];
-                    outFile << std::scientific << std::setprecision(4) // Etas oft klein -> Scientific Notation
-                            << std::left << std::setw(widthVal) << val;
-                } else {
-                    outFile << std::setw(widthVal) << "0.0"; // Fallback
-                }
-            }
-            outFile << "\n"; */
             // 1. Zeile schreiben: ETA
             std::string etaName = nodePrefix + " Eta " + std::to_string(e);
             outFile << std::left << std::setw(widthDesc) << etaName;
             for (size_t s = 0; s < numSteps; ++s) {
                 if (s < node.MNodeEtaSteps.size() && e < node.MNodeEtaSteps[s].size()) {
                     double val = node.MNodeEtaSteps[s][e];
-                    outFile << std::scientific << std::setprecision(4) 
+                    outFile << std::scientific << std::setprecision(9) 
                             << std::left << std::setw(widthVal) << val;
                 } else {
                     outFile << std::setw(widthVal) << "0.0"; 
@@ -212,7 +202,7 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std
                 if (s < node.MNodePhiSteps.size() && e < node.MNodePhiSteps[s].size()) {
                     double val = node.MNodePhiSteps[s][e];
                     std::stringstream ss;
-                    ss << std::fixed << std::setprecision(6) << val << units; // "m" hier anhängen
+                    ss << std::fixed << std::setprecision(9) << val << units; // "m" hier anhängen
                     outFile << std::left << std::setw(widthVal) << ss.str();
                 } else {
                     outFile << std::setw(widthVal) << "NaN"; 
@@ -302,8 +292,8 @@ inline void exportParameterLog(const std::vector<std::vector<double>>& values,
     size_t numParams = values[0].size(); // Annahme: Alle Steps haben gleich viele Params
 
     // Formatierungseinstellungen
-    const int widthDesc = 30; // Breite der Beschreibungs-Spalte
-    const int widthVal  = 15; // Breite der Wert-Spalten
+    const int widthDesc = 25; // Breite der Beschreibungs-Spalte
+    const int widthVal  = 25; // Breite der Wert-Spalten
 
     // =========================================================
     // HEADER (Step 0   Step 1   Step 2 ...)
@@ -340,7 +330,7 @@ inline void exportParameterLog(const std::vector<std::vector<double>>& values,
             // Safety Check: Hat dieser Step auch diesen Parameter?
             if (p < values[s].size()) {
                 val = values[s][p];
-                outFile << std::fixed << std::setprecision(6) 
+                outFile << std::fixed << std::setprecision(9) 
                         << std::left << std::setw(widthVal) << val;
             } else {
                 outFile << std::setw(widthVal) << "NaN";

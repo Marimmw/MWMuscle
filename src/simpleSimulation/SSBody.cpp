@@ -40,12 +40,24 @@ int SSJoint::update(int step)
     MWMath::RotMatrix3x3 jointRotation = MWMath::RotMatrix3x3();
     MWMath::RotMatrix3x3 jointHalfRotation = MWMath::RotMatrix3x3();
     
-            // double angle = CurrentAngles[i].back(); // Neuesten Winkel verwenden
-            double denominator = (TotalSteps > 1) ? (double)(TotalSteps - 1) : 1.0;
-            double progress = (double)step / denominator;
+            double newAngle = 0.0;
             MWMath::Point3D axis = RotationAxes;
-            jointRotation = jointRotation * MWMath::axisAngle(axis, MaxAngles * progress);
-            jointHalfRotation = jointHalfRotation * MWMath::axisAngle(axis, MaxAngles * progress * 0.5);
+            if (AngleSteps.empty()) {
+                double denominator = (TotalSteps > 1) ? (double)(TotalSteps - 1) : 1.0;
+                double progress = (double)step / denominator;
+                newAngle = MaxAngles * progress;
+            }
+            else {
+                if (step < AngleSteps.size()) {
+                    newAngle = AngleSteps[step];
+                }
+                else {
+                    newAngle = AngleSteps.back(); // Wenn mehr Schritte als definiert, letzten Winkel beibehalten
+                }
+            }
+            jointRotation = jointRotation * MWMath::axisAngle(axis, newAngle);
+            jointHalfRotation = jointHalfRotation * MWMath::axisAngle(axis, newAngle * 0.5);
+            DoneAngleSteps.push_back(newAngle);
         
     // 1. Parent-Transformation anwenden
     if (Parent) {

@@ -36,7 +36,8 @@ void CasadiSystem::setupCasadiSum()
     for (size_t m = 0; m < m_muscles.size(); ++m) {
         SSMuscle* mus = m_muscles[m];
         int num_inner = mus->MNodes.size() - 2;
-        int K = mus->MNodes.size();
+        int K = mus->MNodes.size()-1;
+        qDebug() << "Muscle " << m << ": " << mus->Name.c_str() << ", K=" << K << ", num_inner=" << num_inner;
         int num_wrap = mus->meshPtrs.size();
         int num_eta_per_node = num_wrap;
 

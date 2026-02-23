@@ -7,7 +7,7 @@ bFingerIsEllipsoid 1
 bCreateJointMeshes 0
 
 # Muscles (Default points, or list separated by space)
-muscleNumPoints 10 25
+muscleNumPoints 25 25
 
 # Scene & Time
 currentScene OFINGER_SIMPLE_BigTorus_2DJoint #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH

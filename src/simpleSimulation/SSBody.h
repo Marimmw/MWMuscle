@@ -67,6 +67,8 @@ public:
     double MaxAngles; // In Grad
     MWMath::Point3D RotationAxes;
     int TotalSteps;
+    std::vector<double> AngleSteps; 
+    std::vector<double> DoneAngleSteps;
 
     MWMath::RotMatrix3x3 JointHalfRotation = MWMath::RotMatrix3x3();
 
