@@ -285,65 +285,8 @@ casadi::MX SSCylinderMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
     return term1 + term2;
 }
 
-/*
-casadi::MX SSTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
-    casadi::MX phi = q(casadi::Slice(0, 3));
-    casadi::MX d1  = q(casadi::Slice(3, 6));
-    casadi::MX d2  = q(casadi::Slice(6, 9));
-    casadi::MX d3  = q(casadi::Slice(9, 12));
-    casadi::MX diff = gamma - phi;
 
-    casadi::MX dot1 = casadi::MX::dot(diff, d1);
-    casadi::MX dot2 = casadi::MX::dot(diff, d2);
-    casadi::MX dot3 = casadi::MX::dot(diff, d3);
-
-    // dist = (dot1^2 + dot2^2 + dot3^2 + a^2 - b^2)^2 - 4*a^2*(dot1^2 + dot2^2)
-    casadi::MX term1 = pow(dot1, 2) + pow(dot2, 2) + pow(dot3, 2) + pow(R, 2) - pow(r, 2);
-    return pow(term1, 2) - 4.0 * pow(R, 2) * (pow(dot1, 2) + pow(dot2, 2));
-}
-
-double SSTorusMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance) {
-    // 1. In lokales System transformieren
-    MWMath::Point3D diff = pGlobal - PositionGlobal;
-    MWMath::Point3D pLoc = OrientationGlobal.transposed().transform(diff);
-
-    // R ist der Major-Radius (Mitte bis Ringzentrum)
-    // r ist der Minor-Radius (Dicke des Schlauchs)
-    
-    // Abstand zur Z-Achse in der XY-Ebene
-    double dist_xy = std::sqrt(pLoc.x * pLoc.x + pLoc.y * pLoc.y);
-    
-    // Abstand zum "Kern-Ring"
-    double delta_R = dist_xy - R;
-    
-    // Euklidischer Abstand zur Ring-Mittellinie
-    double dist_to_center_line = std::sqrt(delta_R * delta_R + pLoc.z * pLoc.z);
-    
-    // Finale Distanz zur Oberfläche
-    return dist_to_center_line - r;
-}
-
-casadi::MX SSTorusMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    casadi::MX phi = q(casadi::Slice(0, 3));
-    casadi::MX d1  = q(casadi::Slice(3, 6));
-    casadi::MX d2  = q(casadi::Slice(6, 9));
-    casadi::MX d3  = q(casadi::Slice(9, 12));
-    casadi::MX diff = gamma - phi;
-
-    casadi::MX dot1 = casadi::MX::dot(diff, d1);
-    casadi::MX dot2 = casadi::MX::dot(diff, d2);
-    casadi::MX dot3 = casadi::MX::dot(diff, d3);
-
-    casadi::MX term1 = pow(dot1, 2) + pow(dot2, 2) + pow(dot3, 2) + pow(R, 2) - pow(r, 2);
-    
-    // grad = 2 * term1 * (2*dot1*d1 + 2*dot2*d2 + 2*dot3*d3) - 8*a^2*(dot1*d1 + dot2*d2)
-    // (Hinweis: Deine MATLAB Vorlage hat 2*dot1*d1... das entspricht der Ableitung der inneren Klammer)
-    return 2.0 * term1 * (2.0 * dot1 * d1 + 2.0 * dot2 * d2 + 2.0 * dot3 * d3) - 
-           8.0 * pow(R, 2) * (dot1 * d1 + dot2 * d2);
-}
-
-*/
-// SCALED TORUS
+// TORUS
 casadi::MX SSTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
     casadi::MX phi = q(casadi::Slice(0, 3));
     casadi::MX d1  = q(casadi::Slice(3, 6));
@@ -491,44 +434,62 @@ void SSTorusMesh::discretizeMesh(int discrCount)
     }
 }
 
-////// UNSCALED TORUS //////
-/* 
-casadi::MX SSEllipsoidMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
-    // Parameter extrahieren
-    casadi::MX phi = q(casadi::Slice(0, 3));
-    casadi::MX d1  = q(casadi::Slice(3, 6));
-    casadi::MX d2  = q(casadi::Slice(6, 9));
-    casadi::MX d3  = q(casadi::Slice(9, 12));
+// SSMESH
+void SSMesh::InitializeMesh()
+{
+    if (Parent){
+        Parent->Meshes.push_back(shared_from_this());
+        qDebug() << "Mesh " << QString::fromStdString(Name) << " added to Parent " << QString::fromStdString(Parent->Name);
+        
+        if (dynamic_cast<SSJoint*>(Parent.get()))// != nullptr && dynamic_cast<SSTorusMesh*>(shared_from_this().get()) == nullptr)
+        {
+            //qDebug() << "  -> Parent is a Joint.";
+            bIsJointMesh = true;
+        }
+    } // Füge dieses Mesh der Liste des Parents hinzu
 
-    casadi::MX diff = gamma - phi;
-
-    // --- 1. Projektion ins lokale System ---
-    casadi::MX u = casadi::MX::dot(diff, d1);
-    casadi::MX v = casadi::MX::dot(diff, d2);
-    casadi::MX w = casadi::MX::dot(diff, d3);
-
-    // --- 2. Berechnung des Pfad-Terms (Große Ellipse) ---
-    // Wir berechnen, wo wir relativ zur Pfad-Ellipse stehen.
-    // term_path = 1.0 bedeutet: Wir sind exakt auf der Pfad-Linie.
-    casadi::MX term_path = (u * u) / (RX * RX) + (v * v) / (RY * RY);
-    casadi::MX sqrt_path = sqrt(term_path + 1e-16); // epsilon für Stabilität
-
-    // Der Term (sqrt_path - 1.0) ist der "Abstand" zur Pfad-Ellipse.
-    // Aber Achtung: Er ist dimensionslos!
-    // Um ihn mit r1 (Meter) zu vergleichen, skalieren wir ihn mit RX.
-    // (Das ist eine Approximation; exakt wäre es nur bei einem Kreis).
-    casadi::MX radial_dist_approx = (sqrt_path - 1.0) * RX;
-
-    // --- 3. Zusammensetzen mit Querschnitts-Ellipse (Kleine Ellipse) ---
-    // Formel: (dist_radial / r1)^2 + (dist_vertical / r2)^2 - 1
-    
-    casadi::MX term_r1 = (radial_dist_approx * radial_dist_approx) / (R1 * R1);
-    casadi::MX term_r2 = (w * w) / (R2 * R2);
-
-    return term_r1 + term_r2 - 1.0;
 }
 
-casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
+void SSMesh::getCasadiParentGPOs(casadi::MX &pos, casadi::MX &ori)
+{
+        MWMath::Point3D positionGlobal;
+        MWMath::RotMatrix3x3 orientationGlobal;
+        if (Parent) {
+            positionGlobal = Parent->PositionGlobal;
+            orientationGlobal = Parent->OrientationGlobal;
+        }
+        else {
+            positionGlobal = Position2ParentRelInParentFrame;
+            orientationGlobal = Orientation2ParentRel;
+        }
+        pos = casadi::MX::vertcat({positionGlobal.x, positionGlobal.y, positionGlobal.z});
+        ori = casadi::MX::zeros(3,3);
+        for (int i=0;i<3;i++){for (int j=0;j<3;j++){ori(i,j) = orientationGlobal.m[i][j];}}
+}
+
+void SSMesh::updateMeshPosAndRot() {
+    // Aktualisiere globale Position und Rotation basierend auf Parent
+    // qDebug() << "Updating Mesh Position: " <<  QString::fromStdString(Name);
+    if (Parent) {
+        // qDebug() << "  old: Pos: " << QString::fromStdString(PositionGlobal.print()) << ", Ori: " << QString::fromStdString(OrientationGlobal.print());
+        PositionGlobal = Parent->PositionGlobal + Parent->OrientationGlobal.transform(Position2ParentRelInParentFrame);
+        OrientationGlobal = Parent->OrientationGlobal * Orientation2ParentRel;
+        //PositionGlobal = Parent->PositionGlobal + OrientationGlobal.transform(Position2ParentRelInParentFrame);
+        if (Name == "_"){
+            qDebug() << "    " << this->Name.c_str() << ": Pos: " << QString::fromStdString(PositionGlobal.print()) << ", Ori: " << QString::fromStdString(OrientationGlobal.print());
+        }
+    } else {
+        PositionGlobal = Position2ParentRelInParentFrame; // Falls kein Parent, dann ist die lokale Position die globale
+        OrientationGlobal = Orientation2ParentRel; // Falls kein Parent, dann ist die lokale Rotation die globale
+    }
+
+    
+};
+
+
+// ELLIPTICAL TORUS
+casadi::MX SSEllipticalTorusMesh::constraintJacobian(casadi::MX gamma, casadi::MX q)
+{
     casadi::MX phi = q(casadi::Slice(0, 3));
     casadi::MX d1  = q(casadi::Slice(3, 6));
     casadi::MX d2  = q(casadi::Slice(6, 9));
@@ -577,54 +538,116 @@ casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
 
     return grad;
 }
- */
 
-void SSMesh::InitializeMesh()
+casadi::MX SSEllipticalTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q)
 {
-    if (Parent){
-        Parent->Meshes.push_back(shared_from_this());
-        qDebug() << "Mesh " << QString::fromStdString(Name) << " added to Parent " << QString::fromStdString(Parent->Name);
-        
-        if (dynamic_cast<SSJoint*>(Parent.get()))// != nullptr && dynamic_cast<SSTorusMesh*>(shared_from_this().get()) == nullptr)
-        {
-            //qDebug() << "  -> Parent is a Joint.";
-            bIsJointMesh = true;
-        }
-    } // Füge dieses Mesh der Liste des Parents hinzu
+    // Parameter extrahieren
+    casadi::MX phi = q(casadi::Slice(0, 3));
+    casadi::MX d1  = q(casadi::Slice(3, 6));
+    casadi::MX d2  = q(casadi::Slice(6, 9));
+    casadi::MX d3  = q(casadi::Slice(9, 12));
 
+    casadi::MX diff = gamma - phi;
+
+    // --- 1. Projektion ins lokale System ---
+    casadi::MX u = casadi::MX::dot(diff, d1);
+    casadi::MX v = casadi::MX::dot(diff, d2);
+    casadi::MX w = casadi::MX::dot(diff, d3);
+
+    // --- 2. Berechnung des Pfad-Terms (Große Ellipse) ---
+    // Wir berechnen, wo wir relativ zur Pfad-Ellipse stehen.
+    // term_path = 1.0 bedeutet: Wir sind exakt auf der Pfad-Linie.
+    casadi::MX term_path = (u * u) / (RX * RX) + (v * v) / (RY * RY);
+    casadi::MX sqrt_path = sqrt(term_path + 1e-16); // epsilon für Stabilität
+
+    // Der Term (sqrt_path - 1.0) ist der "Abstand" zur Pfad-Ellipse.
+    // Aber Achtung: Er ist dimensionslos!
+    // Um ihn mit r1 (Meter) zu vergleichen, skalieren wir ihn mit RX.
+    // (Das ist eine Approximation; exakt wäre es nur bei einem Kreis).
+    casadi::MX radial_dist_approx = (sqrt_path - 1.0) * RX;
+
+    // --- 3. Zusammensetzen mit Querschnitts-Ellipse (Kleine Ellipse) ---
+    // Formel: (dist_radial / r1)^2 + (dist_vertical / r2)^2 - 1
+    
+    casadi::MX term_r1 = (radial_dist_approx * radial_dist_approx) / (R1 * R1);
+    casadi::MX term_r2 = (w * w) / (R2 * R2);
+
+    return term_r1 + term_r2 - 1.0;
 }
 
-void SSMesh::getCasadiParentGPOs(casadi::MX &pos, casadi::MX &ori)
+double SSEllipticalTorusMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance)
 {
-        MWMath::Point3D positionGlobal;
-        MWMath::RotMatrix3x3 orientationGlobal;
-        if (Parent) {
-            positionGlobal = Parent->PositionGlobal;
-            orientationGlobal = Parent->OrientationGlobal;
-        }
-        else {
-            positionGlobal = Position2ParentRelInParentFrame;
-            orientationGlobal = Orientation2ParentRel;
-        }
-        pos = casadi::MX::vertcat({positionGlobal.x, positionGlobal.y, positionGlobal.z});
-        ori = casadi::MX::zeros(3,3);
-        for (int i=0;i<3;i++){for (int j=0;j<3;j++){ori(i,j) = orientationGlobal.m[i][j];}}
+    if (GlobalDiscreteMeshPoints.empty()) {
+        MWMath::Point3D diff = pGlobal - PositionGlobal;
+        MWMath::Point3D pLoc = OrientationGlobal.transposed().transform(diff);
+        // Fallback: Wenn keine diskreten Punkte vorhanden sind, verwenden wir den Abstand zum Zentrum
+        return std::sqrt(pLoc.x * pLoc.x + pLoc.y * pLoc.y + pLoc.z * pLoc.z);
+    }
+    else{
+        double minDistSq = std::numeric_limits<double>::max();
+            for (const auto& discMeshP : GlobalDiscreteMeshPoints) {
+                double distSq = MWMath::distance(pGlobal, discMeshP);
+                if (distSq < minDistSq) {
+                    minDistSq = distSq;
+                }
+            }
+            return minDistSq;
+    }
 }
 
-void SSMesh::updateMeshPosAndRot() {
-    // Aktualisiere globale Position und Rotation basierend auf Parent
-    // qDebug() << "Updating Mesh Position: " <<  QString::fromStdString(Name);
-    if (Parent) {
-        // qDebug() << "  old: Pos: " << QString::fromStdString(PositionGlobal.print()) << ", Ori: " << QString::fromStdString(OrientationGlobal.print());
-        OrientationGlobal = Parent->OrientationGlobal * Orientation2ParentRel;
-        PositionGlobal = Parent->PositionGlobal + OrientationGlobal.transform(Position2ParentRelInParentFrame);
-        if (Name == "_"){
-            qDebug() << "    " << this->Name.c_str() << ": Pos: " << QString::fromStdString(PositionGlobal.print()) << ", Ori: " << QString::fromStdString(OrientationGlobal.print());
-        }
-    } else {
-        PositionGlobal = Position2ParentRelInParentFrame; // Falls kein Parent, dann ist die lokale Position die globale
-        OrientationGlobal = Orientation2ParentRel; // Falls kein Parent, dann ist die lokale Rotation die globale
+void SSEllipticalTorusMesh::discretizeMesh(int discrCount)
+{
+    discrCount = 31; // TEST
+    // 1. Sicherheitscheck
+    if (discrCount < 4) discrCount = 4;
+
+    // Größe berechnen (discCount * discCount Punkte)
+    int expectedSize = discrCount * discrCount;
+    
+    if(GlobalDiscreteMeshPoints.size() != expectedSize){
+        GlobalDiscreteMeshPoints.resize(expectedSize);
     }
 
-    
-};
+    // 2. Schleifen über die Winkel
+    for (int i = 0; i < discrCount; ++i) {
+        
+        // Winkel u: Parameter der Pfad-Ellipse (um die Z-Achse)
+        double u = (2.0 * M_PI * (double)i) / (double)discrCount;
+        double cos_u = std::cos(u);
+        double sin_u = std::sin(u);
+
+        // Punkt auf der Pfad-Ellipse (Mittellinie des Schlauchs)
+        // x_path = RX * cos(u)
+        // y_path = RY * sin(u)
+
+        for (int j = 0; j < discrCount; ++j) {
+            
+            // Winkel v: Parameter der Rohr-Ellipse (Querschnitt)
+            double v = (2.0 * M_PI * (double)j) / (double)discrCount;
+            double cos_v = std::cos(v);
+            double sin_v = std::sin(v);
+
+            // --- Parametrisierung des elliptischen Torus ---
+            // Wir berechnen zuerst den Punkt im lokalen Koordinatensystem:
+            
+            // Der Radius der Rohr-Ellipse wirkt sich auf die Verschiebung aus.
+            // Der Querschnitt "schwillt" um den Pfad herum an.
+            // xLoc und yLoc nutzen die Pfad-Radien RX/RY + Rohr-Anteil
+            // zLoc nutzt den vertikalen Rohr-Radius R2
+            
+            double xLoc = (RX + R1 * cos_v) * cos_u;
+            double yLoc = (RY + R1 * cos_v) * sin_u;
+            double zLoc = R2 * sin_v;
+
+            // Lokaler Punkt
+            MWMath::Point3D pLoc(xLoc, yLoc, zLoc);
+
+            // 3. Transformation in Weltkoordinaten
+            // Nutzt die von SSBody/SSMesh berechnete globale Pose
+            MWMath::Point3D pGlob = PositionGlobal + OrientationGlobal.transform(pLoc);
+            
+            // Speichern
+            GlobalDiscreteMeshPoints[i * discrCount + j] = pGlob;
+        }
+    }
+}

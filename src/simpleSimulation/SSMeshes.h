@@ -142,3 +142,33 @@ public:
 private:
 };
 
+class SSEllipticalTorusMesh : public SSMesh {
+public:
+    SSEllipticalTorusMesh(double R1, double R2, double RX, double RY) : R1(R1), R2(R2), RX(RX), RY(RY) {MViaPointTolerance = std::max({R1, R2, RX, RY}); }
+    SSEllipticalTorusMesh(double R1, double R2, double RX, double RY,
+                    std::string name, 
+                    std::shared_ptr<SSTissue> parent,
+                    MWMath::Point3D relPos, 
+                    MWMath::RotMatrix3x3 relRot, 
+                    MWMath::Point3D color)
+        : SSMesh(name, parent, relPos, relRot, color), R1(R1), R2(R2), RX(RX), RY(RY)
+    {
+        MViaPointTolerance = std::max({R1, R2, RX, RY});
+    }
+    ~SSEllipticalTorusMesh() override = default;
+
+    casadi::MX constraintJacobian(casadi::MX gamma, casadi::MX q) override;
+    casadi::MX constraintDistance(casadi::MX gamma, casadi::MX q) override;
+
+    double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) override;
+    virtual void discretizeMesh(int discrCount) override;
+
+    // Extrusionsellipse 
+    double R1; // ~x-achse
+    double R2; // höhe=z-achse
+    // pfadellipse (z-achse)
+    double RX; // x-achse
+    double RY; // y-achse
+
+private:
+};

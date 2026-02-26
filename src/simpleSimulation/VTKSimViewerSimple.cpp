@@ -6,6 +6,7 @@ VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector
                            const std::vector<std::vector<MWMath::RotMatrix3x3>>& meshResults,
                            const std::vector<std::vector<std::vector<MWMath::Point3D>>>& initialGuesses,
                            const std::vector<std::vector<std::vector<MWMath::Point3D>>>& initialGuessColors,
+                           std::vector<std::shared_ptr<SSTissue>> tissues,
                            std::vector<std::shared_ptr<SSMesh>> meshes, 
                             const std::vector<SSMuscle*>& muscles,
                            const std::vector<double>& angles,
@@ -16,7 +17,7 @@ VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector
     : QDialog(parent), m_muscleResults(muscleResults), m_meshResults(meshResults), 
       m_initialGuesses(initialGuesses), m_initialGuessColors(initialGuessColors), 
       m_meshes(meshes), m_muscles(muscles), m_angles(angles), m_otherPointsWithColors(otherPointsWithColors),
-      m_solverInfoText(solverInfoText), m_scalerCM(scalerCM)
+      m_solverInfoText(solverInfoText), m_scalerCM(scalerCM), m_tissues(tissues)
 {
     setWindowTitle("MW CasADi 3D Analysis - Multi-Muscle System");
     resize(1200, 800);
@@ -196,7 +197,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
             const auto& p = ptsAndColors[i];
             const auto& c = ptsAndColors[i + 1];
             auto sphere = vtkSmartPointer<vtkSphereSource>::New();
-            sphere->SetRadius(0.008 * m_scalerCM);
+            sphere->SetRadius(0.003 * m_scalerCM);
             sphere->SetThetaResolution(12);
             sphere->SetPhiResolution(12);
             auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
@@ -211,35 +212,8 @@ void VTKSimViewerSimple::setupVtkPipeline() {
         m_otherPointActors.push_back(timeStepActors);
     }
 
-    /* if (ShowCoordinateSystems > -1)
-    {    // ---------------------------------------------------------
-        // 7. Mesh Coordinate Systems (Pro Mesh)
-        // ---------------------------------------------------------
-        m_meshAxesActors.clear();
-        for (size_t i = 0; i < m_meshes.size(); ++i) {
-            auto axes = vtkSmartPointer<vtkAxesActor>::New();
-            axes->SetTotalLength(0.5, 0.5, 0.5); // Etwas kleiner als Welt-Achsen
-            axes->SetShaftTypeToLine(); // Dünnere Linien für Meshes
-            // axes->SetShaftTypeToCylinder(); // Oder dicker, wenn gewünscht
-            
-            // Optional: Beschriftung ausschalten, damit es nicht zu voll wird
-            axes->SetAxisLabels(0); 
-
-            m_renderer->AddActor(axes);
-            m_meshAxesActors.push_back(axes);
-        }
-        
-        // ---------------------------------------------------------
-        // 6. World Coordinate System (Ursprung)
-        // ---------------------------------------------------------
-        m_worldAxes = vtkSmartPointer<vtkAxesActor>::New();
-        m_worldAxes->SetTotalLength(1.0, 1.0, 1.0); // Länge der Achsen
-        m_worldAxes->SetShaftTypeToCylinder();
-        m_worldAxes->SetCylinderRadius(0.02);
-        m_worldAxes->SetAxisLabels(1); // X, Y, Z Labels anzeigen
-        m_renderer->AddActor(m_worldAxes);
-    } */
-    m_meshAxesActors.clear();
+    
+    /* m_meshAxesActors.clear();
     for (size_t i = 0; i < m_meshes.size(); ++i) {
         auto axes = vtkSmartPointer<vtkAxesActor>::New();
         axes->SetTotalLength(0.5 * m_scalerCM, 0.5 * m_scalerCM, 0.5 * m_scalerCM); 
@@ -251,7 +225,42 @@ void VTKSimViewerSimple::setupVtkPipeline() {
 
         m_renderer->AddActor(axes);
         m_meshAxesActors.push_back(axes);
+    } */
+    // =========================================================
+    // 5. ACHSENKREUZE FÜR MESHES (Eingefärbt!)
+    // =========================================================
+    m_meshAxesActors.clear();
+    for (size_t i = 0; i < m_meshes.size(); ++i) {
+        auto axes = vtkSmartPointer<vtkAxesActor>::New();
+        axes->SetTotalLength(0.5 * m_scalerCM, 0.5 * m_scalerCM, 0.5 * m_scalerCM); 
+        axes->SetShaftTypeToLine(); 
+        axes->SetAxisLabels(0); 
+        
+        // Farben anpassen basierend auf MeshColor
+        applyCustomColorsToAxes(axes, m_meshes[i]->MeshColor);
+
+        axes->SetVisibility(ShowCoordinateSystems == 2); 
+        m_renderer->AddActor(axes);
+        m_meshAxesActors.push_back(axes);
     }
+
+    m_tissueAxesActors.clear();
+    for (size_t i = 0; i < m_tissues.size(); ++i) {
+        auto axes = vtkSmartPointer<vtkAxesActor>::New();
+        // Etwas dicker und länger, damit sie sich von den Meshes abheben
+        axes->SetTotalLength(0.7 * m_scalerCM, 0.7 * m_scalerCM, 0.7 * m_scalerCM); 
+        axes->SetShaftTypeToCylinder();
+        axes->SetCylinderRadius(0.01 * m_scalerCM);
+        axes->SetAxisLabels(0); // Joints/Bodies haben Labels (X, Y, Z)
+
+        axes->SetVisibility(ShowCoordinateSystems == 2); 
+        m_renderer->AddActor(axes);
+        m_tissueAxesActors.push_back(axes);
+    }
+
+    // ---------------------------------------------------------
+    // 6. World Coordinate System (Ursprung) - IMMER ERSTELLEN
+    // ---------------------------------------------------------
     m_worldAxes = vtkSmartPointer<vtkAxesActor>::New();
     m_worldAxes->SetTotalLength(1.0 * m_scalerCM, 1.0 * m_scalerCM, 1.0 * m_scalerCM); // Länge der Achsen
     m_worldAxes->SetShaftTypeToCylinder();
@@ -424,12 +433,29 @@ void VTKSimViewerSimple::updateStep(int step) {
                                   m_meshes[i]->MeshPointsGlobal[step]);
             }
         } */
+
+
         if (i < m_meshAxesActors.size() && m_meshAxesActors[i]) {
             if (step < (int)m_meshes[i]->allRMatrixGlobal.size()) {
                 updateMeshTransform(m_meshAxesActors[i], 
                                 m_meshes[i]->allRMatrixGlobal[step], 
                                 m_meshes[i]->MeshPointsGlobal[step]);
             }
+        }
+    }
+
+
+    // ===== NEU: Tissue Transformation & Axes =====
+    for (size_t i = 0; i < m_tissues.size(); ++i) {
+        if (i < m_tissueAxesActors.size() && m_tissueAxesActors[i]) {
+            // Wir müssen an die Historie des Tissues rankommen.
+            // Falls dein Tissue keine Historie speichert, nutzen wir die aktuelle Position
+            // Da updateStep oft zurückspult, musst du in main.cpp sicherstellen, 
+            // dass du die Szene auf den Step 'step' updatest, bevor dieser Viewer rendert.
+            
+            updateMeshTransform(m_tissueAxesActors[i], 
+                                m_tissues[i]->OrientationGlobal, 
+                                m_tissues[i]->PositionGlobal);
         }
     }
 
@@ -652,13 +678,19 @@ void VTKSimViewerSimple::toggleCoordinateSystems()
         }
     }
 
+    for (auto& axes : m_tissueAxesActors) {
+        if (axes) {
+            // Sichtbar nur wenn Modus == 2 (Alles)
+            axes->SetVisibility(ShowCoordinateSystems == 2);
+        }
+    }
+
     // Render erzwingen, damit man es sofort sieht
     m_vtkWidget->renderWindow()->Render();
 }
 
-void VTKSimViewerSimple::generatePlots()
-{
-    std::cout << "\n[Python] Starte Plot-Generierung..." << std::endl;
+void VTKSimViewerSimple::generatePlots() {
+    /* std::cout << "\n[Python] Starte Plot-Generierung..." << std::endl;
     
     // Relativer Pfad zur Python-Executable in der venv
     // (Geht von 'build' einen Ordner hoch zu '.venv')
@@ -674,7 +706,60 @@ void VTKSimViewerSimple::generatePlots()
     } else {
         std::cerr << "[Python] Fehler beim Ausführen des Skripts (Code: " << retCode << ")." << std::endl;
         std::cerr << "         Stelle sicher, dass die .venv existiert und numpy/matplotlib installiert sind." << std::endl;
+    } */
+    std::cout << "\n[Python] Starte Plot-Generierung..." << std::endl;
+    
+    // Relativer Pfad zur Python-Executable in der venv
+    std::string pythonExec = "../.venv/bin/python3";
+    
+    // Definition der Skripte
+    std::string scriptLogs   = "../src/pythonScripts/plot_muscle_logs.py";
+    std::string scriptLength = "../src/pythonScripts/plot_muscleLength.py"; // Neues Skript!
+    
+    // Kommandos zusammenbauen
+    std::string commandLogs   = pythonExec + " " + scriptLogs;
+    std::string commandLength = pythonExec + " " + scriptLength;
+    
+    // 1. Erstes Skript ausführen
+    std::cout << "  -> Generiere System-Logs (" << scriptLogs << ")..." << std::endl;
+    int retCodeLogs = std::system(commandLogs.c_str());
+    
+    // 2. Zweites Skript ausführen
+    std::cout << "  -> Generiere Muskellängen-Plots (" << scriptLength << ")..." << std::endl;
+    int retCodeLength = std::system(commandLength.c_str());
+    
+    // Auswertung der Rückgabewerte
+    if (retCodeLogs == 0 && retCodeLength == 0) {
+        std::cout << "[Python] Alle PDFs wurden erfolgreich erstellt!" << std::endl;
+    } else {
+        std::cerr << "[Python] Fehler beim Ausführen der Plot-Skripte!" << std::endl;
+        if (retCodeLogs != 0) {
+            std::cerr << "         Fehler in plot_muscle_logs.py (Code: " << retCodeLogs << ")." << std::endl;
+        }
+        if (retCodeLength != 0) {
+            std::cerr << "         Fehler in plot_muscleLength.py (Code: " << retCodeLength << ")." << std::endl;
+        }
+        std::cerr << "         Stelle sicher, dass die .venv existiert und numpy/matplotlib installiert sind." << std::endl;
     }
 }
 
+// --- Helper für die Farb-Anpassung ---
+void VTKSimViewerSimple::applyCustomColorsToAxes(vtkSmartPointer<vtkAxesActor> axes, const MWMath::Point3D& baseColor) {
+    // X-Achse: Heller als baseColor (Richtung Weiß)
+    double rX = std::min(1.0, baseColor.x + 0.4);
+    double gX = std::min(1.0, baseColor.y + 0.4);
+    double bX = std::min(1.0, baseColor.z + 0.4);
+    axes->GetXAxisTipProperty()->SetColor(rX, gX, bX);
+    axes->GetXAxisShaftProperty()->SetColor(rX, gX, bX);
 
+    // Y-Achse: Exakt die Mesh-Farbe
+    axes->GetYAxisTipProperty()->SetColor(baseColor.x, baseColor.y, baseColor.z);
+    axes->GetYAxisShaftProperty()->SetColor(baseColor.x, baseColor.y, baseColor.z);
+
+    // Z-Achse: Dunkler als baseColor (Richtung Schwarz)
+    double rZ = std::max(0.0, baseColor.x - 0.4);
+    double gZ = std::max(0.0, baseColor.y - 0.4);
+    double bZ = std::max(0.0, baseColor.z - 0.4);
+    axes->GetZAxisTipProperty()->SetColor(rZ, gZ, bZ);
+    axes->GetZAxisShaftProperty()->SetColor(rZ, gZ, bZ);
+}

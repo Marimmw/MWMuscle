@@ -56,6 +56,7 @@ public:
                        const std::vector<std::vector<MWMath::RotMatrix3x3>>& meshResults,
                        const std::vector<std::vector<std::vector<MWMath::Point3D>>>& initialGuesses,
                        const std::vector<std::vector<std::vector<MWMath::Point3D>>>& initialGuessColors,
+                          const std::vector<std::shared_ptr<SSTissue>> tissues,
                        std::vector<std::shared_ptr<SSMesh>> meshes,
                     const std::vector<SSMuscle*>& muscles, 
                        const std::vector<double>& angles,
@@ -80,6 +81,7 @@ private:
     void updateMeshTransform(vtkProp3D* actor, const MWMath::RotMatrix3x3& R, const MWMath::Point3D& pos);
     
     void toggleCoordinateSystems();
+    void applyCustomColorsToAxes(vtkSmartPointer<vtkAxesActor> axes, const MWMath::Point3D& baseColor);
 
     // Daten-Referenzen (für mehrere Muskeln)
     const std::vector<std::vector<std::vector<MWMath::Point3D>>>& m_muscleResults;      // [muskel][timestep][punkt]
@@ -87,12 +89,14 @@ private:
     const std::vector<std::vector<std::vector<MWMath::Point3D>>>& m_initialGuessColors; // [muskel][timestep][punkt]
     const std::vector<std::vector<MWMath::RotMatrix3x3>>& m_meshResults;                // [mesh][timestep]
     std::vector<std::shared_ptr<SSMesh>> m_meshes;
+    std::vector<std::shared_ptr<SSTissue>> m_tissues;
     std::vector<SSMuscle*> m_muscles;
     std::vector<double> m_angles;
     const std::vector<std::vector<MWMath::Point3D>>& m_otherPointsWithColors;    
     //std::vector<std::string> m_solverInfoText;       // [timestep][p1, c1, p2, c2, ...]
     const std::vector<std::vector<std::string>>& m_solverInfoText;       // [timestep][p1, c1, p2, c2, ...]
     std::vector<vtkSmartPointer<vtkAxesActor>> m_meshAxesActors; // Pro Mesh ein Achsenkreuz
+    std::vector<vtkSmartPointer<vtkAxesActor>> m_tissueAxesActors; // Pro Tissue ein Achsenkreuz
     vtkSmartPointer<vtkAxesActor> m_worldAxes; // Ein Achsenkreuz für den Welt-Ursprung
 
     // UI & VTK

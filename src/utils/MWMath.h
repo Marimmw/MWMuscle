@@ -41,6 +41,14 @@ namespace MWMath {
             return {x / len, y / len, z / len};
         }
 
+        Point3D cross(const Point3D& other) {
+            return {
+                y * other.z - z * other.y,
+                z * other.x - x * other.z,
+                x * other.y - y * other.x
+            };
+        }
+
         std::string print() const {
             std::stringstream ss;
             ss << std::fixed << std::setprecision(4); // 4 Nachkommastellen

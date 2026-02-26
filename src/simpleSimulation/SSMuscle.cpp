@@ -2,6 +2,7 @@
 
 #include <QDebug>
 #include <QString>
+#include "SSBody.h"
 
 void SSMuscle::createMusclePoints()
 {
@@ -53,6 +54,10 @@ void SSMuscle::createMusclePoints()
         
         MNodes.push_back(node);
     }
+}
+
+void SSMuscle::createMusclePointsComplexPath(){
+    return;
 }
 
 void SSMuscle::updateMusclePointsParents()
@@ -247,6 +252,78 @@ double SSMuscle::computeMuscleLength(bool addToHistory, int stepIdx)
     }
     MuscleLength = musclelength;
     return musclelength;
+}
+
+double SSMuscle::computeMomentArm(int stepIdx)
+{
+    // Initialisierung
+    for (auto& jointResult : MuscleMomentArmResults) {
+        jointResult.MomentArmValues.clear();
+    }
+
+    // Rahmenbedingungen
+    if (MuscleMomentArmResults.empty()) {
+        for (auto* m : meshPtrs) {
+            if (m && m->bIsJointMesh && dynamic_cast<SSJoint*>(m->Parent.get())) {
+                MomentArmFoJoint joint;
+                joint.JointName = m->Name;
+                joint.Joint = dynamic_cast<SSJoint*>(m->Parent.get());
+                MuscleMomentArmResults.push_back(joint);
+            }
+        }
+    }
+
+    // Berechnung über alle Gelenke und alle Zeitschritte
+    // MuscleLengthSteps.size() == Joint.DoneAngleSteps[jointIdx].size()
+    for (size_t jointIdx = 0; jointIdx < MuscleMomentArmResults.size(); ++jointIdx) {
+        auto& joint = MuscleMomentArmResults[jointIdx];
+        std::vector<double> momentArmValuesForJoint;
+        
+        // Winkelverläufe dieses Gelenks
+        // Annahme: DoneAngleSteps ist ein std::vector<std::vector<double>> [Gelenk][Schritt]
+        const std::vector<double>& angles = joint.Joint->DoneAngleSteps; 
+        joint.JointAngleValues = angles; // Speichern
+
+        for (size_t i = 0; i < MuscleLengthSteps.size(); ++i) {
+            double momentArm = 0.0;
+            double dl = 0.0;
+            double dq = 0.0;
+
+            if (i == 0) {
+                // Forward Difference (l1 - l0) / (q1 - q0)
+                dl = MuscleLengthSteps[i + 1] - MuscleLengthSteps[i];
+                dq = angles[i + 1] - angles[i];
+            }
+            else if (i >= MuscleLengthSteps.size() - 1) {
+                // Backward Difference (ln - ln-1) / (qn - qn-1)
+                dl = MuscleLengthSteps[i] - MuscleLengthSteps[i - 1];
+                dq = angles[i] - angles[i - 1];
+            }
+            else {
+                // Central Difference (l_next - l_prev) / (q_next - q_prev)
+                dl = MuscleLengthSteps[i + 1] - MuscleLengthSteps[i - 1];
+                dq = angles[i + 1] - angles[i - 1];
+            }
+
+            // Momentarm berechnen gemäß Matouq Gl. 5: j = -dl / dq
+            if (std::abs(dq) > 1e-9) { // Division durch Null
+                momentArm = -(dl / dq);
+            } else {
+                momentArm = 0.0; 
+            }
+
+            momentArmValuesForJoint.push_back(momentArm);
+        }
+        joint.MomentArmValues = momentArmValuesForJoint;
+    }
+
+    // Rückgabe des Werts für einen spezifischen Schritt, falls angefordert
+    if (stepIdx >= 0 && !MuscleMomentArmResults.empty() && stepIdx < (int)MuscleLengthSteps.size()) {
+        // Beispielhaft für das erste Gelenk, da du ja im Nachgang filterst
+        return MuscleMomentArmResults[0].MomentArmValues[stepIdx];
+    }
+
+    return 0.0;
 }
 
 int SSMuscle::checkCollision(std::vector<SSMesh *> allToCheckMeshes)
@@ -486,7 +563,61 @@ void SSMuscle::getAllMuscleMNodesStepValues(int totalSteps, std::vector<std::vec
     }
 }
 
+void SSMuscle::exportMomentArms()
+{
+    /* namespace fs = std::filesystem;
+    // 1. Pfade definieren 
+    // Nutzt konsequent fs::path für Betriebssystem-unabhängige Trennzeichen
+    fs::path targetDir = fs::path("..") / "examples" / "results" / "MomentArms";
+    fs::path fullPath = targetDir / (muscle->Name + ".txt");
 
+    // 2. Ordner erstellen (nur einmal nötig)
+    try {
+        if (!fs::exists(targetDir)) {
+            fs::create_directories(targetDir);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "[Export] Fehler beim Erstellen des Ordners: " << e.what() << std::endl;
+        return;
+    }
+
+    // 3. Datei öffnen
+    std::ofstream outFile(fullPath);
+    if (!outFile.is_open()) {
+        // Nutze fullPath.string() für die Ausgabe
+        qDebug() << "Konnte Datei nicht öffnen:" << QString::fromStdString(fullPath.string());
+        return;
+    }
+
+    // 4. Header schreiben
+    outFile << "Moment Arm Export for Muscle: " << muscle->Name << "\n";
+    //outFile << "Based on Matouq (2019) Methodology\n"; // Kleiner Verweis aufs Paper ;)
+    outFile << std::string(50, '-') << "\n\n";
+
+    // 5. Daten pro Gelenk exportieren
+    for (const auto& res : muscle->MuscleMomentArmResults) {
+        outFile << "### Joint: " << res.JointName << " ###\n";
+        
+        outFile << std::left << std::setw(10) << "Step" 
+                << std::setw(20) << "Angle [rad/deg]" 
+                << std::setw(20) << "Moment Arm [mm]" << "\n";
+        outFile << std::string(50, '-') << "\n";
+
+        size_t numSteps = res.MomentArmValues.size();
+        for (size_t i = 0; i < numSteps; ++i) {
+            double angle = (i < res.JointAngleValues.size()) ? res.JointAngleValues[i] : 0.0;
+            double mArm = res.MomentArmValues[i];
+
+            outFile << std::left << std::setw(10) << i 
+                    << std::setw(20) << std::fixed << std::setprecision(4) << angle 
+                    << std::setw(20) << std::fixed << std::setprecision(4) << mArm << "\n";
+        }
+        outFile << "\n\n"; 
+    }
+
+    outFile.close();
+    qDebug() << "Export erfolgreich nach:" << QString::fromStdString(fullPath.string()); */
+}
 
 // #########################################
 void MuscleNode::getMNodeInfoStep(int idx)

@@ -7,9 +7,12 @@
 #include <iomanip>      // Für std::setw, std::setprecision
 #include <filesystem>   // Braucht C++17 (in CMake sicherstellen!)
 
+
 #include "simpleSimulation/SSMuscle.h"
 #include "utils/MWMath.h"
+#include "simpleSimulation/SSBody.h"
 
+// In utility.h ganz oben (nach den #includes):
 
 struct MeshParameter
 {
@@ -60,13 +63,11 @@ struct BodyResult {
 
 
 
-
-
-
-namespace fs = std::filesystem;
+//namespace fs = std::filesystem;
 
 inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std::vector<std::string> solverResults = {""}, std::string units="m") 
 {
+    namespace fs = std::filesystem;
     // 0. Sicherheitschecks
     if (!muscle) {
         std::cerr << "[Export] Fehler: Muskel-Pointer ist null." << std::endl;
@@ -219,8 +220,113 @@ inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std
     std::cout << "[Export] Muskel-Log gespeichert: " << fs::absolute(fullPath) << std::endl;
 }
 
+inline void exportMuscleLengthLog(const std::vector<SSMuscle*>& muscles, const std::vector<SSJoint*>& joints){
+    namespace fs = std::filesystem;
+    
+    // 1. Pfad und Ordnerstruktur vorbereiten
+    fs::path targetDir = fs::path("..") / "examples" / "results";
+    std::string filename = "MuscleLength.txt";
+    
+    // Erstelle das Verzeichnis, falls es noch nicht existiert
+    if (!fs::exists(targetDir)) {
+        fs::create_directories(targetDir);
+    }
+    
+    fs::path fullPath = targetDir / filename;
+    std::ofstream outFile(fullPath);
+    
+    if (!outFile.is_open()) {
+        std::cerr << "Fehler: Konnte Datei nicht oeffnen/erstellen: " << fullPath << std::endl;
+        return;
+    }
+
+    // 2. Maximale Anzahl an Steps herausfinden (zur Sicherheit)
+    size_t numSteps = 0;
+    for (auto* j : joints) {
+        if (j && j->DoneAngleSteps.size() > numSteps) numSteps = j->DoneAngleSteps.size();
+    }
+    for (auto* m : muscles) {
+        if (m && m->MuscleLengthSteps.size() > numSteps) numSteps = m->MuscleLengthSteps.size();
+    }
+
+    if (numSteps == 0) {
+        outFile << "Keine Daten vorhanden (0 Steps)." << std::endl;
+        outFile.close();
+        return;
+    }
+
+    // Präzision für alle kommenden Double-Werte auf 5 festlegen
+    outFile << std::fixed << std::setprecision(5);
+
+    // ==============================================================================
+    // TABELLE 1: JOINT ANGLES
+    // ==============================================================================
+    outFile << "================================================================================\n";
+    outFile << "                               JOINT ANGLES OVER TIME                           \n";
+    outFile << "================================================================================\n";
+    
+    // Header (Steps)
+    outFile << std::left << std::setw(25) << "Step / Joint Name";
+    for (size_t t = 0; t < numSteps; ++t) {
+        outFile << std::right << std::setw(12) << t;
+    }
+    outFile << "\n--------------------------------------------------------------------------------\n";
+
+    // Gelenke-Daten eintragen
+    for (auto* j : joints) {
+        if (!j) continue;
+        
+        outFile << std::left << std::setw(25) << j->Name; // Name auf 25 Zeichen fixieren
+        
+        for (size_t t = 0; t < numSteps; ++t) {
+            if (t < j->DoneAngleSteps.size()) {
+                outFile << std::right << std::setw(12) << j->DoneAngleSteps[t];
+            } else {
+                outFile << std::right << std::setw(12) << "NaN"; // Falls Daten fehlen
+            }
+        }
+        outFile << "\n";
+    }
+    
+    outFile << "\n\n"; // Abstand zwischen den Tabellen
+
+    // ==============================================================================
+    // TABELLE 2: MUSCLE LENGTHS
+    // ==============================================================================
+    outFile << "================================================================================\n";
+    outFile << "                              MUSCLE LENGTHS OVER TIME                          \n";
+    outFile << "================================================================================\n";
+    
+    // Header (Steps) - Noch einmal zur besseren Übersicht wie gewünscht
+    outFile << std::left << std::setw(25) << "Step / Muscle Name";
+    for (size_t t = 0; t < numSteps; ++t) {
+        outFile << std::right << std::setw(12) << t;
+    }
+    outFile << "\n--------------------------------------------------------------------------------\n";
+
+    // Muskel-Daten eintragen
+    for (auto* m : muscles) {
+        if (!m) continue;
+        
+        outFile << std::left << std::setw(25) << m->Name; // Name auf 25 Zeichen fixieren
+        
+        for (size_t t = 0; t < numSteps; ++t) {
+            if (t < m->MuscleLengthSteps.size()) {
+                outFile << std::right << std::setw(12) << m->MuscleLengthSteps[t];
+            } else {
+                outFile << std::right << std::setw(12) << "NaN";
+            }
+        }
+        outFile << "\n";
+    }
+
+    // 3. Abschluss
+    outFile.close();
+    std::cout << "Log erfolgreich exportiert nach: " << fullPath << std::endl;
+}
 
 void backupSourceCode() {
+    namespace fs = std::filesystem;
     // 1. Pfad zur aktuellen Quelldatei (wird vom Compiler gesetzt)
     fs::path sourceFile = __FILE__; 
     
@@ -262,6 +368,7 @@ inline void exportParameterLog(const std::vector<std::vector<double>>& values,
                         const std::vector<std::vector<std::string>>& descriptions, 
                         const std::string& filename = "parameter_log.txt") 
 {
+    namespace fs = std::filesystem;
     // 1. Zielpfad definieren
     fs::path targetDir = fs::path("..") / "examples" / "results";
     fs::path fullPath = targetDir / filename;

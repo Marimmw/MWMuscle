@@ -7,7 +7,13 @@
 #include "simpleSimulation/SSMeshes.h"
 #include "simpleSimulation/SSTissue.h"
 
-
+class SSJoint; // Forward Declaration
+struct MomentArmFoJoint {
+    std::string JointName;
+    SSJoint* Joint = nullptr;
+    std::vector<double> MomentArmValues; // Momentenarm-Werte über die Zeit
+    std::vector<double> JointAngleValues; // Gelenkwinkel-Werte über die Zeit
+};
 
 
 class MuscleNode : public SSTissue {
@@ -147,6 +153,7 @@ public:
     SSTissue* parentMeshInsertion = nullptr;
 
     std::vector<double> MuscleLengthSteps;
+    std::vector<MomentArmFoJoint> MuscleMomentArmResults;
 
     double tooFarAwayThreshold = 1000000.0; // [meter]
 
@@ -156,10 +163,12 @@ public:
 
     std::vector<std::vector<MWMath::Point3D>> allOptimizedPoints; // Alle optimierten Punkte für alle Simulationsschritte
     void createMusclePoints();
+    void createMusclePointsComplexPath();
     void updateMusclePointsParents();
     void updateMusclePointsParentsLocal();
     void updateAttractorNodes();
     double computeMuscleLength(bool addToHistory = false, int stepIdx = -1);
+    double computeMomentArm(int stepIdx = -1); // "-1" for all steps, otherwise specific step
 
     int checkCollision(std::vector<SSMesh*> allToCheckMeshes = {});
 
@@ -179,6 +188,8 @@ public:
                                       std::vector<std::vector<MWMath::Point3D>>& initialGuessPoints,
                                       std::vector<std::vector<MWMath::Point3D>>& initialGuessColors,
                                       std::vector<std::vector<std::vector<double>>>& etaValues);
+
+    void exportMomentArms();
     
     private:
 };
