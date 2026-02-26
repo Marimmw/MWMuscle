@@ -3564,7 +3564,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             tissues.push_back(jointCMCAbd);
             auto jMeshCMC = std::make_shared<SSEllipsoidMesh>(width[0], width[0], width[0], "Mesh_CMC"+prefN+"_Joint", jointCMCAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0 , 0 }, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
             meshes.push_back(jMeshCMC);
-            MeshMap["Mesh_CMC" + prefN + "_Joint"] = jMeshCMC.get();
+            MeshMap["Mesh_CMC"+prefN+"_Joint"] = jMeshCMC.get();
 
             jAngle = 0.0; // CMC_FE_M[fidx];
             jName = "CMC" + prefN + "_JointFlex";
@@ -3579,19 +3579,19 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             jName = "MC" + prefN;
             auto bodyMC = std::make_shared<SSBody>(jName, MWMath::Point3D(0.,-flength*0.5,0.), MWMath::RotMatrix3x3(), jointCMCFlex);
             tissues.push_back(bodyMC);
-            auto meshMC = std::make_shared<SSEllipsoidMesh>(segRadius[0], segRadius[0], flength*0.5, cFName + "_Mesh_MC", bodyMC, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1, 0, 0 }, 90.0), COLORF1);
+            auto meshMC = std::make_shared<SSEllipsoidMesh>(segRadius[0], segRadius[0], flength*0.5, "Mesh_"+jName, bodyMC, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1, 0, 0 }, 90.0), COLORF1);
             meshes.push_back(meshMC);
-            MeshMap[cFName + "_Mesh_MC"] = meshMC.get();
+            MeshMap["Mesh_" + jName] = meshMC.get();
 
             // --- NEU: TORUS MC ---
             double tR0 = segLen[0] * relTorusR[0];
             double tr0 = segLen[0] * relTorusr[0];
             double tPosY0 = -flength * relTorusPos[0]; // Position von Gelenk aus gerechnet
-            auto mTorusMC = std::make_shared<SSTorusMesh>(tR0, tr0, cFName + "_Torus_MC", bodyMC, 
+            auto mTorusMC = std::make_shared<SSTorusMesh>(tR0, tr0, "MeshTorus_"+jName, bodyMC, 
                  MWMath::Point3D(segLen[0] * off[0], tPosY0, 0), // +X ist Palmar!
                  MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(1, 0, 0));
             meshes.push_back(mTorusMC);
-            MeshMap[cFName + "_Torus_MC"] = mTorusMC.get();
+            MeshMap["MeshTorus_" + jName] = mTorusMC.get();
 
              
             // MCP Joint + Mesh
@@ -3600,9 +3600,9 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             jName = "MCP" + prefN + "_JointAbd";
             auto jointMCPAbd = std::make_shared<SSJoint>(jName, jointPosRelMCP, MWMath::RotMatrix3x3(), bodyMC, jAngle, MWMath::Point3D(1, 0, 0), numTimeSteps);
             tissues.push_back(jointMCPAbd);
-            auto jMeshMCP = std::make_shared<SSEllipsoidMesh>(jointRadius[0], jointRadius[0], jointRadius[0], cFName + "_Mesh_MCP_Joint", jointMCPAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0 , 0 }, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
+            auto jMeshMCP = std::make_shared<SSEllipsoidMesh>(jointRadius[0], jointRadius[0], jointRadius[0], "Mesh_MCP"+prefN+"_Joint", jointMCPAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0 , 0 }, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
             meshes.push_back(jMeshMCP);
-            MeshMap[cFName + "_Mesh_MCP_Joint"] = jMeshMCP.get();
+            MeshMap["Mesh_MCP"+prefN+"_Joint"] = jMeshMCP.get();
 
             jAngle = MMHA.MCP_FE_M[fidx];
             jName = "MCP" + prefN + "_JointFlex";
@@ -3617,19 +3617,19 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             jName =  "PP" + prefN;
             auto bodyPP = std::make_shared<SSBody>(jName, posPP, MWMath::RotMatrix3x3(), jointMCPFlex);
             tissues.push_back(bodyPP);
-            auto meshPP = std::make_shared<SSEllipsoidMesh>(segRadius[1], segRadius[1], segLen[1]*0.5, cFName + "_Mesh_PP", bodyPP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1, 0, 0 }, 90.0), COLORF2);
+            auto meshPP = std::make_shared<SSEllipsoidMesh>(segRadius[1], segRadius[1], segLen[1]*0.5, "Mesh_"+jName, bodyPP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1, 0, 0 }, 90.0), COLORF2);
             meshes.push_back(meshPP);
-            MeshMap[cFName + "_Mesh_PP"] = meshPP.get();
+            MeshMap["Mesh_" + jName] = meshPP.get();
 
             // --- NEU: TORUS PP ---
             double tR1 = segLen[1] * relTorusR[1];
             double tr1 = segLen[1] * relTorusr[1];
             double tPosY1 = -segLen[1] *relTorusPos[1]; 
-            auto mTorusPP = std::make_shared<SSTorusMesh>(tR1, tr1, cFName + "_Torus_PP", bodyPP, 
+            auto mTorusPP = std::make_shared<SSTorusMesh>(tR1, tr1, "MeshTorus_"+jName, bodyPP, 
                  MWMath::Point3D(segLen[1] * off[1], tPosY1, 0), 
                  MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(0.8, 0.3, 0));
             meshes.push_back(mTorusPP);
-            MeshMap[cFName + "_Torus_PP"] = mTorusPP.get();
+            MeshMap["MeshTorus_" + jName] = mTorusPP.get();
 
             
             // PIP Joint + Mesh
@@ -3639,9 +3639,9 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             auto jointPIP = std::make_shared<SSJoint>(jName, jointPosRelPP, MWMath::RotMatrix3x3(), bodyPP, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
             tissues.push_back(jointPIP);
             //auto MeshPIP = std::make_shared<SSEllipsoidMesh>(jointRadius[1], jointRadius[1], jointRadius[1], cFName + "_Mesh_PIP_Joint", jointPIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
-            auto MeshPIP = std::make_shared<SSCylinderMesh>(jointRadius[1], jointRadius[1]*3, cFName + "_Mesh_PIP_Joint", jointPIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+            auto MeshPIP = std::make_shared<SSCylinderMesh>(jointRadius[1], jointRadius[1]*3, "Mesh_"+jName, jointPIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
             meshes.push_back(MeshPIP);
-            MeshMap[cFName + "_Mesh_PIP_Joint"] = MeshPIP.get();
+            MeshMap["Mesh_" + jName] = MeshPIP.get();
 
             // ==========================================
             // MP SEGMENT
@@ -3650,19 +3650,19 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             jName =  "MP" + prefN;
             auto bodyMP = std::make_shared<SSBody>(jName, posMP, MWMath::RotMatrix3x3(), jointPIP);
             tissues.push_back(bodyMP);
-            auto meshMP = std::make_shared<SSEllipsoidMesh>(segRadius[2], segRadius[2], segLen[2]*0.5, cFName + "_Mesh_MP", bodyMP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0, 0 }, 90.0), COLORF3);
+            auto meshMP = std::make_shared<SSEllipsoidMesh>(segRadius[2], segRadius[2], segLen[2]*0.5, "Mesh_"+jName, bodyMP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0, 0 }, 90.0), COLORF3);
             meshes.push_back(meshMP);
-            MeshMap[cFName + "_Mesh_MP"] = meshMP.get();
+            MeshMap["Mesh_" + jName] = meshMP.get();
 
             // --- NEU: TORUS MP ---
             double tR2 = segLen[2] * relTorusR[2];
             double tr2 = segLen[2] * relTorusr[2];
             double tPosY2 = -segLen[2] * relTorusPos[2]; 
-            auto mTorusMP = std::make_shared<SSTorusMesh>(tR2, tr2, cFName + "_Torus_MP", bodyMP, 
+            auto mTorusMP = std::make_shared<SSTorusMesh>(tR2, tr2, "MeshTorus_"+jName, bodyMP, 
                  MWMath::Point3D(segLen[2] * off[2], tPosY2, 0), 
                  MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(0.8, 0.3, 0.2));
             meshes.push_back(mTorusMP);
-            MeshMap[cFName + "_Torus_MP"] = mTorusMP.get();
+            MeshMap["MeshTorus_" + jName] = mTorusMP.get();
 
             // DIP Joint + Mesh
             MWMath::Point3D jointPosRelMP = MWMath::Point3D(0,-segLen[2]*0.5, 0); 
@@ -3671,9 +3671,9 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             auto jointDIP = std::make_shared<SSJoint>(jName, jointPosRelMP, MWMath::RotMatrix3x3(), bodyMP, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
             tissues.push_back(jointDIP);
             //auto MeshDIP = std::make_shared<SSEllipsoidMesh>(jointRadius[2], jointRadius[2], jointRadius[2], cFName + "_Mesh_DIP_Joint", jointDIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
-            auto MeshDIP = std::make_shared<SSCylinderMesh>(jointRadius[2], jointRadius[2]*3, cFName + "_Mesh_DIP_Joint", jointDIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+            auto MeshDIP = std::make_shared<SSCylinderMesh>(jointRadius[2], jointRadius[2]*3, "Mesh_"+jName, jointDIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
             meshes.push_back(MeshDIP);
-            MeshMap[cFName + "_Mesh_DIP_Joint"] = MeshDIP.get();
+            MeshMap["Mesh_" + jName] = MeshDIP.get();
 
             // ==========================================
             // DP SEGMENT
@@ -3682,10 +3682,15 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
             jName =  "DP" + prefN;
             auto bodyDP = std::make_shared<SSBody>(jName, posDP, MWMath::RotMatrix3x3(), jointDIP);
             tissues.push_back(bodyDP);
-            auto meshDP = std::make_shared<SSEllipsoidMesh>(segRadius[3], segRadius[3], segLen[3]*0.5, cFName + "_Mesh_DP", bodyDP, MWMath::Point3D(0., 0., 0.), MWMath::axisAngle({ 1,0,0}, 90.0), COLORF4);
+            auto meshDP = std::make_shared<SSEllipsoidMesh>(segRadius[3], segRadius[3], segLen[3]*0.5, "Mesh_"+jName, bodyDP, MWMath::Point3D(0., 0., 0.), MWMath::axisAngle({ 1,0,0}, 90.0), COLORF4);
             meshes.push_back(meshDP);
-            MeshMap[cFName + "_Mesh_DP"] = meshDP.get(); 
+            MeshMap["Mesh_" + jName] = meshDP.get(); 
            
+        }
+
+        // print mesh map
+        for (auto i : MeshMap){
+            qDebug() << "MeshMap: " << QString::fromStdString(i.first) << " -> " << i.second->Name.c_str();
         }
 
 
@@ -3702,18 +3707,20 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         // MUSKEL
         // ==============================================================================
         int numPoints = cfg.muscleNumPoints.empty() ? 25 : cfg.muscleNumPoints[0];
+        // "Mesh_WristFlexorCyl", "Mesh_CMC1_Joint"
+        std::vector<std::string> refBodyNames = { "Mesh_WristFlexorCyl", "MeshTorus_MC1", "Mesh_MCP1_Joint", "MeshTorus_PP1", "Mesh_PIP1_Joint", "MeshTorus_MP1", "Mesh_DIP1_Joint"};
+        MWMath::Point3D startOffset = MWMath::Point3D(0., 0.5, 0.0);
+        MWMath::Point3D endOffset = MWMath::Point3D(0.05, 0.0, 0.0);
+        SSMuscle* flexor = new SSMuscle("Flexor", numPoints, rootSystem.get(), startOffset, getRefMesh("Mesh_DP1", MeshMap), endOffset);
 
-        MWMath::Point3D startOffset = MWMath::Point3D(-HL * 0.7, 0.0, 0.0);
-        MWMath::Point3D endOffset = MWMath::Point3D(-HL * 0.6, 0.0, 0.0);
+        for (auto& m : getRefMeshes(refBodyNames, MeshMap)) {
+            flexor->meshPtrs.push_back(m);
+            //if (dynamic_cast<SSTorusMesh*>(m.get())) flexor->meshPtrs.push_back(m.get());
+        }
 
-        SSMuscle* flexor = new SSMuscle("Flexor", numPoints, carpals.get(), startOffset, carpals.get(), endOffset);
-
-        /* for (auto& m : meshes) {
-            flexor->meshPtrs.push_back(m.get());
-        } */
-
-        flexor->createMusclePoints();
-        flexor->updateMusclePointsParents();
+        //flexor->createMusclePoints();
+        flexor->createMusclePointsComplexPath();
+        flexor->updateMusclePointsParentsLocal();
         muscles.push_back(flexor);
         
     }
@@ -3842,7 +3849,7 @@ int main(int argc, char** argv)
         }
         qDebug() << "-------------------------------------------------------------------------------------------------";
         
-        if (cfg.dynamicReparametrization)
+        if (cfg.dynamicReparametrization || t < 1)
         {    
             for (auto muscle : musclePtrs) {
                 muscle->updateMusclePointsParentsLocal();// updateMusclePointsParents();

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
+#include <unordered_map>
 
 #include "utils/MWMath.h"
 
@@ -70,6 +70,28 @@ inline MWMath::RotMatrix3x3 buildOrientation(const MWMath::Point3D& start, const
     );
 }
 
+inline std::vector<SSMesh*> getRefMeshes(std::vector<std::string> meshNames, std::unordered_map<std::string, SSMesh*>& MeshMap) {
+    std::vector<SSMesh*> meshPtrs;
+    for (const std::string& name : meshNames) {
+        if (MeshMap.find(name) != MeshMap.end()) {
+            meshPtrs.push_back(MeshMap[name]);
+        }
+        else {
+            std::cerr << "Warnung: Mesh mit Namen '" << name << "' nicht gefunden!" << std::endl;
+        }
+    }
+    return meshPtrs;
+}
+
+inline SSMesh* getRefMesh(std::string meshName, std::unordered_map<std::string, SSMesh*>& MeshMap) {
+    if (MeshMap.find(meshName) != MeshMap.end()) {
+        return MeshMap[meshName];
+    }
+    else {
+        std::cerr << "Warnung: Mesh mit Namen '" << meshName << "' nicht gefunden!" << std::endl;
+        return nullptr;
+    }
+}
 ///// HAND MODEL BUILDING /////
 
 namespace Hand {

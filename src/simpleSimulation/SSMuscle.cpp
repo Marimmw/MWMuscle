@@ -1,6 +1,7 @@
 #include "SSMuscle.h"
 
 #include <QDebug>
+#include "SSMeshes.h"
 #include <QString>
 #include "SSBody.h"
 
@@ -57,7 +58,122 @@ void SSMuscle::createMusclePoints()
 }
 
 void SSMuscle::createMusclePointsComplexPath(){
-    return;
+
+    MWMath::Point3D pOrigGlob = parentMeshOrigin ? parentMeshOrigin->PositionGlobal : MWMath::Point3D(0,0,0);
+    MWMath::RotMatrix3x3 rOrigGlob = parentMeshOrigin ? parentMeshOrigin->OrientationGlobal : MWMath::RotMatrix3x3();
+    OriginPointGlobal = pOrigGlob + rOrigGlob.transform(OriginPointLocal);
+
+    MWMath::Point3D pInsGlob = parentMeshInsertion ? parentMeshInsertion->PositionGlobal : MWMath::Point3D(0,0,0);
+    MWMath::RotMatrix3x3 rInsGlob = parentMeshInsertion ? parentMeshInsertion->OrientationGlobal : MWMath::RotMatrix3x3();
+    InsertionPointGlobal = pInsGlob + rInsGlob.transform(InsertionPointLocal);
+
+
+    // gather Tori and via points
+    std::vector<MWMath::Point3D> viaPointsGlobal;
+    for (SSMesh* mesh : meshPtrs) {
+        if (auto torus = dynamic_cast<SSTorusMesh*>(mesh)) {
+            // add offset to not lie in the middle of the torus (numerics)
+            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{(torus->R-torus->r)*0.2, (torus->R-torus->r)*0.2, 0.});
+        }
+    }
+
+    if (viaPointsGlobal.empty()) {
+        qDebug() << "Keine Torus-Meshes gefunden. Erstelle einfache Muskelpunkte.";
+        createMusclePoints();
+        return;
+    }
+
+
+    // build full path
+    std::vector<MWMath::Point3D> fullPath;
+    fullPath.push_back(OriginPointGlobal);
+    for (const auto& vp : viaPointsGlobal) {
+        fullPath.push_back(vp);
+    }
+    fullPath.push_back(InsertionPointGlobal);
+
+    // compute accumulated lengths along the path
+    std::vector<double> accumLengths;
+    double totalLength = 0.0;
+    accumLengths.push_back(0.0); // Startpunkt ist bei Distanz 0.0
+
+    for (size_t i = 0; i < fullPath.size() - 1; ++i) {
+        MWMath::Point3D diff = fullPath[i+1] - fullPath[i];
+        // Distanz zwischen zwei aufeinanderfolgenden Pfadpunkten
+        double segLen = std::sqrt(diff.x*diff.x + diff.y*diff.y + diff.z*diff.z); 
+        totalLength += segLen;
+        accumLengths.push_back(totalLength);
+    }
+
+
+    // place nodes equidistantly along the path
+    MusclePointsGlobal.clear();
+    MNodes.clear();
+    MusclePointsGlobal.reserve(MNodesCount);
+    MNodes.reserve(MNodesCount);
+
+    // Welchen Abstand haben die Nodes zueinander auf dem Pfad?
+    double stepDist = totalLength / (MNodesCount - 1);
+
+    for (int i = 0; i < MNodesCount; ++i) {
+        MWMath::Point3D point;
+        
+        if (i == 0) {
+            point = OriginPointGlobal;
+        } 
+        else if (i == MNodesCount - 1) {
+            point = InsertionPointGlobal;
+        } 
+        else {
+            double targetDist = i * stepDist;
+            
+            // find out on which segment of the path this targetDist lies
+            size_t segIdx = 0;
+            for (size_t j = 0; j < accumLengths.size() - 1; ++j) {
+                if (targetDist >= accumLengths[j] && targetDist <= accumLengths[j+1]) {
+                    segIdx = j;
+                    break;
+                }
+            }
+            
+            // Lineare Interpolation
+            double segStartDist = accumLengths[segIdx];
+            double segEndDist = accumLengths[segIdx+1];
+            double segLength = segEndDist - segStartDist;
+            
+            double localT = 0.0;
+            if (segLength > 1e-9) { // Division durch Null abfangen (falls 2 Tori auf gleicher Position)
+                localT = (targetDist - segStartDist) / segLength;
+            }
+            
+            // point coord caluclation
+            point = fullPath[segIdx] + (fullPath[segIdx+1] - fullPath[segIdx]) * localT;
+        }
+        
+        MusclePointsGlobal.push_back(point);
+
+        // Initialisize MuscleNode
+        MuscleNode node;
+        node.PositionGlobal = point;
+        
+        if (i == 0) {
+            node.bParentIsFixed = true;
+            node.parentMesh = parentMeshOrigin;
+            node.PositionLocal = OriginPointLocal;
+        } 
+        else if (i == MNodesCount - 1) {
+            node.bParentIsFixed = true;
+            node.parentMesh = parentMeshInsertion;
+            node.PositionLocal = InsertionPointLocal;
+        } 
+        else {
+            node.bParentIsFixed = false;
+            node.parentMesh = nullptr; 
+            node.PositionLocal = point; // Lokale Position für freie Knoten anfangs gleich Global
+        }
+        
+        MNodes.push_back(node);
+    }
 }
 
 void SSMuscle::updateMusclePointsParents()

@@ -172,6 +172,7 @@ public:
 
     int checkCollision(std::vector<SSMesh*> allToCheckMeshes = {});
 
+    // std::vector<SSMesh*> getReferencedMeshes(std::vector<std::string> meshNames);
     void getAttractorNodeInfo();
     void getViaPointNodeInfo();
     void getMuscleInfo(std::string prefix="    ");
