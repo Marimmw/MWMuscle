@@ -28,6 +28,7 @@ add_executable(MWMuscle
     src/simpleSimulation/VTKSimViewerSimple.cpp
     src/simpleSimulation/SSBody.cpp
     src/simpleSimulation/SSTissue.cpp
+    src/simpleSimulation/SimulationManager.cpp
     #${MODEL_SRC}
     #${RENDERER_SRC}
     #${VIEWPORT_SRC}

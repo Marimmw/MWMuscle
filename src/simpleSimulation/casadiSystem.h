@@ -21,7 +21,7 @@ class CasadiSystem {
 public:
     // Konstruktor setzt jetzt direkt das System auf
     CasadiSystem(std::vector<SSMuscle*> muscles, int objType = 0, std::string version="new", std::string parametrizationType="global",
-                    bool bUseCasGradient = false, bool bSumPhiEta = false, bool bUseWarmstartEtas = true);
+                    bool bUseCasGradient = false, bool bSumPhiEta = false, bool bUseWarmstartEtas = true, bool bDebug = true);
     std::string CasadiSystemName;
     std::vector<std::string> SolverConvergenceMessages;
     std::vector<int> SolverConvergenceSteps;
@@ -29,6 +29,8 @@ public:
 
     std::vector<std::vector<double>> allParameterInputsAllSteps;
     std::vector<std::vector<std::string>> allParameterInputDescriptionsAllSteps;
+
+    bool bDebug;
 
 
     void setupCasadi();

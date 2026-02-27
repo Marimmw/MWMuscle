@@ -13,6 +13,7 @@
 #include "simpleSimulation/SSMuscle.h"
 #include "simpleSimulation/SSMeshes.h"
 #include "simpleSimulation/SSBody.h"
+#include "simpleSimulation/SimulationManager.h"
 
 std::vector<double> FJAngles = {0.0, 0.0, 90.0, 90.0}; // MCP1, MCP2, PIP, DIP 
 float VIEWSCALER = 1.0f; // VIEWER in [cm]
@@ -3465,10 +3466,15 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         
         // --- TORUS PARAMETER AUS DEINER VORLAGE ---
         double rWF = 1.0; 
-        std::vector<double> relTorusPos = {0.28, 0.16, 0.06}; // {0.32, 0.2, 0.1};         // Position auf dem Knochen
-        std::vector<double> relTorusR = {0.14, 0.19, 0.28}; //{1.6/rWF, 1.8/rWF, 1.3/rWF}; // Großer Radius
-        std::vector<double> relTorusr = {0.13, 0.18, 0.26};// {1.4/rWF, 1.6/rWF, 1.0/rWF}; // Kleiner Radius (Dicke)
-        std::vector<double> off = {0.06, 0.07, 0.18}; // Palmarer Offset (Verschiebung Richtung Handinnenfläche)
+        double RF = 1.0;
+        double offF = 0.0;
+        double PF = 1.0;
+        double relT = 0.65;
+        //                                  0.6, 0.42, 0.32
+        std::vector<double> relTorusPos = {0.32, 0.2, 0.1}; // {0.32, 0.2, 0.1};         // Position auf dem Knochen
+        std::vector<double> relTorusR = {0.14*RF, 0.19*RF, 0.28*RF}; //{1.6/rWF, 1.8/rWF, 1.3/rWF}; // Großer Radius
+        std::vector<double> relTorusr = {relT*1.4, relT, relT};// {1.4/rWF, 1.6/rWF, 1.0/rWF}; // Kleiner Radius (Dicke)
+        std::vector<double> off = {0.06, 0.07*offF, 0.18*offF}; // Palmarer Offset (Verschiebung Richtung Handinnenfläche)
 
         double segLen[4];
         double segRadius[4];
@@ -3476,7 +3482,8 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         std::vector<std::string> fingerNames = {"Thumb", "Index", "Middle", "Ring", "Little"};
 
         // 1. ROOT
-        rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), nullptr);
+        MWMath::RotMatrix3x3 Ausrichtung = MWMath::axisAngle({0,0,1}, 90.0) * MWMath::axisAngle({0,1,0}, 180.0); // KORREKTUR: Erste Rotation um Z für Handfläche nach unten, dann um Y für Zeigefinger nach vorne
+        rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0, 0, 0), Ausrichtung, nullptr);
         tissues.push_back(rootSystem);
 
         // Drehpunkt des Handgelenks
@@ -3585,7 +3592,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
 
             // --- NEU: TORUS MC ---
             double tR0 = segLen[0] * relTorusR[0];
-            double tr0 = segLen[0] * relTorusr[0];
+            double tr0 = tR0 * relTorusr[0]; // segLen[0] * relTorusr[0];
             double tPosY0 = -flength * relTorusPos[0]; // Position von Gelenk aus gerechnet
             auto mTorusMC = std::make_shared<SSTorusMesh>(tR0, tr0, "MeshTorus_"+jName, bodyMC, 
                  MWMath::Point3D(segLen[0] * off[0], tPosY0, 0), // +X ist Palmar!
@@ -3623,7 +3630,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
 
             // --- NEU: TORUS PP ---
             double tR1 = segLen[1] * relTorusR[1];
-            double tr1 = segLen[1] * relTorusr[1];
+            double tr1 = tR1 * relTorusr[1]; // segLen[1] * relTorusr[1];
             double tPosY1 = -segLen[1] *relTorusPos[1]; 
             auto mTorusPP = std::make_shared<SSTorusMesh>(tR1, tr1, "MeshTorus_"+jName, bodyPP, 
                  MWMath::Point3D(segLen[1] * off[1], tPosY1, 0), 
@@ -3656,7 +3663,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
 
             // --- NEU: TORUS MP ---
             double tR2 = segLen[2] * relTorusR[2];
-            double tr2 = segLen[2] * relTorusr[2];
+            double tr2 = tR2 * relTorusr[2]; // segLen[2] * relTorusr[2];
             double tPosY2 = -segLen[2] * relTorusPos[2]; 
             auto mTorusMP = std::make_shared<SSTorusMesh>(tR2, tr2, "MeshTorus_"+jName, bodyMP, 
                  MWMath::Point3D(segLen[2] * off[2], tPosY2, 0), 
@@ -3724,274 +3731,309 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         muscles.push_back(flexor);
         
     }
+
 }
 
 
 int main(int argc, char** argv)
 {
 
-    // versuch simpel
-    QApplication app(argc, argv); // VTK/Qt brauchen das QApplication Objekt
-    std::string configPath = "../config.txt"; // Liegt im Build-Ordner
+
+    std::string configPath = "../config.txt";
     SimSettings cfg = ConfigManager::loadConfig(configPath);
     ConfigManager::saveCopy(configPath);
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
-    std::string currentScene = cfg.currentScene;
-    int numTimeSteps = cfg.numTimeSteps;
-    int objFunc = cfg.objFunc;
-
-    // DYNAMISCHES HINDERNIS-SZENARIO
     
-    std::vector<std::shared_ptr<SSMesh>> meshes;
-    std::vector<SSMuscle*> musclePtrs;
-    std::shared_ptr<SSBody> rootSystem;
-    std::vector<std::shared_ptr<SSTissue>> tissue;
-    // hier szene objektorientert aufbauen per funktion
-    //...setupScene(currentScene, meshes, musclePtrs);
-    setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);
-    // re-dicretize meshes for new position
-    for (auto& m : meshes) {
-        m->discretizeMesh(cfg.discretization); // discretize for distance calculation 
-    }
+    // SCHALTER FÜR DEN MODUS
+    bool bParameterStudy = true; // <-- HIER UMSCHALTEN
 
-    // --- 3. SOLVER SETUP ---
-    // CasadiSystem system(musclePtrs, objFunc);
-    std::vector<CasadiSystem*> systems;
-    for (auto* mus : musclePtrs) {
-        std::vector<SSMuscle*> singleMuscleList = {mus};
-        systems.push_back(new CasadiSystem(singleMuscleList, objFunc, cfg.solverMethod, cfg.casadiParametrization, cfg.bUseManualJacobian, cfg.bSumPhiEta, cfg.bUseWarmstartEtas));
-        //systems.back()->CasadiSystemName = "CasSys_" + mus->Name;
-        // qDebug() << "MUSCLE POINTS" << mus->MNodes.size();
-    }
+    if (bParameterStudy) {
+        // ==========================================
+        // MODUS 1: PARAMETERSTUDIE (Ohne Viewer)
+        // ==========================================
+        std::vector<ParamDef> studyParams = {
+            {0.0, 1.1, 3, "Torus Position"}, // trous psoition 
+            {0.0, 2.0, 2, "Torus Vertical Offset"},  // torus vertical offset
+            {0.5, 1.5, 2, "R"}, // R 
+            {0.4, 0.9, 2, "Relative r"}  // rel r to R
+        };
 
-    // Container für n Muskeln
-    int numMuscles = musclePtrs.size();
-    std::vector<std::vector<std::vector<MWMath::Point3D>>> allMuscleResults(numMuscles);
-    std::vector<std::vector<std::vector<MWMath::Point3D>>> allInitialGuesses(numMuscles);
-    std::vector<std::vector<std::vector<MWMath::Point3D>>> allOptimizedPointColors(numMuscles);
-    std::vector<std::vector<MWMath::RotMatrix3x3>> allMeshResults(meshes.size()); 
-    std::vector<std::vector<MWMath::Point3D>> otherPointsWithColors(numTimeSteps); // {p1, c1, p2, c2, ... }
-    std::vector<double> angles;
-
-    // MUSCLE INITIALIZATION
-    auto start = std::chrono::high_resolution_clock::now();
-    qDebug() << "======================= MUSCLE INITIALIZATION ========================";
-    for (auto* mus : musclePtrs) {
-        mus->initializeSimulationMuscle(numTimeSteps);
+        SimulationManager manager(cfg);
+        manager.runParameterStudy(studyParams);
         
-        mus->getMuscleInfo();
-        mus->checkCollision();
-        qDebug() << "-----------------------------------------------------------";
+        return 0; // Fertig!
     }
+    else {
+        // ==========================================
+        // MODUS 2: NORMALER EINZEL-LAUF MIT VIEWER
+        // ==========================================}
 
-    // --- 4. SIMULATION LOOP ---
-    for(int t = 0; t < numTimeSteps; ++t) {
-        qDebug() << "====================== TIMESTEP " << t << " / " << numTimeSteps-1 << "============================================";
-        double progress = (double)t / (double)numTimeSteps;
-        angles.push_back((double)t);
+        // versuch simpel
+        QApplication app(argc, argv); // VTK/Qt brauchen das QApplication Objekt
+        std::string currentScene = cfg.currentScene;
+        int numTimeSteps = cfg.numTimeSteps;
+        int objFunc = cfg.objFunc;
 
+        // DYNAMISCHES HINDERNIS-SZENARIO
         
-        // MOVE MESHES / UPDATE SCENE
-        if (currentScene[0] == 'O' || currentScene == "NONE" || currentScene == "FINGER_SIMPLE2" || currentScene == "FINGER_SIMPLE4" || currentScene == "FINGER_SIMPLE4T"){ 
-            if (rootSystem) {
-                // Ein einziger Aufruf aktualisiert den gesamten Baum!
-                /* rootSystem->Position2ParentRelInParentFrame += MWMath::Point3D(0.2,0.2,0.2);
-                rootSystem->Orientation2ParentRel *= MWMath::axisAngle({1,1,0}, 10.0); */
-                rootSystem->update(t); 
-                for (auto& m : meshes) {
-                        m->MeshPointsGlobal.push_back(m->PositionGlobal);
-                        m->allRMatrixGlobal.push_back(m->OrientationGlobal);
+        std::vector<std::shared_ptr<SSMesh>> meshes;
+        std::vector<SSMuscle*> musclePtrs;
+        std::shared_ptr<SSBody> rootSystem;
+        std::vector<std::shared_ptr<SSTissue>> tissue;
+        // hier szene objektorientert aufbauen per funktion
+        //...setupScene(currentScene, meshes, musclePtrs);
+
+        // setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);
+        bool bParameterStudy = false;
+        buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
+
+
+        // re-dicretize meshes for new position
+        for (auto& m : meshes) {
+            m->discretizeMesh(cfg.discretization); // discretize for distance calculation 
+        }
+
+        // --- 3. SOLVER SETUP ---
+        // CasadiSystem system(musclePtrs, objFunc);
+        std::vector<CasadiSystem*> systems;
+        for (auto* mus : musclePtrs) {
+            std::vector<SSMuscle*> singleMuscleList = {mus};
+            systems.push_back(new CasadiSystem(singleMuscleList, objFunc, cfg.solverMethod, cfg.casadiParametrization, cfg.bUseManualJacobian, cfg.bSumPhiEta, cfg.bUseWarmstartEtas));
+            //systems.back()->CasadiSystemName = "CasSys_" + mus->Name;
+            // qDebug() << "MUSCLE POINTS" << mus->MNodes.size();
+        }
+
+        // Container für n Muskeln
+        int numMuscles = musclePtrs.size();
+        std::vector<std::vector<std::vector<MWMath::Point3D>>> allMuscleResults(numMuscles);
+        std::vector<std::vector<std::vector<MWMath::Point3D>>> allInitialGuesses(numMuscles);
+        std::vector<std::vector<std::vector<MWMath::Point3D>>> allOptimizedPointColors(numMuscles);
+        std::vector<std::vector<MWMath::RotMatrix3x3>> allMeshResults(meshes.size()); 
+        std::vector<std::vector<MWMath::Point3D>> otherPointsWithColors(numTimeSteps); // {p1, c1, p2, c2, ... }
+        std::vector<double> angles;
+
+        // MUSCLE INITIALIZATION
+        auto start = std::chrono::high_resolution_clock::now();
+        qDebug() << "======================= MUSCLE INITIALIZATION ========================";
+        for (auto* mus : musclePtrs) {
+            mus->initializeSimulationMuscle(numTimeSteps);
+            
+            mus->getMuscleInfo();
+            mus->checkCollision();
+            qDebug() << "-----------------------------------------------------------";
+        }
+
+        // --- 4. SIMULATION LOOP ---
+        for(int t = 0; t < numTimeSteps; ++t) {
+            qDebug() << "====================== TIMESTEP " << t << " / " << numTimeSteps-1 << "============================================";
+            double progress = (double)t / (double)numTimeSteps;
+            angles.push_back((double)t);
+
+            
+            // MOVE MESHES / UPDATE SCENE
+            if (currentScene[0] == 'O' || currentScene == "NONE" || currentScene == "FINGER_SIMPLE2" || currentScene == "FINGER_SIMPLE4" || currentScene == "FINGER_SIMPLE4T"){ 
+                if (rootSystem) {
+                    // Ein einziger Aufruf aktualisiert den gesamten Baum!
+                    /* rootSystem->Position2ParentRelInParentFrame += MWMath::Point3D(0.2,0.2,0.2);
+                    rootSystem->Orientation2ParentRel *= MWMath::axisAngle({1,1,0}, 10.0); */
+                    rootSystem->update(t); 
+                    for (auto& m : meshes) {
+                            m->MeshPointsGlobal.push_back(m->PositionGlobal);
+                            m->allRMatrixGlobal.push_back(m->OrientationGlobal);
+                    }
+                        
+                    // re-dicretize meshes for new position
+                    for (auto& m : meshes) {
+                        m->discretizeMesh(cfg.discretization); // discretize for distance calculation 
+                    }
+
+                    /* for(auto tis : tissue){
+                        tis->getInfo();
+                    } */
                 }
-                    
+            }
+            else{
+                updateSceneMovement(currentScene, meshes, progress);
+                for (auto& m : meshes) {
+                            m->MeshPointsGlobal.push_back(m->PositionGlobal);
+                            m->allRMatrixGlobal.push_back(m->OrientationGlobal);
+                    }
+                        
                 // re-dicretize meshes for new position
                 for (auto& m : meshes) {
                     m->discretizeMesh(cfg.discretization); // discretize for distance calculation 
                 }
-
-                /* for(auto tis : tissue){
-                    tis->getInfo();
-                } */
             }
-        }
-        else{
-            updateSceneMovement(currentScene, meshes, progress);
-            for (auto& m : meshes) {
-                        m->MeshPointsGlobal.push_back(m->PositionGlobal);
-                        m->allRMatrixGlobal.push_back(m->OrientationGlobal);
+
+            // --- SCHRITT B & C: ENDPUNKTE & INITIAL GUESS PRO MUSKEL ---
+            for(int m = 0; m < numMuscles; ++m) {
+                auto* mus = musclePtrs[m];
+                // Fixpunkte prädizieren
+                mus->OriginPointGlobal = mus->MNodes[0].predictNewGlobal();
+                mus->InsertionPointGlobal = mus->MNodes.back().predictNewGlobal();
+                mus->MNodes[0].PositionGlobal = mus->OriginPointGlobal;
+                mus->MNodes.back().PositionGlobal = mus->InsertionPointGlobal;
+                // Guess Pfad sammeln
+                std::vector<MWMath::Point3D> guessPath;
+                for(auto& node : mus->MNodes) {
+                    guessPath.push_back(node.predictNewGlobal());
                 }
-                    
-            // re-dicretize meshes for new position
-            for (auto& m : meshes) {
-                m->discretizeMesh(cfg.discretization); // discretize for distance calculation 
+                mus->storeMNodesInitialGuess(t, guessPath);
             }
-        }
 
-        // --- SCHRITT B & C: ENDPUNKTE & INITIAL GUESS PRO MUSKEL ---
-        for(int m = 0; m < numMuscles; ++m) {
-            auto* mus = musclePtrs[m];
-            // Fixpunkte prädizieren
-            mus->OriginPointGlobal = mus->MNodes[0].predictNewGlobal();
-            mus->InsertionPointGlobal = mus->MNodes.back().predictNewGlobal();
-            mus->MNodes[0].PositionGlobal = mus->OriginPointGlobal;
-            mus->MNodes.back().PositionGlobal = mus->InsertionPointGlobal;
-            // Guess Pfad sammeln
-            std::vector<MWMath::Point3D> guessPath;
-            for(auto& node : mus->MNodes) {
-                guessPath.push_back(node.predictNewGlobal());
+
+            for (auto* sys : systems) {
+                qDebug() << "---------------------------" << " Solve CasadiSystem: " << QString::fromStdString(sys->CasadiSystemName) << " ---------------------------";
+                sys->solveStepX(); // solves all systems
             }
-            mus->storeMNodesInitialGuess(t, guessPath);
-        }
+            qDebug() << "-------------------------------------------------------------------------------------------------";
+            
+            if (cfg.dynamicReparametrization || t < 1)
+            {    
+                for (auto muscle : musclePtrs) {
+                    muscle->updateMusclePointsParentsLocal();// updateMusclePointsParents();
+                }
+            }
 
-
-        for (auto* sys : systems) {
-            qDebug() << "---------------------------" << " Solve CasadiSystem: " << QString::fromStdString(sys->CasadiSystemName) << " ---------------------------";
-            sys->solveStepX(); // solves all systems
-        }
-        qDebug() << "-------------------------------------------------------------------------------------------------";
-        
-        if (cfg.dynamicReparametrization || t < 1)
-        {    
             for (auto muscle : musclePtrs) {
-                muscle->updateMusclePointsParentsLocal();// updateMusclePointsParents();
+                muscle->getViaPointNodeInfo();
+                muscle->checkCollision();
             }
-        }
 
-        for (auto muscle : musclePtrs) {
-            muscle->getViaPointNodeInfo();
-            muscle->checkCollision();
-        }
+            
+            // --- SCHRITT E, F & G: PARENTS UPDATEN & ERGEBNISSE SPEICHERN ---
+            for(int m = 0; m < numMuscles; ++m) {
+                auto* mus = musclePtrs[m];
 
-        
-        // --- SCHRITT E, F & G: PARENTS UPDATEN & ERGEBNISSE SPEICHERN ---
-        for(int m = 0; m < numMuscles; ++m) {
-            auto* mus = musclePtrs[m];
+                // Farben sammeln
+                std::vector<MWMath::Point3D> cols;
+                for(auto& node : mus->MNodes) cols.push_back(node.getparentMeshColor());
+                //GLOBALSAVE allOptimizedPointColors[m].push_back(cols);
+                mus->storeMNodesInitialGuessColors(t, cols);
 
-            // Farben sammeln
-            std::vector<MWMath::Point3D> cols;
-            for(auto& node : mus->MNodes) cols.push_back(node.getparentMeshColor());
-            //GLOBALSAVE allOptimizedPointColors[m].push_back(cols);
-            mus->storeMNodesInitialGuessColors(t, cols);
-
-            // Pfad speichern
-            mus->storeMNodesGlobalPositions();
-            mus->computeMuscleLength(true);
-
-        }
-
-        // plot further points
-        if (cfg.bShowDiscretization){    
-            for (std::shared_ptr<SSMesh> mesh : meshes) {
-                for (MWMath::Point3D& p : mesh->GlobalDiscreteMeshPoints) {
-                    otherPointsWithColors[t].push_back(p);
-                    otherPointsWithColors[t].push_back(mesh->MeshColor);
-                }
-            }
-        }
-    }
-    // ------------------- END OF SIMULATION LOOP -------------------
-
-
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    // test zum neubefüllen
-    allMuscleResults.clear();
-    allInitialGuesses.clear();
-    allOptimizedPointColors.clear();
-    allMuscleResults.resize(numMuscles);
-    allInitialGuesses.resize(numMuscles);
-    allOptimizedPointColors.resize(numMuscles);
-
-    for (int m = 0; m < numMuscles; ++m) {
-        auto* mus = musclePtrs[m];
-        
-        // get all values per muscle
-        std::vector<std::vector<MWMath::Point3D>> globalPoints;
-        std::vector<std::vector<MWMath::Point3D>> localPoints;
-        std::vector<std::vector<MWMath::Point3D>> initialGuessPoints;
-        std::vector<std::vector<MWMath::Point3D>> initialGuessColors;
-        std::vector<std::vector<std::vector<double>>> etaValues;
-        mus->getAllMuscleMNodesStepValues(numTimeSteps, globalPoints, localPoints, initialGuessPoints, initialGuessColors, etaValues);
-        allMuscleResults[m] = globalPoints;
-        allInitialGuesses[m] = initialGuessPoints;
-        allOptimizedPointColors[m] = initialGuessColors;
-    }
-
-    std::cout << "Dauer: " << duration.count()/1000 << " s" << std::endl;
-    
-    for (int m = 0; m < systems.size(); ++m) {
-        auto* sys = systems[m];
-        qDebug() << "=== Solver Convergence - " << QString::fromStdString(sys->CasadiSystemName) << "===";
-        int i = 0;
-        for (const auto& msg : sys->SolverConvergenceMessages) {
-            qDebug() << "Step " << i << "/" << sys->SolverConvergenceMessages.size()-1 << ": " << QString::fromStdString(msg) << " (Iter: " << sys->SolverConvergenceSteps[i] << ")";
-            i++;
-            for (auto* mus : sys->m_muscles) {
-                double len = mus->MuscleLengthSteps[i];
-                qDebug() << "    " << QString::fromStdString(mus->Name) << " Length: " << len*0.01 << " m";
+                // Pfad speichern
+                mus->storeMNodesGlobalPositions();
+                mus->computeMuscleLength(true);
 
             }
-        }
-    }
 
-    // --- 5. VIEWER ---
-    std::vector<std::vector<std::string>> viewerText;
-    for (int t = 0; t < numTimeSteps; ++t) {
-        std::vector<std::string> stepText;
-        stepText.push_back("Scene: " + currentScene);
-        stepText.push_back(std::string("OwnConstraintJacobian: ") + (cfg.bUseManualJacobian ? "Yes" : "No"));
-        stepText.push_back("Time (s): " + QString::number(duration.count()/1000.0).toStdString());
-        stepText.push_back("casadiParametrization: " + cfg.casadiParametrization);
-        stepText.push_back(std::string("dynamicReparametrization: ") + (cfg.dynamicReparametrization ? "Yes" : "No"));
-        stepText.push_back(std::string("useWarmstartEtas: ") + (cfg.bUseWarmstartEtas ? "Yes" : "No"));
-        std::string numNodes;
-        for (auto* mus : musclePtrs) {
-            numNodes += mus->Name + ": " + std::to_string(mus->MNodes.size()) + "  ";
-        }
-        stepText.push_back("Muscle Nodes: " + numNodes);
-        stepText.push_back("Sucess: " + systems[0]->SolverConvergenceMessages[t] + "(" + std::to_string(systems[0]->SolverConvergenceSteps[t]) + ")");
-        std::string jointsangle;
-        int tooManyJoints = 0;
-        for (const auto& join : tissue) {
-            if (auto jointPtr = std::dynamic_pointer_cast<SSJoint>(join)) {
-                std::stringstream ss;
-                if (t < jointPtr->DoneAngleSteps.size()) {
-                    if (jointPtr->DoneAngleSteps[t+1] != 0.0)
-                    {    ss << std::fixed << std::setprecision(2) << jointPtr->DoneAngleSteps[t+1];
-                        jointsangle += jointPtr->Name + ": " + ss.str() + "°  ";
-                        tooManyJoints++;
+            // plot further points
+            if (cfg.bShowDiscretization){    
+                for (std::shared_ptr<SSMesh> mesh : meshes) {
+                    for (MWMath::Point3D& p : mesh->GlobalDiscreteMeshPoints) {
+                        otherPointsWithColors[t].push_back(p);
+                        otherPointsWithColors[t].push_back(mesh->MeshColor);
                     }
                 }
             }
         }
-        if (tooManyJoints < 8) stepText.push_back("Joint Angles: " + jointsangle);
-        viewerText.push_back(stepText);
-    }
-    VTKSimViewerSimple viewer(allMuscleResults, allMeshResults, allInitialGuesses, allOptimizedPointColors, tissue, meshes, musclePtrs, angles, otherPointsWithColors, viewerText, 1.0);
-    viewer.show();
+        // ------------------- END OF SIMULATION LOOP -------------------
 
-    // ##############################################
-    // EXPORTS 
-    // ##############################################
 
-    std::string outputName = systems[0]->CasadiSystemName + "InputParameters" + currentScene + ".txt";
-    exportParameterLog(systems[0]->allParameterInputsAllSteps, systems[0]->allParameterInputDescriptionsAllSteps, outputName);
-    
-    for (auto* sys : systems) {
-        for (auto* mus : sys->m_muscles) {
-            exportMuscleLog(sys->CasadiSystemName, mus, sys->SolverConvergenceMessages, UNITS);
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        // test zum neubefüllen
+        allMuscleResults.clear();
+        allInitialGuesses.clear();
+        allOptimizedPointColors.clear();
+        allMuscleResults.resize(numMuscles);
+        allInitialGuesses.resize(numMuscles);
+        allOptimizedPointColors.resize(numMuscles);
+
+        for (int m = 0; m < numMuscles; ++m) {
+            auto* mus = musclePtrs[m];
+            
+            // get all values per muscle
+            std::vector<std::vector<MWMath::Point3D>> globalPoints;
+            std::vector<std::vector<MWMath::Point3D>> localPoints;
+            std::vector<std::vector<MWMath::Point3D>> initialGuessPoints;
+            std::vector<std::vector<MWMath::Point3D>> initialGuessColors;
+            std::vector<std::vector<std::vector<double>>> etaValues;
+            mus->getAllMuscleMNodesStepValues(numTimeSteps, globalPoints, localPoints, initialGuessPoints, initialGuessColors, etaValues);
+            allMuscleResults[m] = globalPoints;
+            allInitialGuesses[m] = initialGuessPoints;
+            allOptimizedPointColors[m] = initialGuessColors;
         }
-    }
-    backupSourceCode();
 
-    std::vector<SSJoint*> joints;
-    for (const auto& tis : tissue) {
-        if (auto jointPtr = std::dynamic_pointer_cast<SSJoint>(tis)) {
-            joints.push_back(jointPtr.get());
+        std::cout << "Dauer: " << duration.count()/1000 << " s" << std::endl;
+        
+        for (int m = 0; m < systems.size(); ++m) {
+            auto* sys = systems[m];
+            qDebug() << "=== Solver Convergence - " << QString::fromStdString(sys->CasadiSystemName) << "===";
+            int i = 0;
+            for (const auto& msg : sys->SolverConvergenceMessages) {
+                qDebug() << "Step " << i << "/" << sys->SolverConvergenceMessages.size()-1 << ": " << QString::fromStdString(msg) << " (Iter: " << sys->SolverConvergenceSteps[i] << ")";
+                i++;
+                for (auto* mus : sys->m_muscles) {
+                    double len = mus->MuscleLengthSteps[i];
+                    qDebug() << "    " << QString::fromStdString(mus->Name) << " Length: " << len*0.01 << " m";
+
+                }
+            }
         }
-    }
-    exportMuscleLengthLog(musclePtrs, joints);
 
-    return app.exec();
+        // --- 5. VIEWER ---
+        std::vector<std::vector<std::string>> viewerText;
+        for (int t = 0; t < numTimeSteps; ++t) {
+            std::vector<std::string> stepText;
+            stepText.push_back("Scene: " + currentScene);
+            stepText.push_back(std::string("OwnConstraintJacobian: ") + (cfg.bUseManualJacobian ? "Yes" : "No"));
+            stepText.push_back("Time (s): " + QString::number(duration.count()/1000.0).toStdString());
+            stepText.push_back("casadiParametrization: " + cfg.casadiParametrization);
+            stepText.push_back(std::string("dynamicReparametrization: ") + (cfg.dynamicReparametrization ? "Yes" : "No"));
+            stepText.push_back(std::string("useWarmstartEtas: ") + (cfg.bUseWarmstartEtas ? "Yes" : "No"));
+            std::string numNodes;
+            for (auto* mus : musclePtrs) {
+                numNodes += mus->Name + ": " + std::to_string(mus->MNodes.size()) + "  ";
+            }
+            stepText.push_back("Muscle Nodes: " + numNodes);
+            stepText.push_back("Sucess: " + systems[0]->SolverConvergenceMessages[t] + "(" + std::to_string(systems[0]->SolverConvergenceSteps[t]) + ")");
+            std::string jointsangle;
+            int tooManyJoints = 0;
+            for (const auto& join : tissue) {
+                if (auto jointPtr = std::dynamic_pointer_cast<SSJoint>(join)) {
+                    std::stringstream ss;
+                    if (t < jointPtr->DoneAngleSteps.size()) {
+                        if (jointPtr->DoneAngleSteps[t+1] != 0.0)
+                        {    ss << std::fixed << std::setprecision(2) << jointPtr->DoneAngleSteps[t+1];
+                            jointsangle += jointPtr->Name + ": " + ss.str() + "°  ";
+                            tooManyJoints++;
+                        }
+                    }
+                }
+            }
+            if (tooManyJoints < 8) stepText.push_back("Joint Angles: " + jointsangle);
+            viewerText.push_back(stepText);
+        }
+        VTKSimViewerSimple viewer(allMuscleResults, allMeshResults, allInitialGuesses, allOptimizedPointColors, tissue, meshes, musclePtrs, angles, otherPointsWithColors, viewerText, 1.0);
+        viewer.show();
+
+        // ##############################################
+        // EXPORTS 
+        // ##############################################
+
+        if (!bParameterStudy) {
+            std::string outputName = systems[0]->CasadiSystemName + "InputParameters" + currentScene + ".txt";
+            exportParameterLog(systems[0]->allParameterInputsAllSteps, systems[0]->allParameterInputDescriptionsAllSteps, outputName);
+            
+            for (auto* sys : systems) {
+                for (auto* mus : sys->m_muscles) {
+                    exportMuscleLog(sys->CasadiSystemName, mus, sys->SolverConvergenceMessages, UNITS);
+                }
+            }
+            backupSourceCode();
+
+            std::vector<SSJoint*> joints;
+            for (const auto& tis : tissue) {
+                if (auto jointPtr = std::dynamic_pointer_cast<SSJoint>(tis)) {
+                    joints.push_back(jointPtr.get());
+                }
+            }
+            exportMuscleLengthLog(musclePtrs, joints);
+        }
+
+        return app.exec();
+    }
 
 }

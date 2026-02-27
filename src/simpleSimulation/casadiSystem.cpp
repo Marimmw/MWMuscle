@@ -1,8 +1,8 @@
 #include "casadiSystem.h"
 
-CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas)
+CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas, bool bDebug)
     : m_muscles(muscles), objType(objType), Version(version), ParametrizationType(parametrizationType),
-        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas)
+        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas), bDebug(bDebug)
 {
     CasadiSystemName = "CasSys_" + (m_muscles.empty() ? "Empty" : m_muscles[0]->Name);
 
@@ -25,7 +25,7 @@ void CasadiSystem::solveStepX(){
 
 void CasadiSystem::setupCasadiSum()
 {
-    qDebug() << "Setting up CasadiSystem with Sum Phi*Eta formulation...";
+    if (bDebug) qDebug() << "Setting up CasadiSystem with Sum Phi*Eta formulation...";
     using namespace casadi;
     MX all_x = MX::vertcat({});
     MX all_g = MX::vertcat({});
@@ -37,7 +37,7 @@ void CasadiSystem::setupCasadiSum()
         SSMuscle* mus = m_muscles[m];
         int num_inner = mus->MNodes.size() - 2;
         int K = mus->MNodes.size()-1;
-        qDebug() << "Muscle " << m << ": " << mus->Name.c_str() << ", K=" << K << ", num_inner=" << num_inner;
+        if (bDebug) qDebug() << "Muscle " << m << ": " << mus->Name.c_str() << ", K=" << K << ", num_inner=" << num_inner;
         int num_wrap = mus->meshPtrs.size();
         int num_eta_per_node = num_wrap;
 
@@ -116,7 +116,7 @@ void CasadiSystem::setupCasadiSum()
     MXDict nlp = {{"x", all_x}, {"f", obj}, {"g", all_g}, {"p", all_p}};
     solver = nlpsol("f", "ipopt", nlp, opts);
 
-    qDebug() << "CasadiSystem initialized with"
+    if (bDebug) qDebug() << "CasadiSystem initialized with"
              << M << "muscles,"
              << "Objective Type:" << objType
              << "Total variables:" << all_x.size1()
@@ -124,7 +124,7 @@ void CasadiSystem::setupCasadiSum()
 }
 
 void CasadiSystem::solveStepSum() {
-    qDebug() << "Solving step with Sum Phi*Eta formulation...";
+    if (bDebug) qDebug() << "Solving step with Sum Phi*Eta formulation...";
     using namespace casadi;
 
     std::vector<double> x0_all, p_all, lbg_all, ubg_all, lbx_all, ubx_all;
@@ -145,7 +145,7 @@ void CasadiSystem::solveStepSum() {
         }
         
         if (mus->lastEtas.size() == (size_t)num_etas_total && bUseWarmstartEtas) {
-            qDebug() << "    Warmstart etas:" << QString::fromStdString(mus->Name);
+            if (bDebug) qDebug() << "    Warmstart etas:" << QString::fromStdString(mus->Name);
             std::vector<double> scaledEtas;
             for (double eta : mus->lastEtas) {
                 double scaledEta = eta * WarmstartEtaScaling;
@@ -153,7 +153,7 @@ void CasadiSystem::solveStepSum() {
             }
             x0_all.insert(x0_all.end(), scaledEtas.begin(), scaledEtas.end());
         } else {
-            qDebug() << "    No warmstart etas:" << QString::fromStdString(mus->Name);
+            if (bDebug) qDebug() << "    No warmstart etas:" << QString::fromStdString(mus->Name);
             for (int e = 0; e < num_etas_total; ++e) x0_all.push_back(0.0);
         }
 
@@ -226,10 +226,10 @@ void CasadiSystem::solveStepSum() {
     std::string status = solverInfo.at("return_status");
 
     if (status != "Solve_Succeeded") {
-        qDebug() << "    Warning: Multi-Muscle Solver Status:" << QString::fromStdString(status);
+        if (bDebug) qDebug() << "    Warning: Multi-Muscle Solver Status:" << QString::fromStdString(status);
     }
     int convSteps = int(solverInfo.at("iter_count"));
-    qDebug() << "    Solver converged in" << convSteps << "iterations";
+    if (bDebug) qDebug() << "    Solver converged in" << convSteps << "iterations";
     SolverConvergenceMessages.push_back(QString::fromStdString(status).toStdString());
     SolverConvergenceSteps.push_back(convSteps);
     
@@ -335,12 +335,12 @@ void CasadiSystem::setupCasadi()
                 MX grad_h;
                 if (bUseOwnGradient){
                     grad_h = mus->meshPtrs[j]->constraintJacobian(g_k, q_j);
-                    qDebug() << "using own gradient!";
+                    //qDebug() << "using own gradient!";
                 }
                 else {
                     MX grad_h_full = MX::gradient(h, x_mus);
                     grad_h = grad_h_full(Slice(k * 3, (k + 1) * 3));
-                    qDebug() << "using auto-casadi gradient!";
+                    //qDebug() << "using auto-casadi gradient!";
                 }
 
                 total_contact_force += eta_kj * grad_h;
@@ -372,7 +372,7 @@ void CasadiSystem::setupCasadi()
     MXDict nlp = {{"x", all_x}, {"f", obj}, {"g", all_g}, {"p", all_p}};
     solver = nlpsol("f", "ipopt", nlp, opts);
 
-    qDebug() << "CasadiSystem initialized with"
+    if (bDebug) qDebug() << "CasadiSystem initialized with"
              << M << "muscles,"
              << "Objective Type:" << objType
              << "Total variables:" << all_x.size1()
@@ -400,10 +400,10 @@ void CasadiSystem::solveStep() {
         }
         
         if (mus->lastEtas.size() == (size_t)num_etas_total && bUseWarmstartEtas) {
-            qDebug() << "    Warmstart etas:" << QString::fromStdString(mus->Name);
+            if (bDebug) qDebug() << "    Warmstart etas:" << QString::fromStdString(mus->Name);
             x0_all.insert(x0_all.end(), mus->lastEtas.begin(), mus->lastEtas.end());
         } else {
-            qDebug() << "    No warmstart etas:" << QString::fromStdString(mus->Name);
+            if (bDebug) qDebug() << "    No warmstart etas:" << QString::fromStdString(mus->Name);
             for (int e = 0; e < num_etas_total; ++e) x0_all.push_back(0.0);
         }
 
@@ -471,10 +471,10 @@ void CasadiSystem::solveStep() {
     std::string status = solverInfo.at("return_status");
 
     if (status != "Solve_Succeeded") {
-        qDebug() << "    Warnung: Multi-Muscle Solver Status:" << QString::fromStdString(status);
+        if (bDebug) qDebug() << "    Warnung: Multi-Muscle Solver Status:" << QString::fromStdString(status);
     }
     int convSteps = int(solverInfo.at("iter_count"));
-    qDebug() << "    Solver converged in" << convSteps << "iterations";
+    if (bDebug) qDebug() << "    Solver converged in" << convSteps << "iterations";
     SolverConvergenceMessages.push_back(QString::fromStdString(status).toStdString());
     SolverConvergenceSteps.push_back(convSteps);
     

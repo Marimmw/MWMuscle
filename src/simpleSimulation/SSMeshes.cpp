@@ -7,7 +7,7 @@
 
 // ELLIPSOID
 casadi::MX SSEllipsoidMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    qDebug() << "Using manual Jacobi (Ellipsoid)!";
+    //qDebug() << "Using manual Jacobi (Ellipsoid)!";
     using namespace casadi;
     // 1. Parameter entpacken (Exakt wie in der Distanzfunktion)
     MX p_center = q(Slice(0, 3));
@@ -262,7 +262,7 @@ double SSCylinderMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool sign
 }
 
 casadi::MX SSCylinderMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    qDebug() << "Using manual Jacobi (Cylinder)!";
+    //qDebug() << "Using manual Jacobi (Cylinder)!";
     using namespace casadi;
     
     // 1. Parameter entpacken (Exakt wie in der Distanzfunktion)
@@ -309,7 +309,7 @@ casadi::MX SSTorusMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
 }
 
 casadi::MX SSTorusMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
-    qDebug() << "Using manual Jacobi (Torus)";
+    //qDebug() << "Using manual Jacobi (Torus)";
     using namespace casadi;
     
     // 1. Parameter entpacken
@@ -439,7 +439,7 @@ void SSMesh::InitializeMesh()
 {
     if (Parent){
         Parent->Meshes.push_back(shared_from_this());
-        qDebug() << "Mesh " << QString::fromStdString(Name) << " added to Parent " << QString::fromStdString(Parent->Name);
+        if (Parent->bDebug) qDebug() << "Mesh " << QString::fromStdString(Name) << " added to Parent " << QString::fromStdString(Parent->Name);
         
         if (dynamic_cast<SSJoint*>(Parent.get()))// != nullptr && dynamic_cast<SSTorusMesh*>(shared_from_this().get()) == nullptr)
         {

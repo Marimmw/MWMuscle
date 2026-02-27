@@ -73,7 +73,7 @@ void SSMuscle::createMusclePointsComplexPath(){
     for (SSMesh* mesh : meshPtrs) {
         if (auto torus = dynamic_cast<SSTorusMesh*>(mesh)) {
             // add offset to not lie in the middle of the torus (numerics)
-            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{(torus->R-torus->r)*0.2, (torus->R-torus->r)*0.2, 0.});
+            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{(torus->R-torus->r)*0.5, (torus->R-torus->r)*0.1, 0.});
         }
     }
 
@@ -448,7 +448,7 @@ int SSMuscle::checkCollision(std::vector<SSMesh *> allToCheckMeshes)
         allToCheckMeshes = meshPtrs; // if no meshes provided, check against own meshes
     }
 
-    qDebug() << "      Checking Collisions - " << allToCheckMeshes.size() << " Meshes";
+    if (bColisionDebug) qDebug() << "      Checking Collisions - " << allToCheckMeshes.size() << " Meshes";
     // checks collision -> 0=no collision, 1=collision with "own muscle mesh", 2=collision with other mesh
     for (auto* m : allToCheckMeshes) {
         if (m->bIsViaPoint) {
@@ -459,12 +459,12 @@ int SSMuscle::checkCollision(std::vector<SSMesh *> allToCheckMeshes)
             if (d < 0.0) {
                 if (std::find(meshPtrs.begin(), meshPtrs.end(), m) != meshPtrs.end()) {
                     // collision with own muscle mesh
-                    qDebug() << "        [WARNING] Collision detected with own muscle mesh:" << QString::fromStdString(m->Name) << "at Node Index:" << k;
+                    if (bColisionDebug) qDebug() << "        [WARNING] Collision detected with own muscle mesh:" << QString::fromStdString(m->Name) << "at Node Index:" << k;
                     return 1;
                 }
                 else {
                     // collision with other mesh
-                    qDebug() << "        [WARNING] Collision detected with OTHER mesh:" << QString::fromStdString(m->Name) << "at Node Index:" << k;
+                    if (bColisionDebug) qDebug() << "        [WARNING] Collision detected with OTHER mesh:" << QString::fromStdString(m->Name) << "at Node Index:" << k;
                     return 2;
                 }
             }

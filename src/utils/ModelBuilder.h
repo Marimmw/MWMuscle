@@ -10,6 +10,7 @@
 #include "simpleSimulation/SSMuscle.h"
 #include "simpleSimulation/SSMeshes.h"
 #include "simpleSimulation/SSBody.h"
+#include "../utils/ConfigLoader.h" // Für SimSettings
 
 // THIS FILE CONTAINS HELPER FUNCTIONS FOR CREATING MODELS
 
@@ -340,4 +341,259 @@ namespace Hand {
         }
     };
 
+}
+
+
+inline std::string buildOHandModel(
+    std::vector<std::shared_ptr<SSTissue>>& tissues,
+    std::vector<std::shared_ptr<SSMesh>>& meshes,
+    std::vector<SSMuscle*>& muscles,
+    std::shared_ptr<SSBody>& rootSystem,
+    int numTimeSteps,
+    const SimSettings& cfg,
+    float geometryScaler,
+    const std::vector<double> processParams)
+{
+    meshes.clear();
+    muscles.clear();
+
+    // --- Initialisierung der Hand-Winkel (aus deiner Vorlage) ---
+    MWMath::Point3D COLORF1 = MWMath::Point3D(0.50, 0.00, 1.00); 
+    MWMath::Point3D COLORF2 = MWMath::Point3D(0.30, 0.30, 1.00); 
+    MWMath::Point3D COLORF3 = MWMath::Point3D(0.00, 0.50, 1.00); 
+    MWMath::Point3D COLORF4 = MWMath::Point3D(0.00, 0.90, 1.00);
+    Hand::MMHandAngles MMHA;
+
+    // --- PARAMETER ---
+    double HL = 1.8 * geometryScaler;
+    double HB = 0.8 * geometryScaler;
+    double scale = HL / Hand::RefHandLength;
+    double Sign = 1.0; // 1.0 = Rechts
+    float GS = geometryScaler;
+    
+    std::unordered_map<std::string, SSMesh*> MeshMap;
+
+    std::vector<double> width = { 0.15*0.5 * GS, 0.1*0.5 * GS, 0.07*0.5 * GS, 0.05*0.5 * GS };
+    
+    double rWF = 1.0; 
+    double PF = processParams.size() > 0 ? processParams[0] : 1.0;
+    double offF = processParams.size() > 1 ? processParams[1] : 1.0;
+    double RF = processParams.size() > 2 ? processParams[2] : 1.0;
+    double relT = processParams.size() > 3 ? processParams[3] : 1.0;
+    
+    std::vector<double> relTorusPos = {0.32*PF, 0.2*PF, 0.1*PF}; //{0.32*PF, 0.2*PF, 0.1*PF}; 
+    std::vector<double> relTorusR = {0.14*RF, 0.19*RF, 0.28*RF}; 
+    std::vector<double> relTorusr = {relT, relT, relT};
+    std::vector<double> off = {0.06*offF, 0.07*offF, 0.18*offF}; 
+
+    double segLen[4];
+    double segRadius[4];
+    double jointRadius[3];
+    std::vector<std::string> fingerNames = {"Thumb", "Index", "Middle", "Ring", "Little"};
+
+    // 1. ROOT
+    MWMath::RotMatrix3x3 Ausrichtung = MWMath::axisAngle({0,0,1}, 90.0) * MWMath::axisAngle({0,1,0}, 180.0);
+    rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0, 0, 0), Ausrichtung, nullptr);
+    tissues.push_back(rootSystem);
+
+    MWMath::Point3D wristOffset(0.0, 0.003567 * scale, -0.003901 * scale * Sign);
+    
+    auto wristJointAbd = std::make_shared<SSJoint>("Wrist_JointAbd", wristOffset, MWMath::RotMatrix3x3(), rootSystem, 0.0, MWMath::Point3D(0, 0, 1), numTimeSteps);
+    tissues.push_back(wristJointAbd);
+    auto jMeshWrist = std::make_shared<SSEllipsoidMesh>(0.01 * scale, 0.01 * scale, 0.01 * scale, "Mesh_Wrist_Joint", wristJointAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0,0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+    meshes.push_back(jMeshWrist);
+    MeshMap["Mesh_Wrist_Joint"] = jMeshWrist.get();
+
+    auto wristJointFlex = std::make_shared<SSJoint>("Wrist_JointFlex", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), wristJointAbd, 0.0, MWMath::Point3D(0, 0, 1), numTimeSteps);
+    tissues.push_back(wristJointFlex);
+
+    // 2. CARPALS
+    auto carpals = std::make_shared<SSBody>("Carpals", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), wristJointFlex);
+    tissues.push_back(carpals);
+    
+    double carpalThickness = width[0] * 1.5; 
+    double carpalLength = width[0] * 2.5;    
+    double carpalWidth = width[0] * 3.5;     
+    
+    auto meshCarpals = std::make_shared<SSEllipsoidMesh>(carpalThickness, carpalLength, carpalWidth, "Mesh_Carpals", carpals, MWMath::Point3D(0, 0.0*scale, 0), MWMath::RotMatrix3x3(), MWMath::Point3D(0.5, 0.5, 0.5));
+    meshes.push_back(meshCarpals);
+    MeshMap["Mesh_Carpals"] = meshCarpals.get();
+
+    // 3. WRAPPING SURFACE 
+    double flexCylRadius = 0.0115 * scale;
+    double flexCylLength = 0.1400 * scale; 
+    MWMath::Point3D flexCylOffset(carpalThickness * 0.5 + flexCylRadius, 0.02 * scale, 0.0);
+
+    auto flexorCylMesh = std::make_shared<SSCylinderMesh>(flexCylRadius, flexCylLength, "Mesh_WristFlexorCyl", carpals, flexCylOffset, MWMath::axisAngle({ 1, 0, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));  
+    meshes.push_back(flexorCylMesh);
+    MeshMap["Mesh_WristFlexorCyl"] = flexorCylMesh.get();
+
+    // FINGER SCHLEIFE
+    for (int i = 1; i < 2; i++) {
+        int fidx = i;
+        std::string cFName = fingerNames[fidx];
+        double jAngle;
+        std::string prefN = std::to_string(fidx);
+
+        segLen[0] = Hand::SegLenRatios[fidx][0] * HL;
+        segLen[1] = Hand::SegLenRatios[fidx][1] * HL;
+        segLen[2] = Hand::SegLenRatios[fidx][2] * HL;
+        segLen[3] = Hand::SegLenRatios[fidx][3] * HL;
+
+        segRadius[0] = Hand::FingerWrapData[fidx-1][0].radius * scale;
+        segRadius[1] = Hand::FingerWrapData[fidx-1][1].radius * scale;
+        segRadius[2] = Hand::FingerWrapData[fidx-1][2].radius * scale;
+        segRadius[3] = Hand::FingerWrapData[fidx-1][3].radius * scale;
+
+        jointRadius[0] = segRadius[0] * 1.1; 
+        jointRadius[1] = segRadius[2] * 1.1; 
+        jointRadius[2] = segRadius[3] * 1.1; 
+
+        MWMath::Point3D posMCP(0.0, Hand::JointPosTable[fidx][0] * HL, Hand::JointPosTable[fidx][1] * HB * Sign);
+        
+        // CMC
+        MWMath::Point3D posCMC = Hand::CMCOffsets[fidx - 1] * scale;
+        posCMC.z *= Sign;
+        MWMath::RotMatrix3x3 forientation = buildOrientation(posMCP, posCMC);
+        jAngle = 0.0; 
+        std::string jName = "CMC" + prefN + "_JointAbd";
+        auto jointCMCAbd = std::make_shared<SSJoint>(jName, posCMC, forientation, carpals, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
+        tissues.push_back(jointCMCAbd);
+        auto jMeshCMC = std::make_shared<SSEllipsoidMesh>(width[0], width[0], width[0], "Mesh_CMC"+prefN+"_Joint", jointCMCAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0 , 0 }, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(jMeshCMC);
+        MeshMap["Mesh_CMC"+prefN+"_Joint"] = jMeshCMC.get();
+
+        jAngle = 0.0;
+        jName = "CMC" + prefN + "_JointFlex";
+        auto jointCMCFlex = std::make_shared<SSJoint>(jName, MWMath::Point3D(0.,0.,0.), MWMath::RotMatrix3x3(), jointCMCAbd, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
+        tissues.push_back(jointCMCFlex);
+
+        // MC SEGMENT
+        double flength = MWMath::distance(posCMC, posMCP);
+        jName = "MC" + prefN;
+        auto bodyMC = std::make_shared<SSBody>(jName, MWMath::Point3D(0.,-flength*0.5,0.), MWMath::RotMatrix3x3(), jointCMCFlex);
+        tissues.push_back(bodyMC);
+        auto meshMC = std::make_shared<SSEllipsoidMesh>(segRadius[0], segRadius[0], flength*0.5, "Mesh_"+jName, bodyMC, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1, 0, 0 }, 90.0), COLORF1);
+        meshes.push_back(meshMC);
+        MeshMap["Mesh_" + jName] = meshMC.get();
+
+        double tR0 = segLen[0] * relTorusR[0];
+        double tr0 = tR0 * relTorusr[0]; 
+        double tPosY0 = -flength * relTorusPos[0]; 
+        auto mTorusMC = std::make_shared<SSTorusMesh>(tR0, tr0, "MeshTorus_"+jName, bodyMC, 
+             MWMath::Point3D(segLen[0] * off[0], tPosY0, 0), 
+             MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(1, 0, 0));
+        meshes.push_back(mTorusMC);
+        MeshMap["MeshTorus_" + jName] = mTorusMC.get();
+
+        // MCP 
+        MWMath::Point3D jointPosRelMCP = MWMath::Point3D(0, -flength*0.5, 0); 
+        jAngle = 0.0; 
+        jName = "MCP" + prefN + "_JointAbd";
+        auto jointMCPAbd = std::make_shared<SSJoint>(jName, jointPosRelMCP, MWMath::RotMatrix3x3(), bodyMC, jAngle, MWMath::Point3D(1, 0, 0), numTimeSteps);
+        tissues.push_back(jointMCPAbd);
+        auto jMeshMCP = std::make_shared<SSEllipsoidMesh>(jointRadius[0], jointRadius[0], jointRadius[0], "Mesh_MCP"+prefN+"_Joint", jointMCPAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0 , 0 }, 90.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(jMeshMCP);
+        MeshMap["Mesh_MCP"+prefN+"_Joint"] = jMeshMCP.get();
+
+        jAngle = MMHA.MCP_FE_M[fidx];
+        jName = "MCP" + prefN + "_JointFlex";
+        auto jointMCPFlex = std::make_shared<SSJoint>(jName, MWMath::Point3D(0.,0.,0.), MWMath::RotMatrix3x3(), jointMCPAbd, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
+        tissues.push_back(jointMCPFlex);
+
+        // PP SEGMENT
+        MWMath::Point3D posPP = MWMath::Point3D(0, -segLen[1]*0.5, 0);
+        jName =  "PP" + prefN;
+        auto bodyPP = std::make_shared<SSBody>(jName, posPP, MWMath::RotMatrix3x3(), jointMCPFlex);
+        tissues.push_back(bodyPP);
+        auto meshPP = std::make_shared<SSEllipsoidMesh>(segRadius[1], segRadius[1], segLen[1]*0.5, "Mesh_"+jName, bodyPP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1, 0, 0 }, 90.0), COLORF2);
+        meshes.push_back(meshPP);
+        MeshMap["Mesh_" + jName] = meshPP.get();
+
+        double tR1 = segLen[1] * relTorusR[1];
+        double tr1 = tR1 * relTorusr[1]; 
+        double tPosY1 = -segLen[1] *relTorusPos[1]; 
+        auto mTorusPP = std::make_shared<SSTorusMesh>(tR1, tr1, "MeshTorus_"+jName, bodyPP, 
+             MWMath::Point3D(segLen[1] * off[1], tPosY1, 0), 
+             MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(0.8, 0.3, 0));
+        meshes.push_back(mTorusPP);
+        MeshMap["MeshTorus_" + jName] = mTorusPP.get();
+
+        // PIP 
+        MWMath::Point3D jointPosRelPP = MWMath::Point3D(0, -segLen[1]*0.5, 0); 
+        jAngle = MMHA.PIP_M[fidx];
+        jName = "PIP" + prefN + "_Joint";
+        auto jointPIP = std::make_shared<SSJoint>(jName, jointPosRelPP, MWMath::RotMatrix3x3(), bodyPP, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
+        tissues.push_back(jointPIP);
+        auto MeshPIP = std::make_shared<SSCylinderMesh>(jointRadius[1], jointRadius[1]*3, "Mesh_"+jName, jointPIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(MeshPIP);
+        MeshMap["Mesh_" + jName] = MeshPIP.get();
+
+        // MP SEGMENT
+        MWMath::Point3D posMP = MWMath::Point3D(0., -segLen[2]*0.5, 0);
+        jName =  "MP" + prefN;
+        auto bodyMP = std::make_shared<SSBody>(jName, posMP, MWMath::RotMatrix3x3(), jointPIP);
+        tissues.push_back(bodyMP);
+        auto meshMP = std::make_shared<SSEllipsoidMesh>(segRadius[2], segRadius[2], segLen[2]*0.5, "Mesh_"+jName, bodyMP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0, 0 }, 90.0), COLORF3);
+        meshes.push_back(meshMP);
+        MeshMap["Mesh_" + jName] = meshMP.get();
+
+        double tR2 = segLen[2] * relTorusR[2];
+        double tr2 = tR2 * relTorusr[2]; 
+        double tPosY2 = -segLen[2] * relTorusPos[2]; 
+        auto mTorusMP = std::make_shared<SSTorusMesh>(tR2, tr2, "MeshTorus_"+jName, bodyMP, 
+             MWMath::Point3D(segLen[2] * off[2], tPosY2, 0), 
+             MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(0.8, 0.3, 0.2));
+        meshes.push_back(mTorusMP);
+        MeshMap["MeshTorus_" + jName] = mTorusMP.get();
+
+        // DIP 
+        MWMath::Point3D jointPosRelMP = MWMath::Point3D(0,-segLen[2]*0.5, 0); 
+        jAngle = MMHA.DIP_M[fidx];
+        jName = "DIP" + prefN + "_Joint";
+        auto jointDIP = std::make_shared<SSJoint>(jName, jointPosRelMP, MWMath::RotMatrix3x3(), bodyMP, jAngle, MWMath::Point3D(0, 0, 1), numTimeSteps);
+        tissues.push_back(jointDIP);
+        auto MeshDIP = std::make_shared<SSCylinderMesh>(jointRadius[2], jointRadius[2]*3, "Mesh_"+jName, jointDIP, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 0, 1, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+        meshes.push_back(MeshDIP);
+        MeshMap["Mesh_" + jName] = MeshDIP.get();
+
+        // DP SEGMENT
+        MWMath::Point3D posDP = MWMath::Point3D(0., -segLen[3]*0.5, 0.);
+        jName =  "DP" + prefN;
+        auto bodyDP = std::make_shared<SSBody>(jName, posDP, MWMath::RotMatrix3x3(), jointDIP);
+        tissues.push_back(bodyDP);
+        auto meshDP = std::make_shared<SSEllipsoidMesh>(segRadius[3], segRadius[3], segLen[3]*0.5, "Mesh_"+jName, bodyDP, MWMath::Point3D(0., 0., 0.), MWMath::axisAngle({ 1,0,0}, 90.0), COLORF4);
+        meshes.push_back(meshDP);
+        MeshMap["Mesh_" + jName] = meshDP.get(); 
+    }
+
+    // INITIALES UPDATE & DISKRETISIERUNG
+    for (auto& m : meshes) { 
+        m->InitializeMesh(); 
+        m->discretizeMesh(cfg.discretization); 
+    }
+    rootSystem->update(0);
+
+    // MUSKEL
+    int numPoints = cfg.muscleNumPoints.empty() ? 25 : cfg.muscleNumPoints[0];
+    std::vector<std::string> refBodyNames = { "Mesh_WristFlexorCyl", "MeshTorus_MC1", "Mesh_MCP1_Joint", "MeshTorus_PP1", "Mesh_PIP1_Joint", "MeshTorus_MP1", "Mesh_DIP1_Joint"};
+    MWMath::Point3D startOffset = MWMath::Point3D(0., 0.5, 0.0);
+    MWMath::Point3D endOffset = MWMath::Point3D(0.05, 0.0, 0.0);
+    
+    SSMuscle* flexor = new SSMuscle("Flexor", numPoints, rootSystem.get(), startOffset, getRefMesh("Mesh_DP1", MeshMap), endOffset);
+
+    for (auto& m : getRefMeshes(refBodyNames, MeshMap)) {
+        flexor->meshPtrs.push_back(m);
+    }
+
+    flexor->createMusclePointsComplexPath();
+    flexor->updateMusclePointsParentsLocal();
+    muscles.push_back(flexor);
+
+
+    std::string returnString = "";
+    for (const auto param : processParams) {
+        returnString += std::to_string(param) + "\t";
+    }
+    return returnString;
 }

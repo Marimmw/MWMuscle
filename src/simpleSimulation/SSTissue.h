@@ -28,6 +28,7 @@ public:
     MWMath::RotMatrix3x3 Orientation2ParentRel = MWMath::RotMatrix3x3();
     std::shared_ptr<SSTissue> Parent = nullptr;
     int SystemLayer = 0; // Root = 0, Kinder von Root = 1, etc. -> für Update-Reihenfolge und Debug-Ausgaben
+    bool bDebug = false;
     //void setParent(std::shared_ptr<SSTissue> parent) { Parent = parent; }
     //std::shared_ptr<SSTissue> getParent() const { return Parent; }
     virtual int update(int step=0) {return 0;};

@@ -655,7 +655,7 @@ void VTKSimViewerSimple::keyPressEvent(QKeyEvent *event)
 void VTKSimViewerSimple::toggleCoordinateSystems()
 {
     // Modus weiterschalten: 0 -> 1 -> 2 -> 0
-    ShowCoordinateSystems = (ShowCoordinateSystems + 1) % 3;
+    ShowCoordinateSystems = (ShowCoordinateSystems + 1) % 4;
 
     // Feedback im Debug
     QString modeStr;
@@ -681,7 +681,7 @@ void VTKSimViewerSimple::toggleCoordinateSystems()
     for (auto& axes : m_tissueAxesActors) {
         if (axes) {
             // Sichtbar nur wenn Modus == 2 (Alles)
-            axes->SetVisibility(ShowCoordinateSystems == 2);
+            axes->SetVisibility(ShowCoordinateSystems == 3);
         }
     }
 
