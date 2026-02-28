@@ -113,6 +113,11 @@ void CasadiSystem::setupCasadiSum()
     opts["ipopt.output_file"] = filename; 
     opts["ipopt.file_print_level"] = 5;
 
+    // extra
+    /* opts["ipopt.max_soc"] = 4; // WICHTIG: In CasADi heißt die Option oft "max_soc", nicht "max_soc_iter"!
+    opts["ipopt.alpha_red_factor"] = 0.5; // Line Search aggressiver abbremsen
+    opts["ipopt.accept_every_trial_step"] = "no";    // Zwingt IPOPT, die Line Search genauer zu nehmen */
+
     MXDict nlp = {{"x", all_x}, {"f", obj}, {"g", all_g}, {"p", all_p}};
     solver = nlpsol("f", "ipopt", nlp, opts);
 

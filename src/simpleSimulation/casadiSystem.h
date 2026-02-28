@@ -72,7 +72,7 @@ private:
     bool bSumPhiEta;
     bool bUseWarmstartEtas = true;
     double WarmstartEtaScaling = 1.0;
-    int maxIterations = 5000;
+    int maxIterations = 10000;
     double maxTol = 1e-5; // 0.1mm (dm=-4, m=-3, cm=-2, mm=-1)
     double ELTolerance = 0.0;
     //std::string hessianApproximation = "limited-memory"; // "limited-memory" or "exact"

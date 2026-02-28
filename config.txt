@@ -10,15 +10,15 @@ bCreateJointMeshes 0
 muscleNumPoints 30 25
 
 # Scene & Time
-currentScene OHandTest #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 5
+currentScene OFINGER_SIMPLE_OnlyTorus #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
+numTimeSteps 10
 objFunc 0
 discretization 11
 dynamicReparametrization 0
 bShowDiscretization 0
 bShowSolverInVisualization 1
 
-# Solver Settings
+# Solver Settingsc
 casadiParametrization global
 solverMethod NONE
 bUseManualJacobian 1

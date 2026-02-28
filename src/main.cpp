@@ -3745,7 +3745,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    bool bParameterStudy = true; // <-- HIER UMSCHALTEN
+    bool bParameterStudy = false; // <-- HIER UMSCHALTEN
 
     if (bParameterStudy) {
         // ==========================================
@@ -3783,10 +3783,21 @@ int main(int argc, char** argv)
         // hier szene objektorientert aufbauen per funktion
         //...setupScene(currentScene, meshes, musclePtrs);
 
-        // setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);
         bool bParameterStudy = false;
-        buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
-
+        bool bSetupF = 0;
+        if (bSetupF){
+           setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
+        else{
+            //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
+            //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            //buildOHandModelOld(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            //buildOHandModelCylEll4Hole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            //buildOHandModelCylCyl4Hole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+        }
+        
 
         // re-dicretize meshes for new position
         for (auto& m : meshes) {
@@ -3988,6 +3999,16 @@ int main(int argc, char** argv)
                 numNodes += mus->Name + ": " + std::to_string(mus->MNodes.size()) + "  ";
             }
             stepText.push_back("Muscle Nodes: " + numNodes);
+            std::string muscleMeshNames;
+            for (auto* mus : musclePtrs) {
+                muscleMeshNames += mus->Name + "(" + std::to_string(mus->meshPtrs.size()) + "): " ;
+                for (auto& m : mus->meshPtrs) {
+                    muscleMeshNames += m->Name + ", ";
+                }
+                muscleMeshNames += "  ";
+            }
+            stepText.push_back("Muscle Meshes: " + muscleMeshNames);
+
             stepText.push_back("Sucess: " + systems[0]->SolverConvergenceMessages[t] + "(" + std::to_string(systems[0]->SolverConvergenceSteps[t]) + ")");
             std::string jointsangle;
             int tooManyJoints = 0;

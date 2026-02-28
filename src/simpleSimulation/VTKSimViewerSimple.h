@@ -65,7 +65,7 @@ public:
                        double scalerCM = 1.0,
                        QWidget* parent = nullptr);
     void exportAllStepsToImages(std::string outputFolder);
-    int ShowCoordinateSystems = 2; // 0 = none, 1 = only world, 3 = all
+    int ShowCoordinateSystems = 0; // 0 = none, 1 = only world, 3 = all
     float m_scalerCM; // Skalierungsfaktor für die Darstellung (z.B. 100.0 für cm statt m)
 
 protected:
