@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iostream>
 #include <chrono>
+#include <mutex>   // NEU: Für Thread-Sicherheit beim Dateischreiben
+#include <atomic>  // NEU: Für den globalen Counter
 
 #include "utils/ConfigLoader.h"
 #include "simpleSimulation/SSMuscle.h"
@@ -43,4 +45,11 @@ private:
         int& currentRun,
         int totalRuns,
         std::chrono::time_point<std::chrono::high_resolution_clock> startTime); // Starttime
+
+    void generateCombinations(
+        const std::vector<ParamDef>& paramDefs,
+        int currentDepth,
+        std::vector<double>& currentValues,
+        std::vector<std::vector<double>>& allJobs
+    );
 };

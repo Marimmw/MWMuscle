@@ -447,15 +447,22 @@ void VTKSimViewerSimple::updateStep(int step) {
 
     // ===== NEU: Tissue Transformation & Axes =====
     for (size_t i = 0; i < m_tissues.size(); ++i) {
-        if (i < m_tissueAxesActors.size() && m_tissueAxesActors[i]) {
+        if (i < m_tissueAxesActors.size() && m_tissueAxesActors[i] && step == 0) {
             // Wir müssen an die Historie des Tissues rankommen.
             // Falls dein Tissue keine Historie speichert, nutzen wir die aktuelle Position
             // Da updateStep oft zurückspult, musst du in main.cpp sicherstellen, 
             // dass du die Szene auf den Step 'step' updatest, bevor dieser Viewer rendert.
-            
-            updateMeshTransform(m_tissueAxesActors[i], 
-                                m_tissues[i]->OrientationGlobal, 
-                                m_tissues[i]->PositionGlobal);
+            if (step < (int)m_tissues[i]->allRMatrixGlobal.size()) {
+                updateMeshTransform(m_tissueAxesActors[i], 
+                                    m_tissues[i]->allRMatrixGlobal[step], 
+                                    m_tissues[i]->MeshPointsGlobal[step]);
+                }
+            else{
+                // Fallback: Wenn step außerhalb der Historie liegt, setze auf letzte bekannte Position
+                updateMeshTransform(m_tissueAxesActors[i], 
+                                    m_tissues[i]->OrientationGlobal, 
+                                    m_tissues[i]->PositionGlobal);
+            }
         }
     }
 

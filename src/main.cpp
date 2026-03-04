@@ -2532,7 +2532,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         std::vector<double> relTorusR = {1.85, 2.0, 2.3};
         std::vector<double> relTorusr = {1.0, 1.0, 1.2}; */
         bool bShowBody = true;
-        double off = 0.8; 
+        double off = 1.0; 
 
         // 1. ROOT
         rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0,0,0), MWMath::RotMatrix3x3(), nullptr);
@@ -2548,7 +2548,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         if (bShowBody) meshes.push_back(mesh1);
         // Torus 1
         auto mTorus1 = std::make_shared<SSTorusMesh>(mesh1->B * relTorusR[0], mesh1->B * relTorusr[0], 
-             "Torus1", body1, MWMath::Point3D(0, -width[0]*off, L1 * relTorusPos[0]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(1, 0, 0));
+             "Torus1", body1, MWMath::Point3D(L1 * relTorusPos[0], -width[0]*off, 0.), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(1, 0, 0));
         meshes.push_back(mTorus1);
 
         MWMath::Point3D jointPosRel1 = MWMath::Point3D(L1, 0, 0);
@@ -2587,7 +2587,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         if (bShowBody) meshes.push_back(mesh2);
         // Torus 2
         auto mTorus2 = std::make_shared<SSTorusMesh>(mesh2->B * relTorusR[1], mesh2->B * relTorusr[1], 
-             "Torus2", body2, MWMath::Point3D(0, -width[1]*off, L2 * relTorusPos[1]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.8, 0.8, 0));
+             "Torus2", body2, MWMath::Point3D(L2 * relTorusPos[1], -width[1]*off, 0.), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.8, 0.8, 0));
         meshes.push_back(mTorus2);
 
 
@@ -2615,7 +2615,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         if (bShowBody) meshes.push_back(mesh3);
         // Torus 3
         auto mTorus3 = std::make_shared<SSTorusMesh>(width[2] * relTorusR[2], width[2] * relTorusr[2], 
-             "Torus3", body3, MWMath::Point3D(0, -width[2]*off, L3 * relTorusPos[2]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0, 0, 0.8));
+             "Torus3", body3, MWMath::Point3D(L3 * relTorusPos[2], -width[2]*off, 0.), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0, 0, 0.8));
         meshes.push_back(mTorus3);
 
 
@@ -3783,16 +3783,16 @@ int main(int argc, char** argv)
         // hier szene objektorientert aufbauen per funktion
         //...setupScene(currentScene, meshes, musclePtrs);
 
-        bool bParameterStudy = false;
+        // bool bParameterStudy = true;
         bool bSetupF = 0;
         if (bSetupF){
            setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
         else{
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-            //buildOHandModelOld(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            buildOHandModelOldExpanded(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-            buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEll4Hole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylCyl4Hole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
@@ -3868,7 +3868,11 @@ int main(int argc, char** argv)
                 for (auto& m : meshes) {
                             m->MeshPointsGlobal.push_back(m->PositionGlobal);
                             m->allRMatrixGlobal.push_back(m->OrientationGlobal);
-                    }
+                }
+                for (auto& t : tissue) {
+                            t->MeshPointsGlobal.push_back(t->PositionGlobal);
+                            t->allRMatrixGlobal.push_back(t->OrientationGlobal);
+                }
                         
                 // re-dicretize meshes for new position
                 for (auto& m : meshes) {
@@ -4043,7 +4047,7 @@ int main(int argc, char** argv)
                     exportMuscleLog(sys->CasadiSystemName, mus, sys->SolverConvergenceMessages, UNITS);
                 }
             }
-            backupSourceCode();
+            backupSourceCode(__FILE__);
 
             std::vector<SSJoint*> joints;
             for (const auto& tis : tissue) {

@@ -325,11 +325,12 @@ inline void exportMuscleLengthLog(const std::vector<SSMuscle*>& muscles, const s
     std::cout << "Log erfolgreich exportiert nach: " << fullPath << std::endl;
 }
 
-void backupSourceCode() {
+void backupSourceCode(const std::string& callerFilePath) {
     namespace fs = std::filesystem;
     // 1. Pfad zur aktuellen Quelldatei (wird vom Compiler gesetzt)
-    fs::path sourceFile = __FILE__; 
-    
+    // fs::path sourceFile = __FILE__; 
+    fs::path sourceFile = callerFilePath;
+
     // 2. Zielordner definieren (relativ zum Ausführungsort / build ordner)
     // Passe diesen Pfad an, falls dein build-Ordner woanders liegt
     fs::path targetDir = "../examples/results";

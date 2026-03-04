@@ -26,6 +26,8 @@ public:
     std::vector<std::shared_ptr<SSTissue>> Children;
     MWMath::Point3D Position2ParentRelInParentFrame = MWMath::Point3D(0.0, 0.0, 0.0);
     MWMath::RotMatrix3x3 Orientation2ParentRel = MWMath::RotMatrix3x3();
+    std::vector<MWMath::Point3D> MeshPointsGlobal; // Globale Punkte des Meshes
+    std::vector<MWMath::RotMatrix3x3> allRMatrixGlobal; // Alle Rotationsmatrizen für alle Simulationsschritte
     std::shared_ptr<SSTissue> Parent = nullptr;
     int SystemLayer = 0; // Root = 0, Kinder von Root = 1, etc. -> für Update-Reihenfolge und Debug-Ausgaben
     bool bDebug = false;

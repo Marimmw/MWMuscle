@@ -39,8 +39,8 @@ public:
     // MWMath::Point3D PositionGlobal = MWMath::Point3D(0.0, 0.0, 0.0);
     // MWMath::RotMatrix3x3 OrientationGlobal = MWMath::RotMatrix3x3();
     // MWMath::Point3D MeshColor = MWMath::Point3D(0.7, 0.7, 0.7); // RGB Werte zwischen 0 und 1
-    std::vector<MWMath::Point3D> MeshPointsGlobal; // Globale Punkte des Meshes
-    std::vector<MWMath::RotMatrix3x3> allRMatrixGlobal; // Alle Rotationsmatrizen für alle Simulationsschritte
+    /* std::vector<MWMath::Point3D> MeshPointsGlobal; // Globale Punkte des Meshes
+    std::vector<MWMath::RotMatrix3x3> allRMatrixGlobal; // Alle Rotationsmatrizen für alle Simulationsschritte */
     std::vector<MWMath::Point3D> GlobalDiscreteMeshPoints;
     std::vector<MWMath::Point3D> AllScalerStepLists;
 

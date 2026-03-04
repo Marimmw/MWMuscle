@@ -1,8 +1,8 @@
 #include "casadiSystem.h"
 
-CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas, bool bDebug)
+CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas, bool bDebug, bool bWriteFiles)
     : m_muscles(muscles), objType(objType), Version(version), ParametrizationType(parametrizationType),
-        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas), bDebug(bDebug)
+        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas), bDebug(bDebug), bWriteFiles(bWriteFiles)
 {
     CasadiSystemName = "CasSys_" + (m_muscles.empty() ? "Empty" : m_muscles[0]->Name);
 
@@ -109,9 +109,11 @@ void CasadiSystem::setupCasadiSum()
     opts["ipopt.tol"] = maxTol;
     opts["ipopt.linear_solver"] = "mumps";
     opts["ipopt.hessian_approximation"] = "limited-memory"; // "limited-memory" or "exact"
-    std::string filename = "../examples/results/solver_log_" + CasadiSystemName + ".txt";
-    opts["ipopt.output_file"] = filename; 
-    opts["ipopt.file_print_level"] = 5;
+    if (bWriteFiles) {
+        std::string filename = "../examples/results/solver_log_" + CasadiSystemName + ".txt";
+        opts["ipopt.output_file"] = filename; 
+        opts["ipopt.file_print_level"] = 5;
+    }
 
     // extra
     /* opts["ipopt.max_soc"] = 4; // WICHTIG: In CasADi heißt die Option oft "max_soc", nicht "max_soc_iter"!

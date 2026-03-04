@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt5 REQUIRED COMPONENTS Widgets)
 find_package(VTK REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(OpenMP REQUIRED)
 
 #file(GLOB_RECURSE MODEL_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/model/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/model/*.h)
 #file(GLOB_RECURSE RENDERER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/*.h)
@@ -48,6 +49,7 @@ target_link_libraries(MWMuscle
     Qt5::Widgets
     ${VTK_LIBRARIES}         # VTK muss hier bleiben
     casadi
+    OpenMP::OpenMP_CXX
 )
 
 vtk_module_autoinit(

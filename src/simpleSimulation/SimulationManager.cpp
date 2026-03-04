@@ -1,11 +1,21 @@
 #include "SimulationManager.h"
 #include <iomanip>  // Für std::setw und std::left
 #include <sstream>  // Für std::stringstream
+#include <omp.h>
+
+// ANSI Farbcodes
+const std::string COLOR_RESET  = "\033[0m";
+const std::string COLOR_GREEN  = "\033[32m";
+const std::string COLOR_RED    = "\033[31m";
+const std::string COLOR_YELLOW = "\033[33m";
+const std::string COLOR_CYAN   = "\033[36m";
+
+std::mutex casadiSetupMutex;
 
 SimulationManager::SimulationManager(const SimSettings& config) : m_cfg(config) {}
 
 void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs) {
-    // 1. Gesamtzahl der Iterationen berechnen
+    /* // 1. Gesamtzahl der Iterationen berechnen
     int totalRuns = 1;
     for (const auto& p : paramDefs) {
         totalRuns *= (p.steps > 0 ? p.steps : 1);
@@ -45,17 +55,83 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
     
     auto endTime = std::chrono::high_resolution_clock::now();
     auto total_min = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime).count();
-    std::cout << "Parameterstudie erfolgreich beendet in " << total_min << " Minuten!" << std::endl;
+    std::cout << "Parameterstudie erfolgreich beendet in " << total_min << " Minuten!" << std::endl; */
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    // 1. JOBS GENERIEREN (Sekundensache)
+    std::vector<std::vector<double>> allJobs;
+    std::vector<double> currentValues;
+    currentValues.reserve(paramDefs.size());
+    generateCombinations(paramDefs, 0, currentValues, allJobs);
+    
+    int totalRuns = allJobs.size();
+    std::cout << "Starte Parameterstudie (" << totalRuns << " Iterationen, auf mehreren Kernen)..." << std::endl;
+
+    // 2. DATEI VORBEREITEN
+    std::ofstream outFile("../examples/results/ParameterStudy_Summary.txt");
+    int goodScore = m_cfg.numTimeSteps * 40;
+    std::string scoreHeader = "Score(<" + std::to_string(goodScore) + ")";
+
+    outFile << std::left << std::setw(15) << scoreHeader << "\t" << std::setw(15) << "Successes" << "\t";
+    for (const auto& p : paramDefs) outFile << std::setw(12) << p.name << "\t";
+    outFile << "Step_Details [Code(Iter)] (0=Succ, 1=Max, 2=Inf)\n";
+    outFile << std::string(90 + paramDefs.size() * 15, '-') << "\n";
+
+    // 3. THREAD-SICHERE VARIABLEN
+    std::mutex fileMutex;          // Sichert das Schreiben in die Datei
+    std::atomic<int> currentRun{0}; // Zählt sicher hoch, egal welcher Thread gerade fertig wird
+
+    // ==============================================================================
+    // 4. PARALLELE SCHLEIFE (Hier passiert die Magie!)
+    // schedule(dynamic) teilt die Jobs intelligent zu: Wenn ein Kern früher 
+    // fertig ist (z.B. weil Casadi schnell infeasible war), bekommt er direkt den nächsten Job.
+    // ==============================================================================
+    int maxThreads = omp_get_max_threads();
+    int useThreads = 1; // (maxThreads > 2) ? maxThreads - 2 : 1;
+    std::cout << "Nutze " << useThreads << " von " << maxThreads << " verfuegbaren Threads." << std::endl;
+    #pragma omp parallel for schedule(dynamic) num_threads(useThreads)
+
+    for (int i = 0; i < totalRuns; ++i) {
+        
+        // Führe die Simulation lokal im Thread aus
+        std::string resultLine = runSingleSimulation(allJobs[i]);
+        
+        // --- KRITISCHER BEREICH (Immer nur 1 Thread darf hier gleichzeitig rein) ---
+        {
+            std::lock_guard<std::mutex> lock(fileMutex);
+            outFile << resultLine << "\n";
+            outFile.flush();
+            
+            currentRun++;
+            
+            // Output alle 10 Runs (oder beim letzten)
+            if (currentRun % 1 == 0 || currentRun == totalRuns) {
+                auto now = std::chrono::high_resolution_clock::now();
+                auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
+                
+                std::string printColor = COLOR_RESET;
+                if (resultLine.find("Success") != std::string::npos) printColor = COLOR_GREEN;
+                else if (resultLine.find("Failed") != std::string::npos) printColor = COLOR_RED;
+
+                std::cout << COLOR_CYAN << "[Study Progress] " << COLOR_RESET 
+                          << "Run " << currentRun << " / " << totalRuns 
+                          << " | Letzter Status: " << printColor << (resultLine.find("Success") != std::string::npos ? "SUCCESS" : "FAILED") << COLOR_RESET
+                          << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
+                          << std::endl;
+            }
+        }
+        // --- KRITISCHER BEREICH ENDE ---
+    }
+
+    outFile.close();
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto total_min = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime).count();
+    std::cout << "\n" << COLOR_GREEN << "Parameterstudie erfolgreich beendet in " << total_min << " Minuten!" << COLOR_RESET << std::endl;
+
 }
 
-void SimulationManager::runCombinationsRecursive(
-    const std::vector<ParamDef>& paramDefs,
-    int currentDepth,
-    std::vector<double>& currentValues,
-    std::ofstream& outFile,
-    int& currentRun,
-    int totalRuns,
-    std::chrono::time_point<std::chrono::high_resolution_clock> startTime) 
+void SimulationManager::runCombinationsRecursive(const std::vector<ParamDef>& paramDefs, int currentDepth, std::vector<double>& currentValues, std::ofstream& outFile, int& currentRun, int totalRuns, std::chrono::time_point<std::chrono::high_resolution_clock> startTime) 
 {
     // ABBRUCHBEDINGUNG: Wir sind in der innersten Schleife angekommen!
     if (currentDepth == paramDefs.size()) {
@@ -112,10 +188,18 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     }
 
     // 3. Solver Setup
+    // --- KRITISCHER BEREICH: CasADi Setup ---
+    {
+        std::lock_guard<std::mutex> lock(casadiSetupMutex);
+        for (auto* mus : musclePtrs) {
+            std::vector<SSMuscle*> singleMuscleList = {mus};
+            systems.push_back(new CasadiSystem(singleMuscleList, m_cfg.objFunc, m_cfg.solverMethod, m_cfg.casadiParametrization, m_cfg.bUseManualJacobian, m_cfg.bSumPhiEta, m_cfg.bUseWarmstartEtas, false, false));
+            mus->initializeSimulationMuscle(m_cfg.numTimeSteps);
+        }
+    }
+    // ------------------------------------------
+
     for (auto* mus : musclePtrs) {
-        std::vector<SSMuscle*> singleMuscleList = {mus};
-        systems.push_back(new CasadiSystem(singleMuscleList, m_cfg.objFunc, m_cfg.solverMethod, m_cfg.casadiParametrization, m_cfg.bUseManualJacobian, m_cfg.bSumPhiEta, m_cfg.bUseWarmstartEtas, false));
-        mus->initializeSimulationMuscle(m_cfg.numTimeSteps);
         mus->checkCollision();
     }
 
@@ -220,3 +304,28 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
                           
     return ss.str();
 }
+
+
+// Rekursive Funktion füllt nur noch die Job-Liste auf
+void SimulationManager::generateCombinations(const std::vector<ParamDef>& paramDefs,int currentDepth,std::vector<double>& currentValues,std::vector<std::vector<double>>& allJobs) 
+{
+    if (currentDepth == paramDefs.size()) {
+        allJobs.push_back(currentValues);
+        return; 
+    }
+
+    const ParamDef& currentDef = paramDefs[currentDepth];
+    double stepSize = 0.0;
+    if (currentDef.steps > 1) {
+        stepSize = (currentDef.end - currentDef.start) / (currentDef.steps - 1);
+    }
+
+    for (int i = 0; i < currentDef.steps; ++i) {
+        double val = currentDef.start + i * stepSize;
+        currentValues.push_back(val); 
+        generateCombinations(paramDefs, currentDepth + 1, currentValues, allJobs);
+        currentValues.pop_back(); 
+    }
+}
+
+
