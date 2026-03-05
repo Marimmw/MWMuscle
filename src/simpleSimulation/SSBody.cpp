@@ -55,6 +55,7 @@ int SSJoint::update(int step)
                     newAngle = AngleSteps.back(); // Wenn mehr Schritte als definiert, letzten Winkel beibehalten
                 }
             }
+            //qDebug() << QString("   ").repeated(SystemLayer) << "|      " << QString::fromStdString(Name) <<  " Step: " << step << ", New Angle: " << newAngle;
             jointRotation = jointRotation * MWMath::axisAngle(axis, newAngle);
             jointHalfRotation = jointHalfRotation * MWMath::axisAngle(axis, newAngle * 0.5);
             DoneAngleSteps.push_back(newAngle);

@@ -172,3 +172,33 @@ public:
 
 private:
 };
+
+
+class SSSmileMesh : public SSMesh {
+public:
+    SSSmileMesh(double a, double b, double c) : A(a), B(b), C(c) {MViaPointTolerance = std::max({a, b, c}); }
+    SSSmileMesh(double a, double b, double c,
+                    std::string name, 
+                    std::shared_ptr<SSTissue> parent,
+                    MWMath::Point3D relPos, 
+                    MWMath::RotMatrix3x3 relRot, 
+                    MWMath::Point3D color)
+        : SSMesh(name, parent, relPos, relRot, color), // Ruft Basis auf
+          A(a), B(b), C(c)                             // Initialisiert EIGENE Member
+    {
+        MViaPointTolerance = std::max({a, b, c});
+    }
+    ~SSSmileMesh() override = default;   
+
+    casadi::MX constraintJacobian(casadi::MX gamma, casadi::MX q) override;
+    casadi::MX constraintDistance(casadi::MX gamma, casadi::MX q) override;
+    double getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance=false) override;
+
+    virtual void discretizeMesh(int discrCount) override;
+
+    double A = 1.0;
+    double B = 1.0;
+    double C = 1.0;
+private:
+};
+

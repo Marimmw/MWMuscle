@@ -20,15 +20,10 @@ Git push
 0. git reset
 
 UMITTELBAR
--> 
+-> test new "oldModel" -> verlängere muskel, finer discretization und dann arbeitsraum test
 
 WEITER MIT:
 - "exact" hand model
-- Setup first hand model
-    -> add parametrizatiable finger to hand
-    -> ellipsoids as thick as bone in the middle part
-- Moment Arm conpuation (per muscle or per joint)
-- complex initial guess path through tori(+bodies)
 - evtl scalable torus
 - wie viele körper infeasible?
 

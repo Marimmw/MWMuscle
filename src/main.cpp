@@ -15,7 +15,7 @@
 #include "simpleSimulation/SSBody.h"
 #include "simpleSimulation/SimulationManager.h"
 
-std::vector<double> FJAngles = {0.0, 0.0, 90.0, 90.0}; // MCP1, MCP2, PIP, DIP 
+std::vector<double> FJAngles = {90.0, 0.0, 100.0, 90.0}; // MCP1, MCP2, PIP, DIP 
 float VIEWSCALER = 1.0f; // VIEWER in [cm]
 float GEOMETRYSCALER = 1.0f; // GEOMETRIE in [cm]
 std::string UNITS = "cm"; // Einheiten für Export (z.B. "m" für Meter, "cm" für Zentimeter, etc.)
@@ -3790,7 +3790,7 @@ int main(int argc, char** argv)
         else{
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-            buildOHandModelOldExpanded(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            currentScene = buildOHandModelOldExpanded(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
@@ -3842,7 +3842,7 @@ int main(int argc, char** argv)
 
             
             // MOVE MESHES / UPDATE SCENE
-            if (currentScene[0] == 'O' || currentScene == "NONE" || currentScene == "FINGER_SIMPLE2" || currentScene == "FINGER_SIMPLE4" || currentScene == "FINGER_SIMPLE4T"){ 
+            if (currentScene[0] == 'O' || currentScene[0] == 'b' || currentScene == "NONE" || currentScene == "FINGER_SIMPLE2" || currentScene == "FINGER_SIMPLE4" || currentScene == "FINGER_SIMPLE4T"){ 
                 if (rootSystem) {
                     // Ein einziger Aufruf aktualisiert den gesamten Baum!
                     /* rootSystem->Position2ParentRelInParentFrame += MWMath::Point3D(0.2,0.2,0.2);
@@ -3989,6 +3989,7 @@ int main(int argc, char** argv)
         }
 
         // --- 5. VIEWER ---
+        qDebug() << "======================= LAUNCH VIEWER ========================";
         std::vector<std::vector<std::string>> viewerText;
         for (int t = 0; t < numTimeSteps; ++t) {
             std::vector<std::string> stepText;

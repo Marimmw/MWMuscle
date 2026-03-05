@@ -651,3 +651,185 @@ void SSEllipticalTorusMesh::discretizeMesh(int discrCount)
         }
     }
 }
+
+
+// SMILE MESH
+casadi::MX SSSmileMesh::constraintDistance(casadi::MX gamma, casadi::MX q) {
+    casadi::MX phi  = q(casadi::Slice(0, 3));
+    casadi::MX d1   = q(casadi::Slice(3, 6));
+    casadi::MX d2   = q(casadi::Slice(6, 9));
+    casadi::MX d3   = q(casadi::Slice(9, 12));
+    casadi::MX diff = gamma - phi;
+
+    // Skalierte Projektionen in den lokalen Raum
+    casadi::MX x = casadi::MX::dot(diff, d1) / A;
+    casadi::MX y = casadi::MX::dot(diff, d2) / B;
+    casadi::MX z = casadi::MX::dot(diff, d3) / C;
+
+    // Quadrate vorberechnen, da sie mehrfach gebraucht werden
+    casadi::MX x2 = pow(x, 2);
+    casadi::MX y2 = pow(y, 2);
+    casadi::MX z2 = pow(z, 2);
+
+    // Basis-Terme der Smile-Surface
+    casadi::MX U = y - x2 - y2 + 1.0;
+    casadi::MX V = x2 + y2 + z2;
+
+    // Distanzfunktion (impliziter Wert)
+    return pow(U, 4) + pow(V, 4) - 1.0;
+}
+
+void SSSmileMesh::discretizeMesh(int discrCount)
+{
+    // Sicherheitscheck
+    if (discrCount < 4) discrCount = 4;
+
+    // Da wir vorab nicht wissen, wie viele Punkte exakt gültig sind (Wurzel-Bedingung) 
+    // und wir zudem eine obere und untere Hälfte haben, nutzen wir einen dynamischen Aufbau.
+    GlobalDiscreteMeshPoints.clear();
+    
+    // Wir reservieren grob Speicher, um Reallokationen zu vermeiden (ca. 2x für +Z und -Z)
+    GlobalDiscreteMeshPoints.reserve(discrCount * discrCount * 2);
+
+    // 1. Schleife: Winkel theta (in der XY-Ebene, von 0 bis 2*PI)
+    for (int i = 0; i < discrCount; ++i) {
+        double theta = (2.0 * M_PI * (double)i) / (double)discrCount;
+        double cos_theta = std::cos(theta);
+        double sin_theta = std::sin(theta);
+
+        // 2. Schleife: Parameter w (von -1 bis 1)
+        for (int j = 0; j < discrCount; ++j) {
+            
+            // Wir mappen j von [0, discrCount-1] auf w in [-1.0, 1.0]
+            double w = -1.0 + (2.0 * (double)j) / (double)(discrCount - 1);
+            
+            // --- Schritt A: Radius rho berechnen ---
+            // Formel: rho = (sin(theta) + sqrt(sin^2(theta) + 4(1 - w))) / 2
+            double term_under_rho_root = (sin_theta * sin_theta) + 4.0 * (1.0 - w);
+            
+            // Sicherheitshalber abfangen (sollte wegen w <= 1 immer positiv sein)
+            if (term_under_rho_root < 0.0) continue; 
+            
+            double rho = (sin_theta + std::sqrt(term_under_rho_root)) / 2.0;
+
+            // --- Schritt B: Z-Koordinate berechnen ---
+            // Bedingung: z^2 = sqrt[4](1 - w^4) - rho^2
+            double w4 = w * w * w * w;
+            double B_term = std::pow(1.0 - w4, 0.25); // 4. Wurzel aus (1 - w^4)
+            double rho2 = rho * rho;
+
+            double term_under_z_root = B_term - rho2;
+
+            // Nur wenn der Term positiv ist, gehört der Punkt (w, theta) zur echten Oberfläche
+            if (term_under_z_root >= 0.0) {
+                
+                // Basis-Koordinaten unskaliert
+                double z_base = std::sqrt(term_under_z_root);
+                double x_base = rho * cos_theta;
+                double y_base = rho * sin_theta;
+
+                // Mit A, B, C skalieren
+                double xLoc = A * x_base;
+                double yLoc = B * y_base;
+                double zLoc_pos = C * z_base;
+                double zLoc_neg = C * -z_base;
+
+                // --- Obere Schale (+Z) ---
+                MWMath::Point3D pLoc_pos(xLoc, yLoc, zLoc_pos);
+                MWMath::Point3D pGlob_pos = PositionGlobal + OrientationGlobal.transform(pLoc_pos);
+                GlobalDiscreteMeshPoints.push_back(pGlob_pos);
+
+                // --- Untere Schale (-Z) ---
+                // Wir fügen die negative Seite nur hinzu, wenn z nicht exakt 0 ist, 
+                // um doppelte Punkte an den Nahtstellen/Kanten zu vermeiden.
+                if (z_base > 1e-6) {
+                    MWMath::Point3D pLoc_neg(xLoc, yLoc, zLoc_neg);
+                    MWMath::Point3D pGlob_neg = PositionGlobal + OrientationGlobal.transform(pLoc_neg);
+                    GlobalDiscreteMeshPoints.push_back(pGlob_neg);
+                }
+            }
+        }
+    }
+    
+    // Optional: Überflüssigen Speicher freigeben
+    GlobalDiscreteMeshPoints.shrink_to_fit();
+}
+
+double SSSmileMesh::getDistanceNumerically(MWMath::Point3D pGlobal, bool signedDistance) {
+    if (GlobalDiscreteMeshPoints.empty()) {
+        MWMath::Point3D diff = pGlobal - PositionGlobal;
+        MWMath::Point3D pLoc = OrientationGlobal.transposed().transform(diff);
+        // Fallback: Wenn keine diskreten Punkte vorhanden sind, verwenden wir den Abstand zum Zentrum.
+        // Bei skalierten Flächen ist das sehr grob, aber als Fallback absolut ausreichend.
+        return std::sqrt(pLoc.x * pLoc.x + pLoc.y * pLoc.y + pLoc.z * pLoc.z);
+    }
+    else {
+        double minDistSq = std::numeric_limits<double>::max();
+        for (const auto& discMeshP : GlobalDiscreteMeshPoints) {
+            // Berechnet die Distanz (oder quadrierte Distanz, je nach Implementierung deiner Library)
+            double dist = MWMath::distance(pGlobal, discMeshP);
+            // Wir gehen hier davon aus, dass wir Vergleiche optimieren (falls distSq genutzt wird)
+            if (dist < minDistSq) {
+                minDistSq = dist;
+            }
+        }
+        
+        // Falls deine Funktion MWMath::distance tatsächlich die quadrierte Distanz zurückgibt,
+        // solltest du hier return std::sqrt(minDistSq); verwenden. 
+        // Wenn sie die echte Distanz liefert, reicht return minDistSq;
+        return minDistSq; 
+    }
+}
+
+casadi::MX SSSmileMesh::constraintJacobian(casadi::MX gamma, casadi::MX q) {
+    //qDebug() << "Using manual Jacobi (Smile Surface)";
+    using namespace casadi;
+    
+    // 1. Parameter entpacken
+    MX p_center = q(Slice(0, 3));
+    MX p_rot    = q(Slice(3, 12));
+    MX R_mat    = MX::reshape(p_rot, 3, 3);
+    
+    // 2. Relativvektor zum Zentrum
+    MX diff = gamma - p_center;
+
+    // 3. Direktoren (Achsen) extrahieren -> Spalten von R_mat
+    MX d1 = R_mat(Slice(), 0);
+    MX d2 = R_mat(Slice(), 1);
+    MX d3 = R_mat(Slice(), 2);
+
+    // Skalierte lokale Koordinaten ermitteln
+    MX x = MX::dot(diff, d1) / A;
+    MX y = MX::dot(diff, d2) / B;
+    MX z = MX::dot(diff, d3) / C;
+
+    MX x2 = pow(x, 2);
+    MX y2 = pow(y, 2);
+    MX z2 = pow(z, 2);
+
+    // 4. Hilfsterme berechnen (U und V wie in der Distanzfunktion)
+    MX U = y - x2 - y2 + 1.0;
+    MX V = x2 + y2 + z2;
+
+    MX U3 = pow(U, 3);
+    MX V3 = pow(V, 3);
+
+    // 5. Partielle Ableitungen nach den skalierten lokalen Achsen
+    // dF/dx = 8x * (V^3 - U^3)
+    MX dF_dx = 8.0 * x * (V3 - U3);
+    
+    // dF/dy = 4U^3 * (1 - 2y) + 8y * V^3
+    MX dF_dy = 4.0 * U3 * (1.0 - 2.0 * y) + 8.0 * y * V3;
+    
+    // dF/dz = 8z * V^3
+    MX dF_dz = 8.0 * z * V3;
+
+    // 6. Kettenregel für den Gradienten im globalen Raum
+    // Multiplikation mit den Basisvektoren und der inneren Ableitung der Skalierung (1/A, 1/B, 1/C)
+    MX term1 = (dF_dx / A) * d1;
+    MX term2 = (dF_dy / B) * d2;
+    MX term3 = (dF_dz / C) * d3;
+    
+    return term1 + term2 + term3;
+}
+

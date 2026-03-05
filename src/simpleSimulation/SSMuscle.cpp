@@ -7,13 +7,15 @@
 
 void SSMuscle::createMusclePoints()
 {
+    qDebug() << "Create Muscle Points for Muscle: " << QString::fromStdString(Name);
     MusclePointsGlobal.clear();
     MNodes.clear();
     MusclePointsGlobal.reserve(MNodesCount);
     MNodes.reserve(MNodesCount);
 
-    InsertionPointGlobal = parentMeshInsertion ? parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal.transform(InsertionPointLocal) : InsertionPointLocal;
-    OriginPointGlobal = parentMeshOrigin ? parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal.transform(OriginPointLocal) : OriginPointLocal;
+    OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
+    InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
+    
     MWMath::Point3D direction = (InsertionPointGlobal - OriginPointGlobal) * (1/distance(InsertionPointGlobal, OriginPointGlobal));
     for (int i = 0; i < MNodesCount; ++i) {
         double t = static_cast<double>(i) / (MNodesCount - 1); // Richtiges t von 0 bis 1
@@ -59,14 +61,9 @@ void SSMuscle::createMusclePoints()
 
 void SSMuscle::createMusclePointsComplexPath(){
 
-    MWMath::Point3D pOrigGlob = parentMeshOrigin ? parentMeshOrigin->PositionGlobal : MWMath::Point3D(0,0,0);
-    MWMath::RotMatrix3x3 rOrigGlob = parentMeshOrigin ? parentMeshOrigin->OrientationGlobal : MWMath::RotMatrix3x3();
-    OriginPointGlobal = pOrigGlob + rOrigGlob.transform(OriginPointLocal);
-
-    MWMath::Point3D pInsGlob = parentMeshInsertion ? parentMeshInsertion->PositionGlobal : MWMath::Point3D(0,0,0);
-    MWMath::RotMatrix3x3 rInsGlob = parentMeshInsertion ? parentMeshInsertion->OrientationGlobal : MWMath::RotMatrix3x3();
-    InsertionPointGlobal = pInsGlob + rInsGlob.transform(InsertionPointLocal);
-
+    qDebug() << "Create Complex Muscle Points for Muscle: " << QString::fromStdString(Name);
+    OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
+    InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
 
     // gather Tori and via points
     std::vector<MWMath::Point3D> viaPointsGlobal;
