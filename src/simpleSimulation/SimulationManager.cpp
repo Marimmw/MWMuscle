@@ -111,12 +111,13 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
                 auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
                 
                 std::string printColor = COLOR_RESET;
-                if (resultLine.find("Success") != std::string::npos) printColor = COLOR_GREEN;
-                else if (resultLine.find("Failed") != std::string::npos) printColor = COLOR_RED;
+                bool isSuccess = resultLine.find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos;
+                if (isSuccess) printColor = COLOR_GREEN;
+                else if (!isSuccess) printColor = COLOR_RED;
 
                 std::cout << COLOR_CYAN << "[Study Progress] " << COLOR_RESET 
                           << "Run " << currentRun << " / " << totalRuns 
-                          << " | Letzter Status: " << printColor << (resultLine.find("Solve_Succeeded") != std::string::npos ? "SUCCESS" : "FAILED") << COLOR_RESET
+                          << " | Letzter Status: " << printColor << (isSuccess ? "SUCCESS" : "FAILED") << COLOR_RESET
                           << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
                           << std::endl;
             }
@@ -187,13 +188,14 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
             auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
             
             std::string printColor = COLOR_RESET;
-            if (resultLine.find("Success") != std::string::npos) printColor = COLOR_GREEN;
-            else if (resultLine.find("Failed") != std::string::npos) printColor = COLOR_RED;
+            bool isSuccess = resultLine.find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos;
+            if (isSuccess) printColor = COLOR_GREEN;
+            else if (!isSuccess) printColor = COLOR_RED;
 
             std::cout << COLOR_CYAN << "[Pose Study] " << COLOR_RESET 
                       << "Run " << currentRun << " / " << totalRuns 
                       << " | Pose: " << std::setw(15) << std::left << poses[i].PoseName
-                      << " | Status: " << printColor << (resultLine.find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
+                      << " | Status: " << printColor << (isSuccess ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
                       << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
                       << std::endl;
         }
@@ -255,7 +257,8 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     std::vector<CasadiSystem*> systems;
 
     // 2. Modell aufbauen (Hier gibst du deine Parameter p1-p4 an die Funktion weiter!)
-    buildOHandModelOldExpanded_paramStudy(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    std::string buildResult = buildOHandModelOldExpandedLoop(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    qDebug() << "        | Using System: " << QString::fromStdString(buildResult);
 
     for (auto& m : meshes) {
         m->discretizeMesh(m_cfg.discretization);
@@ -368,8 +371,8 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     std::string succStr = std::to_string(successCount) + "/" + std::to_string(m_cfg.numTimeSteps);
     std::stringstream ss;
     ss << std::left 
-       << std::setw(15) << score << "\t"
-       << std::setw(15) << succStr << "\t";
+       << std::setw(15) << score
+       << std::setw(15) << succStr;
        
     for (double p : params) {
         ss << std::setw(15) << p; // Parameter einfügen
@@ -379,6 +382,51 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     return ss.str();
 }
 
+std::vector<PoseDef> SimulationManager::createPoseDefs()
+{
+    // 1. Erweitere die Header-Namen um die neue Spalte für die Knoten
+    std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes"};
+    
+    // 2. Deine Parameter
+    std::vector<double> numNodes = {75, 100, 125, 150, 200};
+    
+    // 3. Temporäre Struktur für die Basis-Posen (ohne numNodes)
+    struct BasePose {
+        std::string name;
+        std::vector<double> angles;
+    };
+    
+    std::vector<BasePose> basePoses = {
+        {"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        {"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
+        {"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
+        {"Schraeger Griff",{ 0.0,   0.0, 45.0, 20.0,  45.0, 45.0}},
+        {"Krampf Pose",    { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}},
+        {"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        {"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}
+    };
+    
+    std::vector<PoseDef> variantList;
+    
+    // 4. Verschachtelte Schleife: Kombiniere jede Pose mit jeder Knotenanzahl
+    for (const auto& bp : basePoses) {
+        for (double nodes : numNodes) {
+            PoseDef p;
+            
+            // Name anpassen (z.B. "Full Fist (N=75)")
+            p.PoseName = bp.name + " (N=" + std::to_string(static_cast<int>(nodes)) + ")";
+            p.JointNames = jointNames;
+            
+            // Winkel übernehmen und am Ende die Knotenanzahl anhängen
+            p.SimulationJointAngles = bp.angles;
+            p.SimulationJointAngles.push_back(nodes); 
+            
+            variantList.push_back(p);
+        }
+    }
+    
+    return variantList;
+}
 
 // Rekursive Funktion füllt nur noch die Job-Liste auf
 void SimulationManager::generateCombinations(const std::vector<ParamDef>& paramDefs,int currentDepth,std::vector<double>& currentValues,std::vector<std::vector<double>>& allJobs) 

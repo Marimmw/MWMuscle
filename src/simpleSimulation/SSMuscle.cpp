@@ -61,7 +61,7 @@ void SSMuscle::createMusclePoints()
 
 void SSMuscle::createMusclePointsComplexPath(){
 
-    qDebug() << "     Create Complex Muscle Points for Muscle: " << QString::fromStdString(Name);
+    qDebug() << "          Create Complex Muscle Points for Muscle: " << QString::fromStdString(Name);
     OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
     InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
 

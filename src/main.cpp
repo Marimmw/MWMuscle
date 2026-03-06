@@ -3745,7 +3745,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
+    int bParameterStudy = 0; // 0=normal, 1=Parameterstudie, 2=PoseStudy
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -3771,9 +3771,9 @@ int main(int argc, char** argv)
             {"Dach-Position",{ 0.0,  0.0, 90.0,  0.0,   0.0,  0.0}, jointNames},
             {"Krallengriff", { 0.0,  0.0,  0.0,  0.0, 100.0, 80.0}, jointNames},
             {"Schraeger Griff",{0.0, 0.0, 45.0, 20.0,  45.0, 45.0}, jointNames},
-            {"Krampf Pose",  {0.0, 60.0, 90.0, 0.0, 100.0, 80.0}, jointNames},
-            {"Power Grip",   {-40.0, 0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
-            {"Dart-Wurf",    { 0.0, 30.0, 90.0,  0.0, 100.0, 80.0}, jointNames}
+            {"Krampf Pose",  {0.0, 80.0, 90.0, 0.0, 100.0, 80.0}, jointNames},
+            {"Power Grip",   {20.0, 0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
+            {"Dart-Wurf",    { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}, jointNames}
         };
 
         SimulationManager manager(cfg);
@@ -3807,13 +3807,14 @@ int main(int argc, char** argv)
         else{
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-            currentScene = buildOHandModelOldExpanded(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            currentScene = buildOHandModelOldExpandedLoop(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEll4Hole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylCyl4Hole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
         }
+        qDebug() << "Scene built: " << QString::fromStdString(currentScene);
         
 
         // re-dicretize meshes for new position

@@ -25,6 +25,8 @@ UMITTELBAR
 -> daumen hinzufügen
 -> muscles for fingers
     - extensors + exentsor torus
+-> parameter studie über die nodes(50, 100, 125, 150) -> posen
+-> wichtig muscle auf body refernzieren! -> habe jetzt das expandedloop an expanded angegelichen
 
 WEITER MIT:
 - "exact" hand model

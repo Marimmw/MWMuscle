@@ -232,11 +232,15 @@ void CasadiSystem::solveStepSum() {
     auto solverInfo = solver.stats();
     std::string status = solverInfo.at("return_status");
 
-    if (status != "Solve_Succeeded") {
-        if (bDebug) qDebug() << "    Warning: Multi-Muscle Solver Status:" << QString::fromStdString(status);
-    }
+    const std::string C_RED   = "\033[31m";
+    const std::string C_GREEN = "\033[32m";
+    const std::string C_RESET = "\033[0m";
     int convSteps = int(solverInfo.at("iter_count"));
-    if (bDebug) qDebug() << "    Solver converged in" << convSteps << "iterations";
+    if (true) { // Dein if(true) oder if(bDebug)
+        std::string stepColor = (status == "Solve_Succeeded") ? C_GREEN : C_RED;
+        std::string fullMessage = stepColor + "    Solver finished after " + std::to_string(convSteps) + " iterations" + "(" + status + ")" + C_RESET;
+        qDebug().noquote() << QString::fromStdString(fullMessage);
+    }
     SolverConvergenceMessages.push_back(QString::fromStdString(status).toStdString());
     SolverConvergenceSteps.push_back(convSteps);
     
@@ -477,11 +481,18 @@ void CasadiSystem::solveStep() {
     auto solverInfo = solver.stats();
     std::string status = solverInfo.at("return_status");
 
-    if (status != "Solve_Succeeded") {
-        if (bDebug) qDebug() << "    Warnung: Multi-Muscle Solver Status:" << QString::fromStdString(status);
-    }
+    const char* C_RED   = "\033[31m";
+    const char* C_GREEN = "\033[32m";
+    const char* C_RESET = "\033[0m";
+
     int convSteps = int(solverInfo.at("iter_count"));
-    if (bDebug) qDebug() << "    Solver converged in" << convSteps << "iterations";
+    qDebug() << "Solver status:" << QString::fromStdString(status);
+    if (bDebug) {
+        // Du kannst auch die Anzahl der Iterationen passend einfärben:
+        const char* stepColor = (status == "Solve_Succeeded") ? C_GREEN : C_RED;
+        qDebug().noquote() << stepColor << "    Solver stopped after" << convSteps << "iterations" << C_RESET;
+    }
+
     SolverConvergenceMessages.push_back(QString::fromStdString(status).toStdString());
     SolverConvergenceSteps.push_back(convSteps);
     

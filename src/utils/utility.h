@@ -6,7 +6,9 @@
 #include <fstream>
 #include <iomanip>      // Für std::setw, std::setprecision
 #include <filesystem>   // Braucht C++17 (in CMake sicherstellen!)
-
+#include <QDebug>
+#include <QString>
+#include <string>
 
 #include "simpleSimulation/SSMuscle.h"
 #include "utils/MWMath.h"
@@ -64,6 +66,38 @@ struct BodyResult {
 
 
 //namespace fs = std::filesystem;
+inline void printColorMsg(const std::string& message, int colorLevel) 
+{
+    std::string colorCode;
+    const std::string resetCode = "\033[0m";
+
+    switch(colorLevel) {
+        case 0: 
+            colorCode = "\033[31m";       // 0 = Rot (Fehler / Infeasible)
+            break;
+        case 1: 
+            colorCode = "\033[38;5;208m"; // 1 = Orange (Max-Iter Warnung / Kritisch)
+            break;
+        case 2: 
+            colorCode = "\033[33m";       // 2 = Gelb (Warnungen / Initialisierung)
+            break;
+        case 3: 
+            colorCode = "\033[96m";       // 3 = Hellblau/Cyan (Infos / Status-Updates)
+            break;
+        case 4: 
+            colorCode = "\033[32m";       // 4 = Grün (Erfolg / Solve_Succeeded)
+            break;
+        default: 
+            colorCode = resetCode;        // Fallback: Standard Terminal-Farbe
+            break;
+    }
+
+    // Alles zu einem einzigen String verschmelzen, damit qDebug keine Leerzeichen fälscht
+    std::string fullMessage = colorCode + message + resetCode;
+    
+    // Sicher ausgeben
+    qDebug().noquote() << QString::fromStdString(fullMessage);
+}
 
 inline void exportMuscleLog(const std::string& systemName, SSMuscle* muscle, std::vector<std::string> solverResults = {""}, std::string units="m") 
 {
