@@ -3745,9 +3745,9 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    bool bParameterStudy = false; // <-- HIER UMSCHALTEN
+    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
 
-    if (bParameterStudy) {
+    if (bParameterStudy == 1) {
         // ==========================================
         // MODUS 1: PARAMETERSTUDIE (Ohne Viewer)
         // ==========================================
@@ -3762,6 +3762,23 @@ int main(int argc, char** argv)
         manager.runParameterStudy(studyParams);
         
         return 0; // Fertig!
+    }
+    if (bParameterStudy == 2) {
+        std::vector<std::string> jointNames = { "Wrist_A", "Wrist_F", "MCP_A", "MCP_F" , "PIP", "DIP"};
+    
+        std::vector<PoseDef> myPoses = {
+            {"Full Fist",    { 0.0,  0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
+            {"Dach-Position",{ 0.0,  0.0, 90.0,  0.0,   0.0,  0.0}, jointNames},
+            {"Krallengriff", { 0.0,  0.0,  0.0,  0.0, 100.0, 80.0}, jointNames},
+            {"Schraeger Griff",{0.0, 0.0, 45.0, 20.0,  45.0, 45.0}, jointNames},
+            {"Krampf Pose",  {0.0, 60.0, 90.0, 0.0, 100.0, 80.0}, jointNames},
+            {"Power Grip",   {-40.0, 0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
+            {"Dart-Wurf",    { 0.0, 30.0, 90.0,  0.0, 100.0, 80.0}, jointNames}
+        };
+
+        SimulationManager manager(cfg);
+        manager.runPoseStudy(myPoses);
+        return 0;
     }
     else {
         // ==========================================
@@ -4039,7 +4056,7 @@ int main(int argc, char** argv)
         // EXPORTS 
         // ##############################################
 
-        if (!bParameterStudy) {
+        if (bParameterStudy == 0) {
             std::string outputName = systems[0]->CasadiSystemName + "InputParameters" + currentScene + ".txt";
             exportParameterLog(systems[0]->allParameterInputsAllSteps, systems[0]->allParameterInputDescriptionsAllSteps, outputName);
             

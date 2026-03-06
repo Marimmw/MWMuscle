@@ -23,12 +23,20 @@ struct ParamDef {
     std::string name; // Optional: Name des Parameters für die Zusammenfassung oder spätere Analyse
 };
 
+struct PoseDef {
+    std::string PoseName;
+    std::vector<double> SimulationJointAngles; // e.g. 10 values for 10 joints (max joint angles, sim is beginning from 0°)
+    std::vector<std::string> JointNames; // for analyisis
+};
+
 class SimulationManager {
 public:
     SimulationManager(const SimSettings& config);
 
     // Nimmt jetzt dynamisch eine Liste von Parameter-Konfigurationen auf
     void runParameterStudy(const std::vector<ParamDef>& paramDefs);
+
+    void runPoseStudy(const std::vector<PoseDef>& poses);
 
     // Nimmt den fertigen Vektor mit den aktuellen Werten für diesen EINEN Run auf
     std::string runSingleSimulation(const std::vector<double>& params);

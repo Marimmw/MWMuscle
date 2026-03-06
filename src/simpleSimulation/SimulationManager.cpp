@@ -116,7 +116,7 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
 
                 std::cout << COLOR_CYAN << "[Study Progress] " << COLOR_RESET 
                           << "Run " << currentRun << " / " << totalRuns 
-                          << " | Letzter Status: " << printColor << (resultLine.find("Success") != std::string::npos ? "SUCCESS" : "FAILED") << COLOR_RESET
+                          << " | Letzter Status: " << printColor << (resultLine.find("Solve_Succeeded") != std::string::npos ? "SUCCESS" : "FAILED") << COLOR_RESET
                           << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
                           << std::endl;
             }
@@ -129,6 +129,80 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
     auto total_min = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime).count();
     std::cout << "\n" << COLOR_GREEN << "Parameterstudie erfolgreich beendet in " << total_min << " Minuten!" << COLOR_RESET << std::endl;
 
+}
+
+void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
+    auto startTime = std::chrono::high_resolution_clock::now();
+    int totalRuns = poses.size();
+    
+    std::cout << "Starte Posen-Studie (" << totalRuns << " Griffarten, auf mehreren Kernen)..." << std::endl;
+
+    // 1. DATEI VORBEREITEN
+    std::ofstream outFile("../examples/results/PoseStudy_Summary.txt");
+    int goodScore = m_cfg.numTimeSteps * 40;
+    std::string scoreHeader = "Score(<" + std::to_string(goodScore) + ")";
+
+    // Header schreiben
+    outFile << std::left << std::setw(20) << "Pose Name" << "\t" 
+            << std::setw(15) << scoreHeader << "\t" 
+            << std::setw(15) << "Successes" << "\t";
+            
+    // Wir nehmen die Gelenk-Namen aus der ersten Pose für den Tabellenkopf
+    if (!poses.empty() && !poses[0].JointNames.empty()) {
+        for (const auto& jName : poses[0].JointNames) {
+            outFile << std::setw(10) << jName << "\t";
+        }
+    }
+    
+    outFile << "Step_Details [Code(Iter)] (0=Succ, 1=Max, 2=Inf)\n";
+    outFile << std::string(120, '-') << "\n";
+
+    // 2. THREAD-SICHERE VARIABLEN
+    std::mutex fileMutex;
+    std::atomic<int> currentRun{0}; 
+
+    int maxThreads = omp_get_max_threads();
+    int useThreads = 1; // (maxThreads > 2) ? maxThreads - 2 : 1;
+    std::cout << "Nutze " << useThreads << " von " << maxThreads << " verfuegbaren Threads." << std::endl;
+
+    // 3. PARALLELE SCHLEIFE
+    #pragma omp parallel for schedule(dynamic) num_threads(useThreads)
+    for (int i = 0; i < totalRuns; ++i) {
+        
+        // Die Simulation wird mit den maximalen Gelenkwinkeln dieser Pose aufgerufen!
+        // Der ModelBuilder in runSingleSimulation() schnappt sich params und steuert damit die Gelenke.
+        std::string resultLine = runSingleSimulation(poses[i].SimulationJointAngles);
+        
+        // --- KRITISCHER BEREICH ---
+        {
+            std::lock_guard<std::mutex> lock(fileMutex);
+            
+            // Wir fügen den Posen-Namen GANZ VORNE in den Result-String ein, damit er in der Tabelle steht
+            outFile << std::left << std::setw(20) << poses[i].PoseName << "\t" << resultLine << "\n";
+            outFile.flush();
+            
+            currentRun++;
+            
+            auto now = std::chrono::high_resolution_clock::now();
+            auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
+            
+            std::string printColor = COLOR_RESET;
+            if (resultLine.find("Success") != std::string::npos) printColor = COLOR_GREEN;
+            else if (resultLine.find("Failed") != std::string::npos) printColor = COLOR_RED;
+
+            std::cout << COLOR_CYAN << "[Pose Study] " << COLOR_RESET 
+                      << "Run " << currentRun << " / " << totalRuns 
+                      << " | Pose: " << std::setw(15) << std::left << poses[i].PoseName
+                      << " | Status: " << printColor << (resultLine.find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
+                      << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
+                      << std::endl;
+        }
+    }
+
+    outFile.close();
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto total_min = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime).count();
+    std::cout << "\n" << COLOR_GREEN << "Posen-Studie erfolgreich beendet in " << total_min << " Minuten!" << COLOR_RESET << std::endl;
 }
 
 void SimulationManager::runCombinationsRecursive(const std::vector<ParamDef>& paramDefs, int currentDepth, std::vector<double>& currentValues, std::ofstream& outFile, int& currentRun, int totalRuns, std::chrono::time_point<std::chrono::high_resolution_clock> startTime) 
@@ -181,7 +255,7 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     std::vector<CasadiSystem*> systems;
 
     // 2. Modell aufbauen (Hier gibst du deine Parameter p1-p4 an die Funktion weiter!)
-    buildOHandModel(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    buildOHandModelOldExpanded_paramStudy(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
 
     for (auto& m : meshes) {
         m->discretizeMesh(m_cfg.discretization);
@@ -301,7 +375,7 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
         ss << std::setw(15) << p; // Parameter einfügen
     }
     ss << stepResults; // Am Ende die Historie anheften
-                          
+    qDebug() << "        | Result Line: " << QString::fromStdString(ss.str());
     return ss.str();
 }
 

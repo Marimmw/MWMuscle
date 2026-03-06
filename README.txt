@@ -21,10 +21,13 @@ Git push
 
 UMITTELBAR
 -> test new "oldModel" -> verlängere muskel, finer discretization und dann arbeitsraum test
+-> weitere finger hinzufügen(loop) -> arbeitsraum testen
+-> daumen hinzufügen
+-> muscles for fingers
+    - extensors + exentsor torus
 
 WEITER MIT:
 - "exact" hand model
-- evtl scalable torus
 - wie viele körper infeasible?
 
 
