@@ -72,6 +72,9 @@ void SSMuscle::createMusclePointsComplexPath(){
             // add offset to not lie in the middle of the torus (numerics)
             viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{(torus->R-torus->r)*0.5, (torus->R-torus->r)*0.1, 0.});
         }
+        else if (mesh->bIsViaPoint){
+            viaPointsGlobal.push_back(mesh->PositionGlobal);
+        }
     }
 
     if (viaPointsGlobal.empty()) {
@@ -486,7 +489,7 @@ void SSMuscle::getViaPointNodeInfo()
     qDebug() << "   Checking Muscle: " << QString::fromStdString(Name);
     for (auto* m : meshPtrs) {
         if (m->bIsViaPoint) {
-            qDebug() << "       ViaPoint Mesh:" << QString::fromStdString(m->Name) << "(vptol=" << m->MViaPointTolerance << ")";
+            if (bMeshDistanceDebug) qDebug() << "       ViaPoint Mesh:" << QString::fromStdString(m->Name) << "(vptol=" << m->MViaPointTolerance << ")";
             double minDist = 1e10;
             int minDistIdx;
             for (size_t k = 0; k < MNodes.size(); ++k) {
@@ -497,8 +500,8 @@ void SSMuscle::getViaPointNodeInfo()
                 }
                 // qDebug() << "       " << "Node Index:" << k << "; Distanz:" << d;
             }
-            qDebug() << "           Nächstgelegener Node Index:" << minDistIdx << "; Distanz:" << minDist;
-            if (minDist > m->MViaPointTolerance) {
+            if (bMeshDistanceDebug) qDebug() << "           Nächstgelegener Node Index:" << minDistIdx << "; Distanz:" << minDist;
+            if (minDist > m->MViaPointTolerance && bMeshDistanceDebug) {
                 qDebug() << "           [WARNING] ViaPoint constraint violated at Node Index:" << minDistIdx << "-> " << minDist;
             }
         }

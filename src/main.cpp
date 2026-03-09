@@ -35,7 +35,7 @@ MWMath::Point3D ROTAXIS = MWMath::Point3D(0,1,0).normed(); // Rotationsachse fü
 double ROTENDANBGLE = 90.0; // Endwinkel der Beugung
 
 double PUSHA = 0.25, PUSHB = 0.4, PUSHC = 0.7; // Halbachsen des Pushers (Kugel)
-MWMath::Point3D MOVEDIR = MWMath::Point3D(0, -1, 0).normed(); // Verschiebung des Fingermodells beim Drücken
+MWMath::Point3D MOVEDIR = MWMath::Point3D(1, -1, 0).normed(); // Verschiebung des Fingermodells beim Drücken
 MWMath::Point3D STARTP = MWMath::Point3D(0.0, 0.3, -0.0);//MWMath::Point3D(0.0, 0.5, -0.5); // Startpunkt des Drückers
 double MOVEDIST = 1.0; // Distanz, die der Drücker bewegt wird
 
@@ -48,7 +48,7 @@ MWMath::Point3D COLORJOINT = MWMath::Point3D(0.0, 0.9, 0.3);
 MWMath::Point3D COLORFDEACTIVE = MWMath::Point3D(0.5, 0.5, 0.5);
 
 void updateSceneMovement(std::string sceneName, std::vector<std::shared_ptr<SSMesh>>& meshes, double progress){
-    if (sceneName == "ELLIPSOID_PUSH_THROUGH" || sceneName == "TORUS_PUSH_THROUGH" || sceneName == "CYLINDER_PUSH_THROUGH" || sceneName == "ELLTORUS") {
+    if (sceneName == "ELLIPSOID_PUSH_THROUGH" || sceneName == "TORUS_PUSH_THROUGH" || sceneName == "VIAPOINT_PUSH_THROUGH" || sceneName == "CYLINDER_PUSH_THROUGH" || sceneName == "ELLTORUS") {
         
         if (meshes.size() < 3) return;
 
@@ -165,6 +165,85 @@ void updateSceneMovement(std::string sceneName, std::vector<std::shared_ptr<SSMe
             }
         }
     }
+    else if (sceneName == "VIAPOINT_PUSH_THROUGH_COMPLEX"){
+        if (meshes.size() < 5) return; // 2 Anker + 3 ViaPoints = 5 Meshes
+
+        // Index-Zuordnung (basierend auf unserer Setup-Reihenfolge)
+        auto via1 = meshes[2]; // Startet bei X = -1.5
+        auto via2 = meshes[3]; // Startet bei X =  0.0
+        auto via4 = meshes[4]; // Startet bei X =  1.5
+
+        // Bewegungsprofile definieren (Abhängig vom progress 0.0 bis 1.0)
+        double moveDistY = 1.5; // Wie weit sie sich auf Y bewegen
+        double moveDistZ = 1.0; // Wie weit sie sich auf Z bewegen
+
+        // Via 1 fährt nach oben (+Y)
+        if (via1->Parent) {
+            via1->Parent->PositionGlobal = MWMath::Point3D(-1.5, moveDistY * progress, 0.0);
+            via1->PositionGlobal = via1->Parent->PositionGlobal;
+        }
+
+        // Via 2 fährt nach vorne in den Raum (+Z)
+        if (via2->Parent) {
+            via2->Parent->PositionGlobal = MWMath::Point3D(0.0, 0.0, moveDistZ * progress);
+            via2->PositionGlobal = via2->Parent->PositionGlobal;
+        }
+
+        // Via 3 fährt nach unten (-Y)
+        if (via4->Parent) {
+            via4->Parent->PositionGlobal = MWMath::Point3D(1.5, -moveDistY * progress, 0.0);
+            via4->PositionGlobal = via4->Parent->PositionGlobal;
+        }
+
+        // Orientierungen synchronisieren (Standard für alle)
+        for(auto& m : meshes) {
+            if(m->Parent) {
+                m->OrientationGlobal = m->Parent->OrientationGlobal * m->Orientation2ParentRel;
+                // PositionGlobal wurde oben schon gesetzt, aber hier ist es generisch sicher:
+                m->PositionGlobal = m->Parent->PositionGlobal + m->Parent->OrientationGlobal * m->Position2ParentRelInParentFrame;
+            }
+        }
+    }
+    else if (sceneName == "VIAPOINT_PLUSMESH"){
+        if (meshes.size() < 5) return; // 2 Anker + 3 ViaPoints = 5 Meshes
+
+        // Index-Zuordnung (basierend auf unserer Setup-Reihenfolge)
+        auto via1 = meshes[2]; // Startet bei X = -1.5
+        auto via2 = meshes[3]; // Startet bei X =  0.0
+        auto via4 = meshes[4]; // Startet bei X =  1.5
+
+        // Bewegungsprofile definieren (Abhängig vom progress 0.0 bis 1.0)
+        double moveDistY = 1.5; // Wie weit sie sich auf Y bewegen
+        double moveDistZ = 1.0; // Wie weit sie sich auf Z bewegen
+
+        // Via 1 fährt nach oben (+Y)
+        if (via1->Parent) {
+            via1->Parent->PositionGlobal = MWMath::Point3D(-1.5, moveDistY * progress, 0.0);
+            via1->PositionGlobal = via1->Parent->PositionGlobal;
+        }
+
+        // Via 2 fährt nach vorne in den Raum (+Z)
+        if (via2->Parent) {
+            via2->Parent->PositionGlobal = MWMath::Point3D(0.0, 0.5 - moveDistZ * progress, 0.2);
+            via2->PositionGlobal = via2->Parent->PositionGlobal;
+        }
+
+        // Via 3 fährt nach unten (-Y)
+        if (via4->Parent) {
+            via4->Parent->PositionGlobal = MWMath::Point3D(1.5, -moveDistY * progress, 0.0);
+            via4->PositionGlobal = via4->Parent->PositionGlobal;
+        }
+
+        // Orientierungen synchronisieren (Standard für alle)
+        for(auto& m : meshes) {
+            if(m->Parent) {
+                m->OrientationGlobal = m->Parent->OrientationGlobal * m->Orientation2ParentRel;
+                // PositionGlobal wurde oben schon gesetzt, aber hier ist es generisch sicher:
+                m->PositionGlobal = m->Parent->PositionGlobal + m->Parent->OrientationGlobal * m->Position2ParentRelInParentFrame;
+            }
+        }
+    }
+
 }
 
 
@@ -511,6 +590,233 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         mus.createMusclePoints();
         muscles.push_back(&mus);
     }
+    else if (currentScene == "VIAPOINT_PUSH_THROUGH") {
+        
+        // --- PARAMETER ---
+        double anchorRadius = 0.2;
+        double pusherRadius = 0.3;
+        double anchorDist = 2.0; // Abstand der Anker vom Zentrum (X-Achse)
+        double pushStart = 0.5;  // Startposition des Pushers (Y-Achse)
+        
+        // ==============================================================================
+        // 1. STRUKTUR AUFBAUEN (Root & Fixpunkte)
+        // ==============================================================================
+
+        // Root
+        rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0,0,0));
+        tissues.push_back(rootSystem);
+
+        // --- Linker Anker (Fix) ---
+        auto bodyLeft = std::make_shared<SSBody>("Body_Left", MWMath::Point3D(-anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyLeft);
+        tissues.push_back(bodyLeft);
+
+        // --- Rechter Anker (Fix) ---
+        auto bodyRight = std::make_shared<SSBody>("Body_Right", MWMath::Point3D(anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyRight);
+        tissues.push_back(bodyRight);
+
+        // --- Pusher (Beweglich in der Mitte) ---
+        // Startet bei Y = pushStart
+        auto bodyPusher = std::make_shared<SSBody>("Body_Pusher", MWMath::Point3D(0, pushStart, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyPusher);
+        bodyPusher->PositionGlobal = STARTP;
+        bodyPusher->OrientationGlobal = FINGERSTARTORIENTATION;
+        tissues.push_back(bodyPusher);
+
+
+        // ==============================================================================
+        // 2. MESHES HINZUFÜGEN
+        // ==============================================================================
+        
+        // Mesh Links
+        auto meshLeft = std::make_shared<SSEllipsoidMesh>(anchorRadius, anchorRadius, anchorRadius);
+        meshLeft->Name = "Mesh_Left"; meshLeft->MeshColor = {0,0,1}; // Blau
+        bodyLeft->Meshes.push_back(meshLeft); meshLeft->Parent = bodyLeft; meshes.push_back(meshLeft);
+
+        // Mesh Rechts
+        auto meshRight = std::make_shared<SSEllipsoidMesh>(anchorRadius, anchorRadius, anchorRadius);
+        meshRight->Name = "Mesh_Right"; meshRight->MeshColor = {0,1,0}; // Grün
+        bodyRight->Meshes.push_back(meshRight); meshRight->Parent = bodyRight; meshes.push_back(meshRight);
+
+        // Mesh Pusher (Rot)
+        auto meshPusher = std::make_shared<SSEllipsoidMesh>(0.1, 0.1, 0.1); // Kugel
+        // Oder flacheres Ellipsoid:
+        // auto meshPusher = std::make_shared<SSEllipsoidMesh>(pusherRadius*1.5, pusherRadius, pusherRadius*0.5); 
+        meshPusher->bIsViaPoint = true; // Wichtig für die Logik, damit er als Viapoint erkannt wird
+        meshPusher->Name = "Mesh_Pusher"; meshPusher->MeshColor = {1,0,0}; 
+        bodyPusher->Meshes.push_back(meshPusher); meshPusher->Parent = bodyPusher; meshes.push_back(meshPusher);
+
+
+        // ==============================================================================
+        // INITIALES UPDATE
+        // ==============================================================================
+        rootSystem->update(0); 
+        updateSceneMovement(currentScene, meshes, 0);
+
+        // ==============================================================================
+        // 3. MUSKEL
+        // ==============================================================================
+        
+        int numPoints = (!cfg.muscleNumPoints.empty()) ? cfg.muscleNumPoints[0] : 20;
+        
+        // Muskel spannt sich von Links nach Rechts
+        // Start/Endpunkte relativ zu den Anker-Bodies (z.B. oben drauf bei +Y)
+        static SSMuscle mus("PushedMuscle", numPoints, 
+            meshLeft.get(), {anchorRadius*1.1, 0.0, 0.0}, 
+            meshRight.get(), {-anchorRadius*1.1, 0.0, 0.0});
+        
+        // Alle Meshes als Hindernisse (Pusher + Anker, falls er sich um die Anker wickeln soll)
+        for(auto& m : meshes) {
+            mus.meshPtrs.push_back(m.get());
+        }
+
+        mus.createMusclePoints();
+        muscles.push_back(&mus);
+    }
+    else if (currentScene == "VIAPOINT_PUSH_THROUGH_COMPLEX") {
+        // --- PARAMETER ---
+        double anchorRadius = 0.2;
+        double viaRadius = 0.15;
+        double anchorDist = 3.0; // Muskel geht von X = -3 bis X = 3
+        
+        // ==============================================================================
+        // 1. STRUKTUR AUFBAUEN (Root & Fixpunkte)
+        // ==============================================================================
+        rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0,0,0));
+        tissues.push_back(rootSystem);
+
+        // --- Anker Links & Rechts (Fix für Origin/Insertion) ---
+        auto bodyLeft = std::make_shared<SSBody>("Body_Left", MWMath::Point3D(-anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyLeft);
+        tissues.push_back(bodyLeft);
+
+        auto bodyRight = std::make_shared<SSBody>("Body_Right", MWMath::Point3D(anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyRight);
+        tissues.push_back(bodyRight);
+
+        // --- 3 Bewegliche Via-Point Bodies (Starten auf der X-Achse verteilt) ---
+        auto bodyVia1 = std::make_shared<SSBody>("Body_Via1", MWMath::Point3D(-1.5, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        auto bodyVia2 = std::make_shared<SSBody>("Body_Via2", MWMath::Point3D( 0.0, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        auto bodyVia3 = std::make_shared<SSBody>("Body_Via3", MWMath::Point3D( 1.5, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        
+        rootSystem->Children.push_back(bodyVia1); tissues.push_back(bodyVia1);
+        rootSystem->Children.push_back(bodyVia2); tissues.push_back(bodyVia2);
+        rootSystem->Children.push_back(bodyVia3); tissues.push_back(bodyVia3);
+
+        // ==============================================================================
+        // 2. MESHES HINZUFÜGEN
+        // ==============================================================================
+        
+        // Anker (Nur visuell / Hindernisse)
+        auto meshLeft = std::make_shared<SSEllipsoidMesh>(anchorRadius, anchorRadius, anchorRadius);
+        meshLeft->MeshColor = {0.5, 0.5, 0.5}; meshes.push_back(meshLeft); meshLeft->Parent = bodyLeft; bodyLeft->Name = "Body_Left";
+
+        auto meshRight = std::make_shared<SSEllipsoidMesh>(anchorRadius, anchorRadius, anchorRadius);
+        meshRight->MeshColor = {0.5, 0.5, 0.5}; meshes.push_back(meshRight); meshRight->Parent = bodyRight; bodyRight->Name = "Body_Right";
+
+        // Die 3 Via-Points! (WICHTIG: bIsViaPoint = true)
+        auto meshVia1 = std::make_shared<SSEllipsoidMesh>(viaRadius, viaRadius, viaRadius);
+        meshVia1->bIsViaPoint = true; meshVia1->MeshColor = {1, 0, 0}; meshes.push_back(meshVia1); meshVia1->Parent = bodyVia1; bodyVia1->Name = "Body_Via1";
+
+        auto meshVia2 = std::make_shared<SSEllipsoidMesh>(viaRadius, viaRadius, viaRadius);
+        meshVia2->bIsViaPoint = true; meshVia2->MeshColor = {0, 1, 0}; meshes.push_back(meshVia2); meshVia2->Parent = bodyVia2; bodyVia2->Name = "Body_Via2";
+
+        auto meshVia3 = std::make_shared<SSEllipsoidMesh>(viaRadius, viaRadius, viaRadius);
+        meshVia3->bIsViaPoint = true; meshVia3->MeshColor = {0, 0, 1}; meshes.push_back(meshVia3); meshVia3->Parent = bodyVia3; bodyVia3->Name = "Body_Via3";
+
+        // Initiales Update
+        rootSystem->update(0); 
+        updateSceneMovement(currentScene, meshes, 0);
+
+        // ==============================================================================
+        // 3. MUSKEL
+        // ==============================================================================
+        int numPoints = (!cfg.muscleNumPoints.empty()) ? cfg.muscleNumPoints[0] : 25; // Gönn ihm ein paar mehr Knoten für die Kurven!
+        
+        static SSMuscle mus("PushedMuscle", numPoints, 
+            meshLeft.get(), {0.0, 0.0, 0.0}, 
+            meshRight.get(), {0.0, 0.0, 0.0});
+        
+        for(auto& m : meshes) mus.meshPtrs.push_back(m.get());
+        
+        mus.createMusclePoints();
+        muscles.push_back(&mus);
+
+        
+    }
+    else if (currentScene == "VIAPOINT_PLUSMESH") {
+        // --- PARAMETER ---
+        double anchorRadius = 0.2;
+        double viaRadius = 0.15;
+        double anchorDist = 3.0; // Muskel geht von X = -3 bis X = 3
+        
+        // ==============================================================================
+        // 1. STRUKTUR AUFBAUEN (Root & Fixpunkte)
+        // ==============================================================================
+        rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0,0,0));
+        tissues.push_back(rootSystem);
+
+        // --- Anker Links & Rechts (Fix für Origin/Insertion) ---
+        auto bodyLeft = std::make_shared<SSBody>("Body_Left", MWMath::Point3D(-anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyLeft);
+        tissues.push_back(bodyLeft);
+
+        auto bodyRight = std::make_shared<SSBody>("Body_Right", MWMath::Point3D(anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        rootSystem->Children.push_back(bodyRight);
+        tissues.push_back(bodyRight);
+
+        // --- 3 Bewegliche Via-Point Bodies (Starten auf der X-Achse verteilt) ---
+        auto bodyVia1 = std::make_shared<SSBody>("Body_Via1", MWMath::Point3D(-1.5, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        auto bodyVia2 = std::make_shared<SSBody>("Body_Via2", MWMath::Point3D( 0.0, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        auto bodyVia3 = std::make_shared<SSBody>("Body_Via3", MWMath::Point3D( 1.5, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+        
+        rootSystem->Children.push_back(bodyVia1); tissues.push_back(bodyVia1);
+        rootSystem->Children.push_back(bodyVia2); tissues.push_back(bodyVia2);
+        rootSystem->Children.push_back(bodyVia3); tissues.push_back(bodyVia3);
+
+        // ==============================================================================
+        // 2. MESHES HINZUFÜGEN
+        // ==============================================================================
+        
+        // Anker (Nur visuell / Hindernisse)
+        auto meshLeft = std::make_shared<SSEllipsoidMesh>(anchorRadius, anchorRadius, anchorRadius);
+        meshLeft->MeshColor = {0.5, 0.5, 0.5}; meshes.push_back(meshLeft); meshLeft->Parent = bodyLeft; bodyLeft->Name = "Body_Left";
+
+        auto meshRight = std::make_shared<SSEllipsoidMesh>(anchorRadius, anchorRadius, anchorRadius);
+        meshRight->MeshColor = {0.5, 0.5, 0.5}; meshes.push_back(meshRight); meshRight->Parent = bodyRight; bodyRight->Name = "Body_Right";
+
+        // Die 3 Via-Points! (WICHTIG: bIsViaPoint = true)
+        auto meshVia1 = std::make_shared<SSEllipsoidMesh>(viaRadius, viaRadius, viaRadius);
+        meshVia1->bIsViaPoint = true; meshVia1->MeshColor = {1, 0, 0}; meshes.push_back(meshVia1); meshVia1->Parent = bodyVia1; bodyVia1->Name = "Body_Via1";
+
+        auto meshVia2 = std::make_shared<SSEllipsoidMesh>(viaRadius*3, viaRadius*5, viaRadius*5);
+        meshVia2->bIsViaPoint = false; meshVia2->MeshColor = {0, 1, 0}; meshes.push_back(meshVia2); meshVia2->Parent = bodyVia2; bodyVia2->Name = "Body_Via2";
+
+        auto meshVia3 = std::make_shared<SSEllipsoidMesh>(viaRadius, viaRadius, viaRadius);
+        meshVia3->bIsViaPoint = true; meshVia3->MeshColor = {0, 0, 1}; meshes.push_back(meshVia3); meshVia3->Parent = bodyVia3; bodyVia3->Name = "Body_Via3";
+
+        // Initiales Update
+        rootSystem->update(0); 
+        updateSceneMovement(currentScene, meshes, 0);
+
+        // ==============================================================================
+        // 3. MUSKEL
+        // ==============================================================================
+        int numPoints = (!cfg.muscleNumPoints.empty()) ? cfg.muscleNumPoints[0] : 25; // Gönn ihm ein paar mehr Knoten für die Kurven!
+        
+        static SSMuscle mus("PushedMuscle", numPoints, 
+            meshLeft.get(), {0.0, 0.0, 0.0}, 
+            meshRight.get(), {0.0, 0.0, 0.0});
+        
+        for(auto& m : meshes) mus.meshPtrs.push_back(m.get());
+        
+        mus.createMusclePoints();
+        muscles.push_back(&mus);
+
+        
+    }
+    
     else if (currentScene == "OAUDE08_UPPER_LIMB") {
         
         // --- PARAMETER ---
@@ -3745,7 +4051,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 0; // 0=normal, 1=Parameterstudie, 2=PoseStudy
+    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -3767,16 +4073,20 @@ int main(int argc, char** argv)
         std::vector<std::string> jointNames = { "Wrist_A", "Wrist_F", "MCP_A", "MCP_F" , "PIP", "DIP"};
     
         std::vector<PoseDef> myPoses = {
-            {"Full Fist",    { 0.0,  0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
+            /* {"Full Fist",    { 0.0,  0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
             {"Dach-Position",{ 0.0,  0.0, 90.0,  0.0,   0.0,  0.0}, jointNames},
             {"Krallengriff", { 0.0,  0.0,  0.0,  0.0, 100.0, 80.0}, jointNames},
             {"Schraeger Griff",{0.0, 0.0, 45.0, 20.0,  45.0, 45.0}, jointNames},
-            {"Krampf Pose",  {0.0, 80.0, 90.0, 0.0, 100.0, 80.0}, jointNames},
+            {"Krampf Pose",  {0.0, 80.0, 90.0, 0.0, 100.0, 80.0}, jointNames}, 
             {"Power Grip",   {20.0, 0.0, 90.0,  0.0, 100.0, 80.0}, jointNames},
-            {"Dart-Wurf",    { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}, jointNames}
+            {"Dart-Wurf",    { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}, jointNames}*/
         };
+        
 
         SimulationManager manager(cfg);
+        myPoses = manager.createPoseDefs();
+
+        // 3. Die Studie starten
         manager.runPoseStudy(myPoses);
         return 0;
     }
@@ -3807,7 +4117,7 @@ int main(int argc, char** argv)
         else{
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-            currentScene = buildOHandModelOldExpandedLoop(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            currentScene = buildOHandModelOldExpandedViaX(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});

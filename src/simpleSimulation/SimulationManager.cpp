@@ -193,7 +193,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
             else if (!isSuccess) printColor = COLOR_RED;
 
             std::cout << COLOR_CYAN << "[Pose Study] " << COLOR_RESET 
-                      << "Run " << currentRun << " / " << totalRuns 
+                      << "Finished " << currentRun << " / " << totalRuns 
                       << " | Pose: " << std::setw(15) << std::left << poses[i].PoseName
                       << " | Status: " << printColor << (isSuccess ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
                       << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
@@ -257,7 +257,7 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     std::vector<CasadiSystem*> systems;
 
     // 2. Modell aufbauen (Hier gibst du deine Parameter p1-p4 an die Funktion weiter!)
-    std::string buildResult = buildOHandModelOldExpandedLoop(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    std::string buildResult = buildOHandModelOldExpandedViaX(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
     qDebug() << "        | Using System: " << QString::fromStdString(buildResult);
 
     for (auto& m : meshes) {
@@ -388,7 +388,7 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes"};
     
     // 2. Deine Parameter
-    std::vector<double> numNodes = {75, 100, 125, 150, 200};
+    std::vector<double> numNodes = {30,40,50};//{75, 100, 125, 150, 200};
     
     // 3. Temporäre Struktur für die Basis-Posen (ohne numNodes)
     struct BasePose {

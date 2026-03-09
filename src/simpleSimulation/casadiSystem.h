@@ -39,6 +39,9 @@ public:
 
     void solveStepSum();
     void setupCasadiSum();
+
+    void solveStepVia();
+    void setupCasadiVia();
     
     void solveStep();
 
