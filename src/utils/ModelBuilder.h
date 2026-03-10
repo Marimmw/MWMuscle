@@ -28,6 +28,26 @@ struct FingerSegParams
     double jointRadius;
 };
 
+struct ViaPointDef
+{
+    std::string name;
+    std::string refObj;
+    MWMath::Point3D relPos;
+    double tolerance = 0.01;
+};
+
+struct MuscleDef{
+    std::string name;
+    std::string originMeshName;
+    MWMath::Point3D originRelPos;
+    std::string insertionMeshName;
+    MWMath::Point3D insertionRelPos;
+    std::vector<std::string> meshes;
+    std::vector<ViaPointDef> viaPoints;
+    int numNodes = 2;
+    MWMath::Point3D mcolor;
+};
+
 
 
 
@@ -105,10 +125,237 @@ inline SSTissue* getRefTissue(std::string tissueName, std::vector<std::shared_pt
     return nullptr;
 }
 
+inline SSMesh* getRefMeshFromList(std::string meshName, std::vector<std::shared_ptr<SSMesh>>& meshes) {
+    for (const auto& mesh : meshes) {
+        if (mesh->Name == meshName) {
+            return mesh.get();
+        }
+    }
+    std::cerr << "Warnung: Mesh mit Namen '" << meshName << "' nicht gefunden!" << std::endl;
+    return nullptr;
+}
 
 ///// HAND MODEL BUILDING /////
 
 namespace Hand {
+
+    inline std::vector<MuscleDef> muscleDefs = {
+        // testmuscle
+        {
+            "TestMuscle", 
+            "", MWMath::Point3D{1.8*0.1,1.8*0.3, 0.0}, 
+            "Mesh_DP1", MWMath::Point3D{0.05*1.1, -1.8*0.097, 0.0}, 
+            {"Mesh_CarpalTunnel","MeshVP_MC1","Mesh_MC1_Joint","Mesh_PP1","MeshVP_PP1","Mesh_PIP1_Joint","Mesh_MP1","MeshVP_MP1","Mesh_DIP1_Joint","Mesh_DP1"}, 
+            {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0},
+        }
+        /* 
+        // ==========================================
+        // --- DAUMEN (Finger 1) ---
+        // ==========================================
+        {
+            "AbductorPollicisLongus", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal1", MWMath::Point3D{-0.01, 0.007, 0.0} , 
+            {}, {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorPollicisBrevis", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal1", MWMath::Point3D{-0.01, -0.02, 0.0} , 
+            {}, 
+            { {"Via1_EPB", "Mesh_Metacarpal1", MWMath::Point3D{-0.01, 0.0, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorPollicisLongus", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal1", MWMath::Point3D{-0.01, -0.02, 0.0} , 
+            {}, 
+            { {"Via1_EPL", "Mesh_Metacarpal1", MWMath::Point3D{-0.01, 0.0, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorPollicisLongus", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal1", MWMath::Point3D{0.008, -0.015, 0.0} , 
+            {}, 
+            { {"Via_FPL", "Mesh_Metacarpal1", MWMath::Point3D{0.008, 0.0, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+
+        // ==========================================
+        // --- ZEIGEFINGER (Finger 2) ---
+        // ==========================================
+        {
+            "ExtensorIndicis", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal2", MWMath::Point3D{-0.01, -0.02, 0.0} , 
+            {}, 
+            { {"Via1_EI", "Mesh_Metacarpal2", MWMath::Point3D{-0.007, 0.02, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorCarpiRadialisLongus", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal2", MWMath::Point3D{-0.006, -0.01, 0.0} , 
+            {}, {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorCarpiRadialis", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal2", MWMath::Point3D{0.006, 0.03, 0.0} , 
+            {}, {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumSuperficialis2", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal2", MWMath::Point3D{0.007, -0.025, 0.0} , 
+            {}, 
+            { {"Via_FDS2", "Mesh_Metacarpal2", MWMath::Point3D{0.008, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumProfundus2", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal2", MWMath::Point3D{0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_FDP2", "Mesh_Metacarpal2", MWMath::Point3D{0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorDigitorum2", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal2", MWMath::Point3D{-0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_ED2", "Mesh_Metacarpal2", MWMath::Point3D{-0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+
+        // ==========================================
+        // --- MITTELFINGER (Finger 3) ---
+        // ==========================================
+        {
+            "ExtensorCarpiRadialisBrevis", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal3", MWMath::Point3D{-0.006, 0.025, 0.0} , 
+            {}, 
+            { {"Via_ECRB", "Mesh_Metacarpal3", MWMath::Point3D{-0.006, 0.027, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumSuperficialis3", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal3", MWMath::Point3D{0.007, -0.025, 0.0} , 
+            {}, 
+            { {"Via_FDS3", "Mesh_Metacarpal3", MWMath::Point3D{0.008, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumProfundus3", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal3", MWMath::Point3D{0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_FDP3", "Mesh_Metacarpal3", MWMath::Point3D{0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorDigitorum3", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal3", MWMath::Point3D{-0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_ED3", "Mesh_Metacarpal3", MWMath::Point3D{-0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+
+        // ==========================================
+        // --- RINGFINGER (Finger 4) ---
+        // ==========================================
+        {
+            "PalmarisLongus", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal4", MWMath::Point3D{0.004, 0.02, 0.0} , 
+            {}, {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumSuperficialis4", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal4", MWMath::Point3D{0.007, -0.025, 0.0} , 
+            {}, 
+            { {"Via_FDS4", "Mesh_Metacarpal4", MWMath::Point3D{0.008, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumProfundus4", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal4", MWMath::Point3D{0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_FDP4", "Mesh_Metacarpal4", MWMath::Point3D{0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorDigitorum4", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal4", MWMath::Point3D{-0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_ED4", "Mesh_Metacarpal4", MWMath::Point3D{-0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+
+        // ==========================================
+        // --- KLEINER FINGER (Finger 5) ---
+        // ==========================================
+        {
+            "ExtensorCarpiUlnaris", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal5", MWMath::Point3D{-0.002, 0.02, -0.007} , 
+            {}, {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorCarpiUlnaris", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal5", MWMath::Point3D{0.009, 0.02, 0.007} , 
+            {}, {}, 
+            2, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumSuperficialis5", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal5", MWMath::Point3D{0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_FDS5", "Mesh_Metacarpal5", MWMath::Point3D{0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "FlexorDigitorumProfundus5", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal5", MWMath::Point3D{0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_FDP5", "Mesh_Metacarpal5", MWMath::Point3D{0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorDigitorum5", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal5", MWMath::Point3D{-0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_ED5", "Mesh_Metacarpal5", MWMath::Point3D{-0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        },
+        {
+            "ExtensorDigitiMinimi", 
+            "Mesh_Forearm_Placeholder", MWMath::Point3D{0.0, 0.0, 0.0}, 
+            "Mesh_Metacarpal5", MWMath::Point3D{-0.009, -0.02, 0.0} , 
+            {}, 
+            { {"Via_EDM", "Mesh_Metacarpal5", MWMath::Point3D{-0.009, 0.01, 0.0} } }, 
+            3, MWMath::Point3D{1.0, 0.0, 0.0}
+        } */
+    };
 
     // Spalten-Index-Legende:
     //  0: CMC F/E Min (Ext)  |  1: CMC F/E Max (Flex)
@@ -253,7 +500,7 @@ namespace Hand {
         std::vector<Bone> bones; // Meta, Prox, Mid, Dist
     };
 
-    class HandBuilder {
+    /* class HandBuilder {
     public:
         double HL;   // HandLength
         double HB;   // HandBreadth
@@ -263,7 +510,7 @@ namespace Hand {
             : HL(handLength), HB(handBreadth), Sign(sign) {}
 
         // Hilfsfunktion: Baut die "LookAt" Matrix
-        /* MWMath::RotMatrix3x3 buildOrientation(const MWMath::Point3D& start, const MWMath::Point3D& end) {
+        MWMath::RotMatrix3x3 buildOrientation(const MWMath::Point3D& start, const MWMath::Point3D& end) {
         
             // 1. Die Y-Achse ist genau die Richtung des Knochens (Endpunkt minus Startpunkt)
             MWMath::Point3D yAxis = (end - start).normed();
@@ -284,7 +531,7 @@ namespace Hand {
                 xAxis.y, yAxis.y, zAxis.y,
                 xAxis.z, yAxis.z, zAxis.z
             );
-        } */
+        } 
 
 
         // idx: 1 = Zeigefinger, 2 = Mittelfinger, 3 = Ringfinger, 4 = Kleiner Finger
@@ -361,9 +608,47 @@ namespace Hand {
 
             return f;
         }
-    };
+    }; */
 
 }
+
+// wk10
+inline std::string createMusclePathHand(std::shared_ptr<SSBody>& rootSystem, std::vector<std::shared_ptr<SSMesh>>& meshes, std::vector<SSMuscle*>& muscles, const SimSettings& cfg, int numNodes){
+    std::vector<MuscleDef> allMuscles = Hand::muscleDefs;
+    double scaleF = 1.0; // m -> dm
+    bool bUseViaPoints = true;
+
+    std::vector<std::string> createdMuscleNames;
+
+    for (const auto& mDef : allMuscles) {
+        std::vector<SSMesh*> pathMeshes;
+        for (const auto& meshName : mDef.meshes) {
+            if (getRefMeshFromList(meshName, meshes)) {
+                pathMeshes.push_back(getRefMeshFromList(meshName, meshes));
+            } else {
+                std::cerr << "Fehler: Mesh " << meshName << " nicht gefunden für Muskel " << mDef.name << std::endl;
+            }
+        }
+        // Origin
+        auto oriMesh = getRefMeshFromList(mDef.originMeshName, meshes);
+        SSTissue* oriBody = oriMesh ? oriMesh->Parent.get() : rootSystem.get();
+        // Insertion
+        auto insMesh = getRefMeshFromList(mDef.insertionMeshName, meshes);
+        SSTissue* insBody = insMesh ? insMesh->Parent.get() : rootSystem.get();
+
+        //int numNodes = cfg.muscleNumPoints.empty() ? 2 : cfg.muscleNumPoints[0];
+        SSMuscle* muscle = new SSMuscle(mDef.name, numNodes, oriBody, mDef.originRelPos * scaleF, insBody, mDef.insertionRelPos * scaleF);
+        muscle->meshPtrs = pathMeshes;
+        createdMuscleNames.push_back(mDef.name);
+        
+        muscle->createMusclePointsComplexPath();
+        muscle->updateMusclePointsParentsLocal();
+        muscles.push_back(muscle);
+    }
+
+    return "Created muscles: " + std::to_string(createdMuscleNames.size());
+}
+
 
 inline MWMath::Point3D getRotatedPosition(MWMath::Point3D center, double R, double angleDeg) {
     double angleRad = angleDeg * M_PI / 180.0;
@@ -2934,7 +3219,7 @@ inline std::string buildOHandModelOldExpandedViaX(std::vector<std::shared_ptr<SS
     const MWMath::Point3D COLORJOINT = MWMath::Point3D(0.0, 0.9, 0.3);
     const MWMath::Point3D COLORFDEACTIVE = MWMath::Point3D(0.5, 0.5, 0.5);
     const bool bShowBody = true;
-    qDebug ()<< "      Running 'buildOHandModelOldExpandedVia' with HAngles: "<< HAngles[0] << ", "<< HAngles[1] << ", "<< HAngles[2] << ", "<< HAngles[3] << ", "<< HAngles[4] << ", "<< HAngles[5] << " and numPoints: " << numPoints;
+    qDebug ()<< "      Running 'buildOHandModelOldExpandedViaX' with HAngles: "<< HAngles[0] << ", "<< HAngles[1] << ", "<< HAngles[2] << ", "<< HAngles[3] << ", "<< HAngles[4] << ", "<< HAngles[5] << " and numPoints: " << numPoints;
     
 
     // --- PARAMETER ---
@@ -2963,29 +3248,38 @@ inline std::string buildOHandModelOldExpandedViaX(std::vector<std::shared_ptr<SS
     MWMath::Point3D wristOffset(0.0, 0.003567 * scale, -0.003901 * scale * Sign);
     auto wristJointAbd = std::make_shared<SSJoint>("Wrist_JointAbd", wristOffset, MWMath::RotMatrix3x3(), rootSystem, FWAngles[0], MWMath::Point3D(1, 0, 0), numTimeSteps);
     tissues.push_back(wristJointAbd);
-    /* auto jMeshWrist = std::make_shared<SSEllipsoidMesh>(0.01 * scale, 0.01 * scale, 0.01 * scale, "Mesh_Wrist_Joint", wristJointAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0,0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
+    auto jMeshWrist = std::make_shared<SSEllipsoidMesh>(0.01 * scale, 0.01 * scale, 0.01 * scale, "Mesh_Wrist_Joint", wristJointAbd, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({ 1,0,0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
     meshes.push_back(jMeshWrist);
-    MeshMap["Mesh_Wrist_Joint"] = jMeshWrist.get(); */
+    MeshMap["Mesh_Wrist_Joint"] = jMeshWrist.get();
     auto wristJointFlex = std::make_shared<SSJoint>("Wrist_JointFlex", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), wristJointAbd, FWAngles[1], MWMath::Point3D(0, 0, 1), numTimeSteps);
     tissues.push_back(wristJointFlex);
 
     // --- CARPALS
     auto carpals = std::make_shared<SSBody>("Carpals", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), wristJointFlex);
     tissues.push_back(carpals);
-    double carpalThickness = width[0] * 0.5; 
-    double carpalLength = width[0] * 1.25;    
-    double carpalWidth = width[0] * 0.5 * 3.5;     
+    double carpalThickness = 0.01*scale; // width[0] * 0.5; 
+    double carpalLength = 0.174*HL*0.5;//0.02*scale; //width[0] * 1.25;    
+    double carpalWidth = 1.6*carpalLength; //0.045*scale; // width[0] * 0.5 * 3.5;     
     auto meshCarpals = std::make_shared<SSEllipsoidMesh>(carpalThickness, carpalLength, carpalWidth, "Mesh_Carpals", carpals, MWMath::Point3D(0, 0.0*scale, 0), MWMath::RotMatrix3x3(), MWMath::Point3D(0.5, 0.5, 0.5));
-    //meshes.push_back(meshCarpals);
+    meshes.push_back(meshCarpals);
     MeshMap["Mesh_Carpals"] = meshCarpals.get();
 
     // --- WRAPPING SURFACE (Karpaltunnel)
-    double flexCylRadius = 0.0115 * scale;
+    /* double flexCylRadius = 0.0115 * scale;
     double flexCylLength = 0.1400 * scale; 
-    MWMath::Point3D flexCylOffset(carpalThickness * 0.5 + flexCylRadius, 0.02 * scale, 0.0);
+    //MWMath::Point3D flexCylOffset(carpalThickness * 0.5 + flexCylRadius, 0.02 * scale, 0.0);
+    MWMath::Point3D flexCylOffset(carpalThickness * 0.5 + flexCylRadius, 0.003567 * scale, 0.0);
     auto flexorCylMesh = std::make_shared<SSCylinderMesh>(flexCylRadius, flexCylLength, "Mesh_WristFlexorCyl", rootSystem, flexCylOffset, MWMath::axisAngle({ 1, 0, 0 }, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));  
     meshes.push_back(flexorCylMesh);
-    MeshMap["Mesh_WristFlexorCyl"] = flexorCylMesh.get();
+    MeshMap["Mesh_WristFlexorCyl"] = flexorCylMesh.get(); */
+
+    double holeRadius = 0.005 * scale;   // Dicke des Knochen/Band-Rings (1 cm)
+    double tubethickness = 0.02 * scale;  // Abstand zur Schlauchmitte (1,5 cm)
+    MWMath::RotMatrix3x3 torusRot = MWMath::axisAngle({1, 0, 0}, 90.0); 
+    auto meshCarpalTunnel = std::make_shared<SSTorusMesh>(tubethickness+holeRadius, tubethickness-holeRadius,  "Mesh_CarpalTunnel",  carpals,  
+        MWMath::Point3D(carpalThickness+holeRadius*2, -carpalLength*0.2, 0.0), torusRot,  MWMath::Point3D(0.6, 0.6, 0.5));
+    meshes.push_back(meshCarpalTunnel);
+    MeshMap["Mesh_CarpalTunnel"] = meshCarpalTunnel.get();
 
 
     // ==============================================================================
@@ -3148,7 +3442,7 @@ inline std::string buildOHandModelOldExpandedViaX(std::vector<std::shared_ptr<SS
         tissues.push_back(joint3);
 
         double jointSize3 = width[2]*1.1/rWF;
-        meshName = "Mesh_PIP" + prefN + "_Joint";
+        meshName = "Mesh_DIP" + prefN + "_Joint";
         auto jMesh3 = std::make_shared<SSEllipsoidMesh>(jointSize3, jointSize3, jointSize3, meshName, joint3, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({1,0,0}, 0.0), MWMath::Point3D(0.8, 0.8, 0.0));
         meshes.push_back(jMesh3);
         MeshMap[meshName] = jMesh3.get();
@@ -3182,27 +3476,36 @@ inline std::string buildOHandModelOldExpandedViaX(std::vector<std::shared_ptr<SS
     MWMath::Point3D startOffset = MWMath::Point3D(HL*0.03,HL*0.3, 0.0); //MWMath::Point3D(mesh1->B * 1.1, 0.0, 0.0);
     auto originMesh = dynamic_cast<SSEllipsoidMesh*>(MeshMap["Mesh_MC1"]);
     auto insertionMesh = dynamic_cast<SSEllipsoidMesh*>(MeshMap["Mesh_DP1"]);
+    std::vector<std::string> refBodyNames = {"Mesh_WristFlexorCyl","MeshVP_MC1","Mesh_MC1_Joint","Mesh_PP1","MeshVP_PP1","Mesh_PIP1_Joint","Mesh_MP1","MeshVP_MP1","Mesh_DIP1_Joint","Mesh_DP1"};
     // MWMath::Point3D endOffset = MWMath::Point3D(insertionMesh->B * 1.1, 0.0, 0.0);
     MWMath::Point3D endOffset = MWMath::Point3D(insertionMesh->B * 1.1, -insertionMesh->C, 0.0);
     
-    SSMuscle* flexor = new SSMuscle("Flexor", numPoints, 
+    /* SSMuscle* flexor = new SSMuscle("Flexor", numPoints, 
         rootSystem.get(), startOffset, 
-        getRefTissue("DP1", tissues), endOffset);
+        getRefTissue("DP1", tissues), endOffset); */
 
     // Alle Hindernisse
-    for(auto& m : meshes) {
-        /* if (dynamic_cast<SSTorusMesh*>(m.get()) || m->bIsJointMesh){
+    /* for(auto& m : meshes) {
+        if (dynamic_cast<SSTorusMesh*>(m.get()) || m->bIsJointMesh){
             flexor->meshPtrs.push_back(m.get());
-        } */
+        }
+        
+        qDebug() << "      Added mesh '" << m->Name.c_str() << "' as obstacle for muscle path.";
         flexor->meshPtrs.push_back(m.get());
+    } */
+
+    /* for (auto& m : getRefMeshes(refBodyNames, MeshMap)) {
+        flexor->meshPtrs.push_back(m);
+        qDebug() << "      Added mesh '" << m->Name.c_str() << "' as obstacle for muscle path.";
     }
 
     flexor->createMusclePointsComplexPath();
-    //flexor->createMusclePoints();
     flexor->updateMusclePointsParents();
-    muscles.push_back(flexor);
+    muscles.push_back(flexor); */
 
-    return "buildOHandModelOldExpandedVia";
+    createMusclePathHand(rootSystem, meshes, muscles, cfg, numPoints);
+
+    return "buildOHandModelOldExpandedViaX";
 }
 
 
@@ -4643,5 +4946,6 @@ inline std::string buildOHandModelCylCyl4Hole(std::vector<std::shared_ptr<SSTiss
     }
     return returnString;
 }
+
 
 

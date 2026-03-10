@@ -4,6 +4,7 @@
 #include "SSMeshes.h"
 #include <QString>
 #include "SSBody.h"
+#include "utils/utility.h"
 
 void SSMuscle::createMusclePoints()
 {
@@ -468,6 +469,64 @@ int SSMuscle::checkCollision(std::vector<SSMesh *> allToCheckMeshes)
                     return 2;
                 }
             }
+        }
+    }
+    return 0;
+}
+
+int SSMuscle::checkTorusSnapThrough()
+{
+    for (auto* m : meshPtrs) {
+        auto torus = dynamic_cast<SSTorusMesh*>(m);
+        bool bSnapped = false;
+        if (torus) {
+            bSnapped = true;
+            
+            MWMath::Point3D C = torus->PositionGlobal; 
+            MWMath::Point3D N = torus->OrientationGlobal * MWMath::Point3D(0, 0, 1); 
+            
+            double R = torus->R;
+            double r = torus->r;
+            double holeRadius = R;// - r; 
+
+            // Alle Muskelabschnitte durchgehen
+            for (size_t k = 0; k < MNodes.size() - 1; ++k) {
+                
+                MWMath::Point3D P1 = MNodes[k].PositionGlobal;
+                MWMath::Point3D P2 = MNodes[k+1].PositionGlobal;
+                
+                MWMath::Point3D dir = P2 - P1; // Richtungsvektor des Muskelabschnitts
+                
+                // Dot-Product
+                double dotDirN = dir.dot(N);
+                
+                // zur Torus-Ebene -> kein Durchstechen möglich.
+                if (std::abs(dotDirN) < 1e-6) {
+                    continue; 
+                }
+                
+                // Schnittpunkt mit der Ebene berechnen 
+                MWMath::Point3D diff = C - P1;
+                double t = diff.dot(N) / dotDirN;
+                
+                if (t >= 0.0 && t <= 1.0) {
+                    
+                    // Exakter Schnittpunkt
+                    MWMath::Point3D Pint = P1 + (dir * t);
+                    
+                    // Prüfen, ob der Schnittpunkt im Loch liegt!
+                    MWMath::Point3D distVec = Pint - C;
+                    double distanceToCenter = distVec.length(); // oder sqrt(x*x + y*y + z*z)
+                    
+                    if (distanceToCenter < holeRadius) {
+                        // Muskel geht durch das Loch.
+                        bSnapped = false;
+                        break; // Schleife über Muskelabschnitte verlassen, da Snap-Through bereits erkannt 
+                    }
+                }
+            }
+
+            if (bSnapped) printColorMsg("     [WARNING] Torus" + torus->Name + " snap-through detected.", 1);
         }
     }
     return 0;

@@ -321,6 +321,7 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
             muscle->checkCollision();
             muscle->storeMNodesGlobalPositions();
             muscle->computeMuscleLength(true); // Länge berechnen
+            muscle->checkTorusSnapThrough();
         }
     }
 
@@ -388,7 +389,7 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes"};
     
     // 2. Deine Parameter
-    std::vector<double> numNodes = {30,40,50};//{75, 100, 125, 150, 200};
+    std::vector<double> numNodes = {20, 30, 50, 70};//{75, 100, 125, 150, 200};
     
     // 3. Temporäre Struktur für die Basis-Posen (ohne numNodes)
     struct BasePose {

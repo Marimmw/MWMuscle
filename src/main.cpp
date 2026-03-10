@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <unordered_map>
+#include <cmath>
 
 // test
 #include "simpleSimulation/casadiSystem.h"
@@ -4051,7 +4052,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
+    int bParameterStudy = 0; // 0=normal, 1=Parameterstudie, 2=PoseStudy
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -4111,13 +4112,14 @@ int main(int argc, char** argv)
         //...setupScene(currentScene, meshes, musclePtrs);
 
         // bool bParameterStudy = true;
+        std::vector<double> params = { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
         bool bSetupF = 0;
         if (bSetupF){
            setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
         else{
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-            currentScene = buildOHandModelOldExpandedViaX(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
+            currentScene = buildOHandModelOldExpandedViaX(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params);
             //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
@@ -4257,7 +4259,7 @@ int main(int argc, char** argv)
                 // Pfad speichern
                 mus->storeMNodesGlobalPositions();
                 mus->computeMuscleLength(true);
-
+                mus->checkTorusSnapThrough();
             }
 
             // plot further points

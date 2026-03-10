@@ -359,7 +359,7 @@ inline void exportMuscleLengthLog(const std::vector<SSMuscle*>& muscles, const s
     std::cout << "Log erfolgreich exportiert nach: " << fullPath << std::endl;
 }
 
-void backupSourceCode(const std::string& callerFilePath) {
+inline void backupSourceCode(const std::string& callerFilePath) {
     namespace fs = std::filesystem;
     // 1. Pfad zur aktuellen Quelldatei (wird vom Compiler gesetzt)
     // fs::path sourceFile = __FILE__; 

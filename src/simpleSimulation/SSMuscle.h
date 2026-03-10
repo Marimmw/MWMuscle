@@ -172,6 +172,7 @@ public:
     double computeMomentArm(int stepIdx = -1); // "-1" for all steps, otherwise specific step
 
     int checkCollision(std::vector<SSMesh*> allToCheckMeshes = {});
+    int checkTorusSnapThrough();
 
     // std::vector<SSMesh*> getReferencedMeshes(std::vector<std::string> meshNames);
     void getAttractorNodeInfo();

@@ -49,6 +49,14 @@ namespace MWMath {
             };
         }
 
+        double dot(const Point3D& other) {
+            return x * other.x + y * other.y + z * other.z;
+        }
+
+        double length() const {
+            return std::sqrt(x*x + y*y + z*z);
+        }
+
         std::string print() const {
             std::stringstream ss;
             ss << std::fixed << std::setprecision(4); // 4 Nachkommastellen
