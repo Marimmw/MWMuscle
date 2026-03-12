@@ -1,6 +1,6 @@
 #include "VTKSimViewerSimple.h"
 #include <QKeyEvent>
-
+#include <vtkPlaneSource.h>
 
 VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector<MWMath::Point3D>>>& muscleResults, 
                            const std::vector<std::vector<MWMath::RotMatrix3x3>>& meshResults,
@@ -122,7 +122,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
         mActor->GetProperty()->SetLineWidth(4);
         
         // Verschiedene Farben für verschiedene Muskeln
-        if (m == 0) {
+        /* if (m == 0) {
             mActor->GetProperty()->SetColor(0.0, 0.8, 1.0); // Cyan für Muskel 1
         } else if (m == 1) {
             mActor->GetProperty()->SetColor(1.0, 0.5, 0.0); // Orange für Muskel 2
@@ -134,7 +134,11 @@ void VTKSimViewerSimple::setupVtkPipeline() {
                 0.5 + 0.5 * std::cos((hue + 0.33) * 2 * M_PI),
                 0.5 + 0.5 * std::cos((hue + 0.67) * 2 * M_PI)
             );
-        }
+        } */
+        auto* currentMuscle = m_muscles[m];
+        mActor->GetProperty()->SetColor(currentMuscle->MeshColor.x, 
+                                        currentMuscle->MeshColor.y, 
+                                        currentMuscle->MeshColor.z);
         
         m_renderer->AddActor(mActor);
         m_muscleActors.push_back(mActor);
@@ -268,18 +272,66 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     m_worldAxes->SetAxisLabels(1); // X, Y, Z Labels anzeigen
     m_renderer->AddActor(m_worldAxes);
     
-    // ---------------------------------------------------------
-    // 6. World Coordinate System (Ursprung) - IMMER ERSTELLEN
-    // ---------------------------------------------------------
-    /* m_worldAxes = vtkSmartPointer<vtkAxesActor>::New();
-    m_worldAxes->SetTotalLength(1.0, 1.0, 1.0); 
-    m_worldAxes->SetShaftTypeToCylinder();
-    m_worldAxes->SetCylinderRadius(0.02);
-    m_worldAxes->SetAxisLabels(1);
-    m_renderer->AddActor(m_worldAxes);
-    
-    // Initiale Sichtbarkeit basierend auf ShowCoordinateSystems
-    m_worldAxes->SetVisibility(ShowCoordinateSystems >= 1); */
+    // =========================================================
+    // 7. KARTESISCHES GITTER (X-Y EBENE)
+    // =========================================================
+    double gridExtent = 5.0 * m_scalerCM; // Ausdehnung von -5 bis +5
+    double gridSpacing = 1.0 * m_scalerCM; // Alle 1 Einheit eine Linie
+    int gridRes = static_cast<int>((2.0 * gridExtent) / gridSpacing);
+
+    // --- 1. X-Y Ebene (Z = 0) ---
+    vtkNew<vtkPlaneSource> planeXY;
+    planeXY->SetOrigin(-gridExtent, -gridExtent, 0.0);
+    planeXY->SetPoint1( gridExtent, -gridExtent, 0.0);
+    planeXY->SetPoint2(-gridExtent,  gridExtent, 0.0);
+    planeXY->SetXResolution(gridRes);
+    planeXY->SetYResolution(gridRes);
+
+    vtkNew<vtkPolyDataMapper> mapperXY;
+    mapperXY->SetInputConnection(planeXY->GetOutputPort());
+    vtkNew<vtkActor> actorXY;
+    actorXY->SetMapper(mapperXY);
+    actorXY->GetProperty()->SetRepresentationToWireframe();
+    actorXY->GetProperty()->SetColor(0.25, 0.25, 0.3); // Leicht bläulich (Z-Achse)
+    actorXY->GetProperty()->SetOpacity(0.3);
+    actorXY->GetProperty()->SetLighting(false);
+    m_renderer->AddActor(actorXY);
+
+    // --- 2. X-Z Ebene (Y = 0) - Der "Boden" ---
+    vtkNew<vtkPlaneSource> planeXZ;
+    planeXZ->SetOrigin(-gridExtent, 0.0, -gridExtent);
+    planeXZ->SetPoint1( gridExtent, 0.0, -gridExtent);
+    planeXZ->SetPoint2(-gridExtent, 0.0,  gridExtent);
+    planeXZ->SetXResolution(gridRes);
+    planeXZ->SetYResolution(gridRes);
+
+    vtkNew<vtkPolyDataMapper> mapperXZ;
+    mapperXZ->SetInputConnection(planeXZ->GetOutputPort());
+    vtkNew<vtkActor> actorXZ;
+    actorXZ->SetMapper(mapperXZ);
+    actorXZ->GetProperty()->SetRepresentationToWireframe();
+    actorXZ->GetProperty()->SetColor(0.25, 0.3, 0.25); // Leicht grünlich (Y-Achse)
+    actorXZ->GetProperty()->SetOpacity(0.3);
+    actorXZ->GetProperty()->SetLighting(false);
+    //m_renderer->AddActor(actorXZ);
+
+    // --- 3. Y-Z Ebene (X = 0) - Die "Wand" ---
+    vtkNew<vtkPlaneSource> planeYZ;
+    planeYZ->SetOrigin(0.0, -gridExtent, -gridExtent);
+    planeYZ->SetPoint1(0.0,  gridExtent, -gridExtent);
+    planeYZ->SetPoint2(0.0, -gridExtent,  gridExtent);
+    planeYZ->SetXResolution(gridRes);
+    planeYZ->SetYResolution(gridRes);
+
+    vtkNew<vtkPolyDataMapper> mapperYZ;
+    mapperYZ->SetInputConnection(planeYZ->GetOutputPort());
+    vtkNew<vtkActor> actorYZ;
+    actorYZ->SetMapper(mapperYZ);
+    actorYZ->GetProperty()->SetRepresentationToWireframe();
+    actorYZ->GetProperty()->SetColor(0.3, 0.25, 0.25); // Leicht rötlich (X-Achse)
+    actorYZ->GetProperty()->SetOpacity(0.3);
+    actorYZ->GetProperty()->SetLighting(false);
+    //m_renderer->AddActor(actorYZ);
     
 
     // 1. Vector zu einem String mit Zeilenumbrüchen (\n) zusammenfügen

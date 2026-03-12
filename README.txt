@@ -20,12 +20,10 @@ Git push
 0. git reset
 
 UMITTELBAR
--> test new "oldModel" -> verlängere muskel, finer discretization und dann arbeitsraum test
--> weitere finger hinzufügen(loop) -> arbeitsraum testen
--> daumen hinzufügen
+-> muskelansätze richtig!
 -> muscles for fingers
     - extensors + exentsor torus
--> parameter studie über die nodes(50, 100, 125, 150) -> posen
+
 -> wichtig muscle auf body refernzieren! -> habe jetzt das expandedloop an expanded angegelichen
 
 WEITER MIT:

@@ -63,7 +63,18 @@ struct BodyResult {
 };
 
 
-
+inline std::vector<std::string> splitString(const std::string& str, char delimiter) {
+    std::vector<std::string> tokens;
+    std::stringstream ss(str);
+    std::string token;
+    
+    // std::getline liest aus dem Stream (ss) bis zum angegebenen Trennzeichen (delimiter)
+    while (std::getline(ss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    
+    return tokens;
+}
 
 //namespace fs = std::filesystem;
 inline void printColorMsg(const std::string& message, int colorLevel) 

@@ -257,7 +257,7 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     std::vector<CasadiSystem*> systems;
 
     // 2. Modell aufbauen (Hier gibst du deine Parameter p1-p4 an die Funktion weiter!)
-    std::string buildResult = buildOHandModelOldExpandedViaX(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    std::string buildResult = buildOHandModelOldExpandedViaX05(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
     qDebug() << "        | Using System: " << QString::fromStdString(buildResult);
 
     for (auto& m : meshes) {
