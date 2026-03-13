@@ -251,7 +251,7 @@ void CasadiSystem::solveStepSum() {
     int convSteps = int(solverInfo.at("iter_count"));
     if (true) { // Dein if(true) oder if(bDebug)
         std::string stepColor = (status == "Solve_Succeeded") ? C_GREEN : C_RED;
-        std::string fullMessage = stepColor + "    Solver finished after " + std::to_string(convSteps) + " iterations" + "(" + status + ")" + C_RESET;
+        std::string fullMessage = stepColor + "           Solver finished after " + std::to_string(convSteps) + " iterations" + "(" + status + ")" + C_RESET;
         qDebug().noquote() << QString::fromStdString(fullMessage);
     }
     SolverConvergenceMessages.push_back(QString::fromStdString(status).toStdString());
@@ -315,7 +315,7 @@ void CasadiSystem::solveStepSum() {
 // VIA POINTS
 void CasadiSystem::solveStepVia()
 {
-    qDebug() << "Solving step with Via Point formulation...";
+    qDebug() << "          Solving step with Via Point formulation...";
     using namespace casadi;
 
     std::vector<double> x0_all, p_all, lbg_all, ubg_all, lbx_all, ubx_all;

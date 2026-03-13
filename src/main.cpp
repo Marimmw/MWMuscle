@@ -4117,7 +4117,7 @@ int main(int argc, char** argv)
         if (bSetupF){
            setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
         else{
-            qDebug () << "Marlene hat keinen plan";
+            qDebug () << "Marlene hat keinen pla";
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             currentScene = buildOHandModelOldExpandedViaX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params);
@@ -4229,10 +4229,10 @@ int main(int argc, char** argv)
 
 
             for (auto* sys : systems) {
-                qDebug() << "---------------------------" << " Solve CasadiSystem: " << QString::fromStdString(sys->CasadiSystemName) << " ---------------------------";
+                qDebug() << "        -----------------" << " Solve CasadiSystem: " << QString::fromStdString(sys->CasadiSystemName) << " ---------------------------";
                 sys->solveStepX(); // solves all systems
             }
-            qDebug() << "-------------------------------------------------------------------------------------------------";
+            //qDebug() << "-------------------------------------------------------------------------------------------------";
             
             if (cfg.dynamicReparametrization || t < 1)
             {    

@@ -71,7 +71,7 @@ void SSMuscle::createMusclePointsComplexPath(){
     for (SSMesh* mesh : meshPtrs) {
         if (auto torus = dynamic_cast<SSTorusMesh*>(mesh)) {
             // add offset to not lie in the middle of the torus (numerics)
-            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{(torus->R-torus->r)*0.5, (torus->R-torus->r)*0.1, 0.});
+            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{TorusPathDirection*(torus->R-torus->r)*0.1, (torus->R-torus->r)*0.1, 0.});
         }
         else if (mesh->bIsViaPoint){
             viaPointsGlobal.push_back(mesh->PositionGlobal);

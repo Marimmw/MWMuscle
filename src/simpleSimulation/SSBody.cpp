@@ -27,7 +27,7 @@ int SSBody::update(int step)
     for (auto& child : Children) {
         child->update(step);
     }
-    qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
+    //qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
     return 0;
 }
 
@@ -86,6 +86,6 @@ int SSJoint::update(int step)
         mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame);
         //mesh->updateMeshPosAndRot();
     }
-    qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
+    //qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
     return 0;
 }

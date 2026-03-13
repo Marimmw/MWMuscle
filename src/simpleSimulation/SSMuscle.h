@@ -144,6 +144,7 @@ public:
     std::string Name = "";
     std::vector<SSMesh*> meshPtrs;
     double MuscleLength;
+    double TorusPathDirection = 1.0;
 
     MWMath::Point3D OriginPointGlobal;
     MWMath::Point3D OriginPointLocal;

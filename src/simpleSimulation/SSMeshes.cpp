@@ -482,7 +482,7 @@ void SSMesh::updateMeshPosAndRot() {
         PositionGlobal = Position2ParentRelInParentFrame; // Falls kein Parent, dann ist die lokale Position die globale
         OrientationGlobal = Orientation2ParentRel; // Falls kein Parent, dann ist die lokale Rotation die globale
     }
-    qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
+    //qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
 
     
 };

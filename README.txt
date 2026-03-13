@@ -20,11 +20,18 @@ Git push
 0. git reset
 
 UMITTELBAR
--> muskelansätze richtig!
+-> intrinsicher vs extrinsische working machen
+-> Ideen:
+    -> 2 torus ( ineinender)
+    -> 3 tori seperat
+    -> ?
+    -> problem durchtritt extensor
 -> muscles for fingers
     - extensors + exentsor torus
 
+WICHTIG
 -> wichtig muscle auf body refernzieren! -> habe jetzt das expandedloop an expanded angegelichen
+-> via points nicht zu tief in mesh 
 
 WEITER MIT:
 - "exact" hand model
