@@ -150,46 +150,47 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     m_initialLines.clear();
     m_initialPointsData.clear();
     m_initialPointActors.clear();
-
-    for (size_t m = 0; m < m_initialGuesses.size(); ++m) {
-        // --- LINIE für Initial Guess ---
-        auto igLinePoints = vtkSmartPointer<vtkPoints>::New();
-        auto igLineData = vtkSmartPointer<vtkPolyData>::New();
-        auto igLineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-        igLineMapper->SetInputData(igLineData);
-        auto igLineActor = vtkSmartPointer<vtkActor>::New();
-        igLineActor->SetMapper(igLineMapper);
-        igLineActor->GetProperty()->SetColor(0.8, 0.8, 0.0); // Gelb
-        igLineActor->GetProperty()->SetLineStipplePattern(0xf0f0);
-        igLineActor->GetProperty()->SetOpacity(0.5);
-        m_renderer->AddActor(igLineActor);
-        
-        m_initialLines.push_back(igLineData);
-        m_initialPointsData.push_back(igLinePoints);
-
-        // --- KUGELN für Initial Guess Punkte ---
-        std::vector<vtkSmartPointer<vtkActor>> currentMuscleSphereActors;
-        
-        // Anzahl Punkte aus dem ersten Timestep ermitteln
-        int numPts = m_initialGuesses[m].empty() ? 0 : m_initialGuesses[m][0].size();
-
-        for (int i = 0; i < numPts; ++i) {
-            auto sphere = vtkSmartPointer<vtkSphereSource>::New();
-            sphere->SetRadius(0.01*m_scalerCM);
-            sphere->SetThetaResolution(16);
-            sphere->SetPhiResolution(16);
+    if (bShowInitialGuess) {
+        for (size_t m = 0; m < m_initialGuesses.size(); ++m) {
+            // --- LINIE für Initial Guess ---
+            auto igLinePoints = vtkSmartPointer<vtkPoints>::New();
+            auto igLineData = vtkSmartPointer<vtkPolyData>::New();
+            auto igLineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+            igLineMapper->SetInputData(igLineData);
+            auto igLineActor = vtkSmartPointer<vtkActor>::New();
+            igLineActor->SetMapper(igLineMapper);
+            igLineActor->GetProperty()->SetColor(0.8, 0.8, 0.0); // Gelb
+            igLineActor->GetProperty()->SetLineStipplePattern(0xf0f0);
+            igLineActor->GetProperty()->SetOpacity(0.5);
+            m_renderer->AddActor(igLineActor);
             
-            auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-            mapper->SetInputConnection(sphere->GetOutputPort());
+            m_initialLines.push_back(igLineData);
+            m_initialPointsData.push_back(igLinePoints);
+
+            // --- KUGELN für Initial Guess Punkte ---
+            std::vector<vtkSmartPointer<vtkActor>> currentMuscleSphereActors;
             
-            auto actor = vtkSmartPointer<vtkActor>::New();
-            actor->SetMapper(mapper);
-            actor->GetProperty()->SetColor(1.0, 0.6, 0.0); // Default Orange
-            
-            m_renderer->AddActor(actor);
-            currentMuscleSphereActors.push_back(actor);
+            // Anzahl Punkte aus dem ersten Timestep ermitteln
+            int numPts = m_initialGuesses[m].empty() ? 0 : m_initialGuesses[m][0].size();
+
+            for (int i = 0; i < numPts; ++i) {
+                auto sphere = vtkSmartPointer<vtkSphereSource>::New();
+                sphere->SetRadius(0.01*m_scalerCM);
+                sphere->SetThetaResolution(16);
+                sphere->SetPhiResolution(16);
+                
+                auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+                mapper->SetInputConnection(sphere->GetOutputPort());
+                
+                auto actor = vtkSmartPointer<vtkActor>::New();
+                actor->SetMapper(mapper);
+                actor->GetProperty()->SetColor(1.0, 0.6, 0.0); // Default Orange
+                
+                m_renderer->AddActor(actor);
+                currentMuscleSphereActors.push_back(actor);
+            }
+            m_initialPointActors.push_back(currentMuscleSphereActors);
         }
-        m_initialPointActors.push_back(currentMuscleSphereActors);
     }
 
     // other points with colors pipeline -> as actors with spheres
@@ -538,113 +539,116 @@ void VTKSimViewerSimple::updateStep(int step) {
         m_muscleLines[m]->Modified();
     }
 
-    // 3. Initial Guess Update (Linie) - FÜR ALLE MUSKELN
-    for (size_t m = 0; m < m_initialGuesses.size(); ++m) {
-        if (step >= (int)m_initialGuesses[m].size()) continue;
-        
-        const auto& igPath = m_initialGuesses[m][step];
-
-        m_initialPointsData[m]->Reset();
-        auto cells = vtkSmartPointer<vtkCellArray>::New();
-        auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
-        polyLine->GetPointIds()->SetNumberOfIds(igPath.size());
-
-        for (size_t i = 0; i < igPath.size(); ++i) {
-            m_initialPointsData[m]->InsertNextPoint(igPath[i].x, igPath[i].y, igPath[i].z);
-            polyLine->GetPointIds()->SetId(i, i);
-        }
-        
-        cells->InsertNextCell(polyLine);
-        m_initialLines[m]->SetPoints(m_initialPointsData[m]);
-        m_initialLines[m]->SetLines(cells);
-        m_initialLines[m]->Modified();
-    }
-
-    // 4. Initial Guess Punkte (Kugeln mit Farben) - FÜR ALLE MUSKELN
-    for (size_t m = 0; m < m_initialGuesses.size(); ++m) {
-        if (step >= (int)m_initialGuesses[m].size()) continue;
-
-        const auto& path = m_initialGuesses[m][step];
-        const auto& colors = m_initialGuessColors[m][step];
-        auto& actors = m_initialPointActors[m];
-
-        for (size_t i = 0; i < path.size() && i < actors.size(); ++i) {
-            // Position setzen
-            actors[i]->SetPosition(path[i].x, path[i].y, path[i].z);
-
-            // Farbe setzen
-            if (i < colors.size()) {
-                actors[i]->GetProperty()->SetColor(colors[i].x, colors[i].y, colors[i].z);
-            } else {
-                actors[i]->GetProperty()->SetColor(1.0, 0.6, 0.0); // Fallback Orange
-            }
-            actors[i]->SetVisibility(1);
-        }
-        
-        // Verstecke überschüssige Aktoren (falls path kürzer als actors)
-        for (size_t i = path.size(); i < actors.size(); ++i) {
-            actors[i]->SetVisibility(0);
-        }
-    } 
-    // 4. Initial Guess / Berechnete Punkte (Kugeln mit Farben) - FÜR ALLE MUSKELN
-    /* for (size_t m = 0; m < m_muscles.size(); ++m) {
-        // Zugriff auf den aktuellen Muskel
-        SSMuscle* mus = m_muscles[m]; 
-        
-        // Hole die Aktoren für diesen Muskel (Kugeln)
-        // (Stelle sicher, dass m_initialPointActors in setupVtkPipeline groß genug initialisiert wurde!)
-        if (m >= m_initialPointActors.size()) continue;
-        auto& actors = m_initialPointActors[m];
-
-        // Iteriere über alle Knoten des Muskels (MNodes)
-        // Wir nehmen an: MNodes[0] bis MNodes[N-1]
-        for (size_t i = 0; i < mus->MNodes.size(); ++i) {
+    if (bShowInitialGuess) {
+        // 3. Initial Guess Update (Linie) - FÜR ALLE MUSKELN
+        for (size_t m = 0; m < m_initialGuesses.size(); ++m) {
+            if (step >= (int)m_initialGuesses[m].size()) continue;
             
-            // Safety Check: Haben wir genug Aktoren?
-            if (i >= actors.size()) break;
+            const auto& igPath = m_initialGuesses[m][step];
 
-            MuscleNode& node = mus->MNodes[i];
+            m_initialPointsData[m]->Reset();
+            auto cells = vtkSmartPointer<vtkCellArray>::New();
+            auto polyLine = vtkSmartPointer<vtkPolyLine>::New();
+            polyLine->GetPointIds()->SetNumberOfIds(igPath.size());
 
-            // Safety Check: Existieren Daten für diesen Step?
-            bool hasData = (step < (int)node.MNodeLocalSteps.size()) && 
-                           (step < (int)node.MNodeParentPosSteps.size()) && 
-                           (step < (int)node.MNodeParentRotSteps.size());
+            for (size_t i = 0; i < igPath.size(); ++i) {
+                m_initialPointsData[m]->InsertNextPoint(igPath[i].x, igPath[i].y, igPath[i].z);
+                polyLine->GetPointIds()->SetId(i, i);
+            }
+            
+            cells->InsertNextCell(polyLine);
+            m_initialLines[m]->SetPoints(m_initialPointsData[m]);
+            m_initialLines[m]->SetLines(cells);
+            m_initialLines[m]->Modified();
+        }
 
-            if (hasData) {
-                // DATEN HOLEN
-                MWMath::Point3D localPos = node.MNodeLocalSteps[step];
-                MWMath::Point3D parentPos = node.MNodeParentPosSteps[step];
-                MWMath::RotMatrix3x3 parentRot = node.MNodeParentRotSteps[step];
+        // 4. Initial Guess Punkte (Kugeln mit Farben) - FÜR ALLE MUSKELN
+        for (size_t m = 0; m < m_initialGuesses.size(); ++m) {
+            if (step >= (int)m_initialGuesses[m].size()) continue;
 
-                // BERECHNUNG: Global = ParentPos + ParentRot * LocalPos
-                MWMath::Point3D globalPos = parentPos + parentRot.transform(localPos);
+            const auto& path = m_initialGuesses[m][step];
+            const auto& colors = m_initialGuessColors[m][step];
+            auto& actors = m_initialPointActors[m];
 
-                // POSITION SETZEN
-                actors[i]->SetPosition(globalPos.x, globalPos.y, globalPos.z);
-                
-                // FARBE SETZEN (Falls vorhanden)
-                if (step < (int)node.MNodeInitialGuessColorSteps.size()) {
-                    MWMath::Point3D col = node.MNodeInitialGuessColorSteps[step];
-                    actors[i]->GetProperty()->SetColor(col.x, col.y, col.z);
+            for (size_t i = 0; i < path.size() && i < actors.size(); ++i) {
+                // Position setzen
+                actors[i]->SetPosition(path[i].x, path[i].y, path[i].z);
+
+                // Farbe setzen
+                if (i < colors.size()) {
+                    actors[i]->GetProperty()->SetColor(colors[i].x, colors[i].y, colors[i].z);
                 } else {
                     actors[i]->GetProperty()->SetColor(1.0, 0.6, 0.0); // Fallback Orange
                 }
-
                 actors[i]->SetVisibility(1);
-            } 
-            else {
-                // Keine Daten für diesen Step -> Verstecken
+            }
+            
+            // Verstecke überschüssige Aktoren (falls path kürzer als actors)
+            for (size_t i = path.size(); i < actors.size(); ++i) {
+                actors[i]->SetVisibility(0);
+            }
+        } 
+        // 4. Initial Guess / Berechnete Punkte (Kugeln mit Farben) - FÜR ALLE MUSKELN
+        /* for (size_t m = 0; m < m_muscles.size(); ++m) {
+            // Zugriff auf den aktuellen Muskel
+            SSMuscle* mus = m_muscles[m]; 
+            
+            // Hole die Aktoren für diesen Muskel (Kugeln)
+            // (Stelle sicher, dass m_initialPointActors in setupVtkPipeline groß genug initialisiert wurde!)
+            if (m >= m_initialPointActors.size()) continue;
+            auto& actors = m_initialPointActors[m];
+
+            // Iteriere über alle Knoten des Muskels (MNodes)
+            // Wir nehmen an: MNodes[0] bis MNodes[N-1]
+            for (size_t i = 0; i < mus->MNodes.size(); ++i) {
+                
+                // Safety Check: Haben wir genug Aktoren?
+                if (i >= actors.size()) break;
+
+                MuscleNode& node = mus->MNodes[i];
+
+                // Safety Check: Existieren Daten für diesen Step?
+                bool hasData = (step < (int)node.MNodeLocalSteps.size()) && 
+                            (step < (int)node.MNodeParentPosSteps.size()) && 
+                            (step < (int)node.MNodeParentRotSteps.size());
+
+                if (hasData) {
+                    // DATEN HOLEN
+                    MWMath::Point3D localPos = node.MNodeLocalSteps[step];
+                    MWMath::Point3D parentPos = node.MNodeParentPosSteps[step];
+                    MWMath::RotMatrix3x3 parentRot = node.MNodeParentRotSteps[step];
+
+                    // BERECHNUNG: Global = ParentPos + ParentRot * LocalPos
+                    MWMath::Point3D globalPos = parentPos + parentRot.transform(localPos);
+
+                    // POSITION SETZEN
+                    actors[i]->SetPosition(globalPos.x, globalPos.y, globalPos.z);
+                    
+                    // FARBE SETZEN (Falls vorhanden)
+                    if (step < (int)node.MNodeInitialGuessColorSteps.size()) {
+                        MWMath::Point3D col = node.MNodeInitialGuessColorSteps[step];
+                        actors[i]->GetProperty()->SetColor(col.x, col.y, col.z);
+                    } else {
+                        actors[i]->GetProperty()->SetColor(1.0, 0.6, 0.0); // Fallback Orange
+                    }
+
+                    actors[i]->SetVisibility(1);
+                } 
+                else {
+                    // Keine Daten für diesen Step -> Verstecken
+                    actors[i]->SetVisibility(0);
+                }
+            }
+            
+            // Verstecke restliche Aktoren (falls der Muskel in diesem Frame weniger Knoten hätte, 
+            // oder Actors-Pool größer ist als Node-Anzahl)
+            for (size_t i = mus->MNodes.size(); i < actors.size(); ++i) {
                 actors[i]->SetVisibility(0);
             }
         }
-        
-        // Verstecke restliche Aktoren (falls der Muskel in diesem Frame weniger Knoten hätte, 
-        // oder Actors-Pool größer ist als Node-Anzahl)
-        for (size_t i = mus->MNodes.size(); i < actors.size(); ++i) {
-            actors[i]->SetVisibility(0);
-        }
-    }
- */
+        */
+    }   
+
     // 5. Other Points with Colors Update
     if (step < (int)m_otherPointActors.size()) {
         const auto& actors = m_otherPointActors[step];

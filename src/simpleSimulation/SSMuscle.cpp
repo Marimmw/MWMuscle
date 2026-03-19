@@ -287,65 +287,72 @@ void SSMuscle::updateMusclePointsParents()
 void SSMuscle::updateMusclePointsParentsLocal()
 {
     for (size_t k = 1; k < MNodes.size()-1; ++k) {
-            if (!MNodes[k].bParentIsFixed) {
-                auto& node = MNodes[k];
-                
-                // Optimierte Position übernehmen
-                node.PositionGlobal = MusclePointsGlobal[k];
 
-                // Nächstes Mesh finden
-                double minDist = 1e10;
-                SSMesh* bestParent = nullptr;
-                if (bMeshDistanceDebug) {
-                    qDebug() << "   Node " << k << "(" << node.PositionGlobal.x << "," << node.PositionGlobal.y << "," << node.PositionGlobal.z << "):";
+        if (!MNodes[k].bParentIsFixed) {
+            auto& node = MNodes[k];
+
+            /* if (!node.bParentIsFixed || node.parentMesh == nullptr) {
+                std::string message = "[" + Name + "-updateMusclePointsParentsLocal] Node has no fixed parent or no parent mesh assigned.";
+                printColorMsg(message, 1);
+                continue;
+            } */
+            
+            // Optimierte Position übernehmen
+            node.PositionGlobal = MusclePointsGlobal[k];
+
+            // Nächstes Mesh finden
+            double minDist = 1e10;
+            SSMesh* bestParent = nullptr;
+            if (bMeshDistanceDebug) {
+                qDebug() << "   Node " << k << "(" << node.PositionGlobal.x << "," << node.PositionGlobal.y << "," << node.PositionGlobal.z << "):";
+            }
+            for (auto& m : meshPtrs) {
+                // avoid cylinder meshes (just because i think last time might didnt work yet)
+                /* if (dynamic_cast<SSCylinderMesh*>(m)) {
+                    continue;
                 }
-                for (auto& m : meshPtrs) {
-                    // avoid cylinder meshes (just because i think last time might didnt work yet)
-                    /* if (dynamic_cast<SSCylinderMesh*>(m)) {
-                        continue;
-                    }
-                    if (dynamic_cast<SSTorusMesh*>(m)) {
-                        continue;
-                    } */
-                    // avoid via point meshes -> because for parent choice the distance to the COM is currently used, and via points (if not moving but near to a joint tend to produce points inside meshes for the next step)
-                    /* if (m->bIsViaPoint) {
-                        continue;
-                    } */
-                    if(m->bIsJointMesh){
-                        continue;
-                    }
-
-                    double d = m->getDistanceNumerically(node.PositionGlobal);
-                    if (bMeshDistanceDebug) {qDebug() << "       Prüfe Mesh" << QString::fromStdString(m->Name) << "(" << m->MeshColor.x << "," << m->MeshColor.y << "," << m->MeshColor.z << ") Distanz =" << d << "m";}
-                    if (d < minDist) {
-                        minDist = d;
-                        bestParent = m;
-                    }
+                if (dynamic_cast<SSTorusMesh*>(m)) {
+                    continue;
+                } */
+                // avoid via point meshes -> because for parent choice the distance to the COM is currently used, and via points (if not moving but near to a joint tend to produce points inside meshes for the next step)
+                /* if (m->bIsViaPoint) {
+                    continue;
+                } */
+                if(m->bIsJointMesh){
+                    continue;
                 }
 
+                double d = m->getDistanceNumerically(node.PositionGlobal);
+                if (bMeshDistanceDebug) {qDebug() << "       Prüfe Mesh" << QString::fromStdString(m->Name) << "(" << m->MeshColor.x << "," << m->MeshColor.y << "," << m->MeshColor.z << ") Distanz =" << d << "m";}
+                if (d < minDist) {
+                    minDist = d;
+                    bestParent = m;
+                }
+            }
 
-                
-                node.parentMesh = bestParent;
-                // WICHTIG: Wir wollen die lokale Position relativ zum BODY (Grandparent),
-                // nicht zum Mesh, weil der Solver den Body nutzt!
-                
-                SSTissue* referenceBody = nullptr;
-                
-                // Hat das Mesh einen Parent (Body/Joint)?
-                if (bestParent->Parent) {
-                    referenceBody = bestParent->Parent.get();
-                } else {
-                    // Fallback, falls Mesh keinen Parent hat (sollte mit main-Fix nicht passieren)
-                    //referenceBody = bestParent; 
-                    qDebug() << "[FEHLER] Mesh" << QString::fromStdString(bestParent->Name) << "hat keinen Parent Body/Joint!";
-                    referenceBody = nullptr;
-                } 
 
-                // Berechnung relativ zum Referenz-Body
-                MWMath::Point3D diff = node.PositionGlobal - referenceBody->PositionGlobal;
-                node.PositionLocal = referenceBody->OrientationGlobal.transposed().transform(diff); // node.PositionLocal = // referenceBody->OrientationGlobal.transform(diff);
-                if (bParentDebug) {qDebug() << "  Node" << k << "-> Parent:"  << QString::fromStdString(bestParent->Name) << "(Distanz:" << minDist << "m)";}
-                
+            
+            node.parentMesh = bestParent;
+            // WICHTIG: Wir wollen die lokale Position relativ zum BODY (Grandparent),
+            // nicht zum Mesh, weil der Solver den Body nutzt!
+            
+            SSTissue* referenceBody = nullptr;
+            
+            // Hat das Mesh einen Parent (Body/Joint)?
+            if (bestParent->Parent) {
+                referenceBody = bestParent->Parent.get();
+            } else {
+                // Fallback, falls Mesh keinen Parent hat (sollte mit main-Fix nicht passieren)
+                //referenceBody = bestParent; 
+                qDebug() << "[FEHLER] Mesh" << QString::fromStdString(bestParent->Name) << "hat keinen Parent Body/Joint!";
+                referenceBody = nullptr;
+            } 
+
+            // Berechnung relativ zum Referenz-Body
+            MWMath::Point3D diff = node.PositionGlobal - referenceBody->PositionGlobal;
+            node.PositionLocal = referenceBody->OrientationGlobal.transposed().transform(diff); // node.PositionLocal = // referenceBody->OrientationGlobal.transform(diff);
+            if (bParentDebug) {qDebug() << "  Node" << k << "-> Parent:"  << QString::fromStdString(bestParent->Name) << "(Distanz:" << minDist << "m)";}
+            
             }
         }
 }

@@ -20,7 +20,8 @@ Git push
 0. git reset
 
 UMITTELBAR
--> check ExtensorIndicis_1
+-> check AbductorPollicisLongus_1 -> ist weit draußen
+-> check FlexorPollicisLongus_1 -> has still 1 problems
 -> intrinsicher vs extrinsische working machen
 -> Ideen:
     -> 2 torus ( ineinender)
