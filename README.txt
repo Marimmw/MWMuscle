@@ -20,6 +20,7 @@ Git push
 0. git reset
 
 UMITTELBAR
+-> check ExtensorIndicis_1
 -> intrinsicher vs extrinsische working machen
 -> Ideen:
     -> 2 torus ( ineinender)

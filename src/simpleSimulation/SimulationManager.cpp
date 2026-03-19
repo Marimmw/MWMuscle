@@ -73,7 +73,7 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
     int goodScore = m_cfg.numTimeSteps * 40;
     std::string scoreHeader = "Score(<" + std::to_string(goodScore) + ")";
 
-    outFile << std::left << std::setw(15) << scoreHeader << "\t" << std::setw(15) << "Successes" << "\t";
+    outFile << std::left << std::setw(35) << "Casadi System" << "\t" << std::setw(15) << scoreHeader << "\t" << std::setw(15) << "Successes" << "\t";
     for (const auto& p : paramDefs) outFile << std::setw(12) << p.name << "\t";
     outFile << "Step_Details [Code(Iter)] (0=Succ, 1=Max, 2=Inf)\n";
     outFile << std::string(90 + paramDefs.size() * 15, '-') << "\n";
@@ -94,13 +94,17 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
 
     for (int i = 0; i < totalRuns; ++i) {
         
-        // Führe die Simulation lokal im Thread aus
-        std::string resultLine = runSingleSimulation(allJobs[i]);
+        // Führe die Simulation lokal im Thread aus (NEU: fängt Vektor auf)
+        std::vector<std::string> resultLines = runSingleSimulation(allJobs[i]);
         
-        // --- KRITISCHER BEREICH (Immer nur 1 Thread darf hier gleichzeitig rein) ---
+        // --- KRITISCHER BEREICH ---
         {
             std::lock_guard<std::mutex> lock(fileMutex);
-            outFile << resultLine << "\n";
+            
+            // NEU: Für jeden Muskel eine eigene Zeile schreiben
+            for (const auto& line : resultLines) {
+                outFile << line << "\n";
+            }
             outFile.flush();
             
             currentRun++;
@@ -111,9 +115,15 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
                 auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
                 
                 std::string printColor = COLOR_RESET;
-                bool isSuccess = resultLine.find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos;
+                bool isSuccess = false;
+                
+                // Prüfe den Erfolg am ersten Muskel
+                if (!resultLines.empty()) {
+                    isSuccess = resultLines[0].find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos;
+                }
+
                 if (isSuccess) printColor = COLOR_GREEN;
-                else if (!isSuccess) printColor = COLOR_RED;
+                else printColor = COLOR_RED;
 
                 std::cout << COLOR_CYAN << "[Study Progress] " << COLOR_RESET 
                           << "Run " << currentRun << " / " << totalRuns 
@@ -122,7 +132,6 @@ void SimulationManager::runParameterStudy(const std::vector<ParamDef>& paramDefs
                           << std::endl;
             }
         }
-        // --- KRITISCHER BEREICH ENDE ---
     }
 
     outFile.close();
@@ -145,6 +154,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
 
     // Header schreiben
     outFile << std::left << std::setw(20) << "Pose Name" << "\t" 
+            << std::setw(35) << "Casadi System" << "\t"
             << std::setw(15) << scoreHeader << "\t" 
             << std::setw(15) << "Successes" << "\t";
             
@@ -172,7 +182,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
         
         // Die Simulation wird mit den maximalen Gelenkwinkeln dieser Pose aufgerufen!
         // Der ModelBuilder in runSingleSimulation() schnappt sich params und steuert damit die Gelenke.
-        std::string resultLine = runSingleSimulation(poses[i].SimulationJointAngles);
+        /* std::string resultLine = runSingleSimulation(poses[i].SimulationJointAngles);
         
         // --- KRITISCHER BEREICH ---
         {
@@ -198,7 +208,42 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
                       << " | Status: " << printColor << (isSuccess ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
                       << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
                       << std::endl;
+        } */
+        std::vector<std::string> resultLines = runSingleSimulation(poses[i].SimulationJointAngles);
+        
+        // --- KRITISCHER BEREICH ---
+        {
+            std::lock_guard<std::mutex> lock(fileMutex);
+            
+            // Wir schreiben für jeden Muskel eine eigene Zeile (mit demselben Posen-Namen davor)
+            for (const auto& line : resultLines) {
+                outFile << std::left << std::setw(20) << poses[i].PoseName << "\t" << line << "\n";
+            }
+            outFile.flush();
+            
+            currentRun++;
+            auto now = std::chrono::high_resolution_clock::now();
+            auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
+            
+            std::string printColor = COLOR_RESET;
+            bool isSuccess = false; // NEU: Standardmäßig auf false
+
+            // NEU: Wir prüfen den ersten String im Vektor (falls vorhanden)
+            if (!resultLines.empty()) {
+                isSuccess = resultLines[0].find(std::to_string(m_cfg.numTimeSteps) + "/" + std::to_string(m_cfg.numTimeSteps)) != std::string::npos;
+            }
+
+            if (isSuccess) printColor = COLOR_GREEN;
+            else printColor = COLOR_RED; // (Das else if (!isSuccess) ist redundant)
+
+            std::cout << COLOR_CYAN << "[Pose Study] " << COLOR_RESET 
+                      << "Finished " << currentRun << " / " << totalRuns 
+                      << " | Pose: " << std::setw(15) << std::left << poses[i].PoseName
+                      << " | Status: " << printColor << (isSuccess ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
+                      << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
+                      << std::endl;
         }
+
     }
 
     outFile.close();
@@ -214,11 +259,11 @@ void SimulationManager::runCombinationsRecursive(const std::vector<ParamDef>& pa
         currentRun++; // Iteration hochzählen
         
         // 1. Simulation ausführen
-        std::string resultLine = runSingleSimulation(currentValues);
-        
-        // 2. In Datei schreiben
-        outFile << resultLine << "\n";
-        outFile.flush(); 
+        std::vector<std::string> resultLines = runSingleSimulation(currentValues);
+        for (const auto& line : resultLines) {
+            outFile << line << "\n";
+        }
+        outFile.flush();
 
         // 3. Konsolen-Output alle 5 Runs (oder beim letzten Run)
         if (currentRun % 1 == 0 || currentRun == totalRuns) {
@@ -247,7 +292,7 @@ void SimulationManager::runCombinationsRecursive(const std::vector<ParamDef>& pa
     }
 }
 
-std::string SimulationManager::runSingleSimulation(const std::vector<double>& params) {
+std::vector<std::string> SimulationManager::runSingleSimulation(const std::vector<double>& params) {
     
     // 1. Container für diesen Durchlauf
     std::vector<std::shared_ptr<SSMesh>> meshes;
@@ -325,7 +370,7 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
         }
     }
 
-    // ==============================================================================
+    /* // ==============================================================================
     // AUSWERTUNG DER CASADI LOGS
     // ==============================================================================
     int score = 0;
@@ -369,9 +414,15 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     // ==============================================================================
     // TABELLEN-ZEILE GENERIEREN
     // ==============================================================================
+    std::string systemName = "Unknown_System";
+    if (!musclePtrs.empty()) {
+        systemName = "CasSys_" + musclePtrs[0]->Name;
+    }
+
     std::string succStr = std::to_string(successCount) + "/" + std::to_string(m_cfg.numTimeSteps);
     std::stringstream ss;
     ss << std::left 
+       << std::setw(35) << systemName << "\t"
        << std::setw(15) << score
        << std::setw(15) << succStr;
        
@@ -380,7 +431,68 @@ std::string SimulationManager::runSingleSimulation(const std::vector<double>& pa
     }
     ss << stepResults; // Am Ende die Historie anheften
     qDebug() << "        | Result Line: " << QString::fromStdString(ss.str());
-    return ss.str();
+    return ss.str(); */
+    // ==============================================================================
+    // AUSWERTUNG DER CASADI LOGS FÜR ALLE SYSTEME
+    // ==============================================================================
+    std::vector<std::string> resultLines;
+
+    // Wir iterieren über ALLE Systeme (Reihenfolge ist identisch mit musclePtrs)
+    for (size_t s = 0; s < systems.size(); ++s) {
+        auto* sys = systems[s];
+        auto* mus = musclePtrs[s]; 
+
+        int score = 0;
+        int successCount = 0;
+        std::string stepResults = "";
+
+        for (size_t t = 0; t < sys->SolverConvergenceMessages.size(); ++t) {
+            std::string msg = sys->SolverConvergenceMessages[t];
+            int iters = sys->SolverConvergenceSteps[t];
+            
+            score += iters;
+
+            int statusCode = 3; // Fallback
+            if (msg.find("Succeeded") != std::string::npos || msg.find("Success") != std::string::npos) {
+                statusCode = 0;
+                successCount++;
+            } 
+            else if (msg.find("Max") != std::string::npos || msg.find("Maximum") != std::string::npos) {
+                statusCode = 1;
+            } 
+            else if (msg.find("Infeasible") != std::string::npos || msg.find("Invalid_Number") != std::string::npos) {
+                statusCode = 2;
+                score += 20000; 
+            }
+
+            stepResults += std::to_string(statusCode) + "(" + std::to_string(iters) + ")  ";
+        }
+
+        // ==============================================================================
+        // TABELLEN-ZEILE GENERIEREN FÜR DIESEN MUSKEL
+        // ==============================================================================
+        std::string systemName = "CasSys_" + mus->Name;
+        std::string succStr = std::to_string(successCount) + "/" + std::to_string(m_cfg.numTimeSteps);
+        
+        std::stringstream ss;
+        ss << std::left 
+           << std::setw(35) << systemName << "\t"
+           << std::setw(15) << score
+           << std::setw(15) << succStr;
+           
+        for (double p : params) {
+            ss << std::setw(15) << p; 
+        }
+        ss << stepResults; 
+        
+        resultLines.push_back(ss.str());
+    }
+
+    // MEMORY CLEANUP
+    for (auto* sys : systems) delete sys;
+    for (auto* mus : musclePtrs) delete mus;
+
+    return resultLines;
 }
 
 std::vector<PoseDef> SimulationManager::createPoseDefs()
@@ -389,7 +501,7 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes"};
     
     // 2. Deine Parameter
-    std::vector<double> numNodes = {20, 30, 50, 70};//{75, 100, 125, 150, 200};
+    std::vector<double> numNodes = {100};//{75, 100, 125, 150, 200};
     
     // 3. Temporäre Struktur für die Basis-Posen (ohne numNodes)
     struct BasePose {
@@ -398,11 +510,11 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     };
     
     std::vector<BasePose> basePoses = {
+        {"Krampf Pose",    { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}},
         {"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
         {"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
         {"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
         {"Schraeger Griff",{ 0.0,   0.0, 45.0, 20.0,  45.0, 45.0}},
-        {"Krampf Pose",    { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}},
         {"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
         {"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}
     };

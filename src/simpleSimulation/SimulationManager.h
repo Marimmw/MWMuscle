@@ -39,7 +39,7 @@ public:
     void runPoseStudy(const std::vector<PoseDef>& poses);
 
     // Nimmt den fertigen Vektor mit den aktuellen Werten für diesen EINEN Run auf
-    std::string runSingleSimulation(const std::vector<double>& params);
+    std::vector<std::string> runSingleSimulation(const std::vector<double>& params);
 
     std::vector<PoseDef> createPoseDefs();
 

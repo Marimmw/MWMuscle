@@ -869,163 +869,163 @@ namespace Hand {
         // ==========================================
         // --- THENAR (Daumen / Finger 0) ---
         // ==========================================
-        /*
-        { "AbductorPollicisBrevis_1", "Mesh_Carpals", MWMath::Point3D{8.9, 1.6, 14.0} , "Mesh_PP0", MWMath::Point3D{-2.9, 1.7, 3.5} , {}, {}, 3, OTHERMUSCLECOLOR },
-        //{ "AbductorPollicisBrevis_2", "Mesh_Carpals", MWMath::Point3D{6.7, 0.2, 8.1} , "Mesh_PP0", MWMath::Point3D{-2.7, -0.028, 3.5} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{11.0, 5.0, 12.2} } }, 3, OTHERMUSCLECOLOR },
-        //{ "AbductorPollicisBrevis_3", "Mesh_Carpals", MWMath::Point3D{7.4, 3.0, 14.0} , "Mesh_PP0", MWMath::Point3D{-3.4, 0.64, 3.3} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{9.0, 5.0, 13.0} } }, 3, OTHERMUSCLECOLOR },
-        //{ "AbductorPollicisBrevis_4", "Mesh_Carpals", MWMath::Point3D{4.3, 3.7, 12.0} , "Mesh_PP0", MWMath::Point3D{-2.5, 0.42, 3.5} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{11.0, 5.0, 14.6} } }, 3, OTHERMUSCLECOLOR },
-        //{ "AbductorPollicisBrevis_5", "Mesh_Carpals", MWMath::Point3D{7.1, 2.2, 10.0} , "Mesh_PP0", MWMath::Point3D{-2.3, 1.8, 2.8} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{6.6, 5.0, 15.0} } }, 3, OTHERMUSCLECOLOR },
+        
+        //{ "AbductorPollicisBrevis_1", "Mesh_Carpals", MWMath::Point3D{8.9, 1.6, 14.0} , "Mesh_PP0", MWMath::Point3D{-2.9, 1.7, 3.5} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR, 1.0 },
+        //{ "AbductorPollicisBrevis_2", "Mesh_Carpals", MWMath::Point3D{6.7, 0.2, 8.1} , "Mesh_PP0", MWMath::Point3D{-2.7, -0.028, 3.5} ,{"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "AbductorPollicisBrevis_3", "Mesh_Carpals", MWMath::Point3D{7.4, 3.0, 14.0} , "Mesh_PP0", MWMath::Point3D{-3.4, 0.64, 3.3} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "AbductorPollicisBrevis_4", "Mesh_Carpals", MWMath::Point3D{4.3, 3.7, 12.0} , "Mesh_PP0", MWMath::Point3D{-2.5, 0.42, 3.5} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "AbductorPollicisBrevis_5", "Mesh_Carpals", MWMath::Point3D{7.1, 2.2, 10.0} , "Mesh_PP0", MWMath::Point3D{-2.3, 1.8, 2.8} ,  {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
 
-        { "FlexorPollicisBrevisSuperficial_1", "Mesh_Carpals", MWMath::Point3D{8.1, 0.7, 17.0} , "Mesh_PP0", MWMath::Point3D{2.0, 6.1, 6.3} , {}, {}, 3, FLEXORCOLOR },
-        //{ "FlexorPollicisBrevisSuperficial_2", "Mesh_Carpals", MWMath::Point3D{8.1, 0.6, 15.0} , "Mesh_PP0", MWMath::Point3D{2.0, 4.4, 5.3} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{8.0, 6.4, 8.0} } }, 3, FLEXORCOLOR },
+        //{ "FlexorPollicisBrevisSuperficial_1", "Mesh_Carpals", MWMath::Point3D{8.1, 0.7, 17.0} , "Mesh_PP0", MWMath::Point3D{2.0, 6.1, 6.3} , {"Mesh_MC0", "Mesh_MCP0_Joint",}, {}, 10, FLEXORCOLOR },
+        //{ "FlexorPollicisBrevisSuperficial_2", "Mesh_Carpals", MWMath::Point3D{8.1, 0.6, 15.0} , "Mesh_PP0", MWMath::Point3D{2.0, 4.4, 5.3} , {"Mesh_MC0", "Mesh_MCP0_Joint",}, {}, 10, FLEXORCOLOR },
 
-        { "FlexorPollicisBrevisDeep_1", "Mesh_Carpals", MWMath::Point3D{3.02, -4.0, -1.0} , "Mesh_PP0", MWMath::Point3D{1.3, 0.5, 2.6} , {}, {}, 3, FLEXORCOLOR },
+        { "FlexorPollicisBrevisDeep_1", "Mesh_Carpals", MWMath::Point3D{3.02, -4.0, -1.0} , "Mesh_PP0", MWMath::Point3D{1.3, 0.5, 2.6} , {"Mesh_MC0", "Mesh_MCP0_Joint", "Mesh_PP0"}, {}, 10, FLEXORCOLOR },
 
-        { "OpponensPollicis_1", "Mesh_Carpals", MWMath::Point3D{9.1, -5.4, 19.0} , "Mesh_MC0", MWMath::Point3D{0.34, -5.6, 1.6} , {}, {}, 3, OTHERMUSCLECOLOR },
-        //{ "OpponensPollicis_2", "Mesh_Carpals", MWMath::Point3D{9.7, -4.9, 15.0} , "Mesh_MC0", MWMath::Point3D{3.3, -0.4, 1.4} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{5.5, 8.3, 3.0} } }, 3, OTHERMUSCLECOLOR },
-        //{ "OpponensPollicis_3", "Mesh_Carpals", MWMath::Point3D{8.3, -10.0, 18.0} , "Mesh_MC0", MWMath::Point3D{1.8, -1.1, 1.8} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{2.6, 8.5, 5.2} } }, 3, OTHERMUSCLECOLOR },
-        //{ "OpponensPollicis_4", "Mesh_Carpals", MWMath::Point3D{6.2, -8.8, 25.0} , "Mesh_MC0", MWMath::Point3D{1.8, -10.5, 2.1} , {}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{-2.1, 9.2, 9.8} } }, 3, OTHERMUSCLECOLOR },
+        //{ "OpponensPollicis_1", "Mesh_Carpals", MWMath::Point3D{9.1, -5.4, 19.0} , "Mesh_MC0", MWMath::Point3D{0.34, -5.6, 1.6} ,{"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "OpponensPollicis_2", "Mesh_Carpals", MWMath::Point3D{9.7, -4.9, 15.0} , "Mesh_MC0", MWMath::Point3D{3.3, -0.4, 1.4} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "OpponensPollicis_3", "Mesh_Carpals", MWMath::Point3D{8.3, -10.0, 18.0} , "Mesh_MC0", MWMath::Point3D{1.8, -1.1, 1.8} ,{"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "OpponensPollicis_4", "Mesh_Carpals", MWMath::Point3D{6.2, -8.8, 25.0} , "Mesh_MC0", MWMath::Point3D{1.8, -10.5, 2.1} ,{"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 10, OTHERMUSCLECOLOR },
 
-        { "AdductorPollicisOblique_1", "Mesh_Carpals", MWMath::Point3D{6.7, -10.0, -0.4} , "Mesh_PP0", MWMath::Point3D{5.93, 6.8, -0.24} , {}, {}, 2, OTHERMUSCLECOLOR },
-        //{ "AdductorPollicisOblique_2", "Mesh_Carpals", MWMath::Point3D{6.3, -14.0, -5.0} , "Mesh_PP0", MWMath::Point3D{5.77, 8.4, -0.91} , {}, {}, 2, OTHERMUSCLECOLOR },
-        //{ "AdductorPollicisOblique_3", "Mesh_Carpals", MWMath::Point3D{6.82, -23.0, -4.8} , "Mesh_PP0", MWMath::Point3D{6.3, 10.0, -4.7} , {}, {}, 2, OTHERMUSCLECOLOR },
+        //{ "AdductorPollicisOblique_1", "Mesh_Carpals", MWMath::Point3D{6.7, -10.0, -0.4} , "Mesh_PP0", MWMath::Point3D{5.93, 6.8, -0.24} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 2, OTHERMUSCLECOLOR },
+        //{ "AdductorPollicisOblique_2", "Mesh_Carpals", MWMath::Point3D{6.3, -14.0, -5.0} , "Mesh_PP0", MWMath::Point3D{5.77, 8.4, -0.91} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 2, OTHERMUSCLECOLOR },
+        //{ "AdductorPollicisOblique_3", "Mesh_Carpals", MWMath::Point3D{6.82, -23.0, -4.8} , "Mesh_PP0", MWMath::Point3D{6.3, 10.0, -4.7} , {"Mesh_MC0", "Mesh_MCP0_Joint"}, {}, 2, OTHERMUSCLECOLOR },
 
-        { "AdductorPollicisTransverse_1", "Mesh_MC2", MWMath::Point3D{1.4, 23.0, -0.36} , "Mesh_PP0", MWMath::Point3D{3.7, 10.0, -7.5} , {}, {}, 2, OTHERMUSCLECOLOR },
-        //{ "AdductorPollicisTransverse_2", "Mesh_MC2", MWMath::Point3D{1.7, -2.4, -0.078} , "Mesh_PP0", MWMath::Point3D{3.1, 4.9, -6.1} , {}, {}, 2, OTHERMUSCLECOLOR },
-        //{ "AdductorPollicisTransverse_3", "Mesh_MC2", MWMath::Point3D{4.1, -10.0, -0.41} , "Mesh_PP0", MWMath::Point3D{1.2, 0.8, -5.0} , {}, {}, 2, OTHERMUSCLECOLOR },
-        //{ "AdductorPollicisTransverse_4", "Mesh_MC2", MWMath::Point3D{1.3, 10.0, -0.4} , "Mesh_PP0", MWMath::Point3D{3.5, 7.5, -7.2} , {}, {}, 2, OTHERMUSCLECOLOR },
-        */
+        //{ "AdductorPollicisTransverse_1", "Mesh_MC2", MWMath::Point3D{1.4, 23.0, -0.36} , "Mesh_PP0", MWMath::Point3D{3.7, 10.0, -7.5}, {"Mesh_MC0", "Mesh_MC1", "Mesh_MCP0_Joint"}, {}, 2, OTHERMUSCLECOLOR },
+        //{ "AdductorPollicisTransverse_2", "Mesh_MC2", MWMath::Point3D{1.7, -2.4, -0.078} , "Mesh_PP0", MWMath::Point3D{3.1, 4.9, -6.1}, {"Mesh_MC0", "Mesh_MC1", "Mesh_MC2"}, {}, 2, OTHERMUSCLECOLOR },
+        //{ "AdductorPollicisTransverse_3", "Mesh_MC2", MWMath::Point3D{4.1, -10.0, -0.41} , "Mesh_PP0", MWMath::Point3D{1.2, 0.8, -5.0}, {"Mesh_MC0", "Mesh_MC1", "Mesh_MC2"}, {}, 2, OTHERMUSCLECOLOR },
+        //{ "AdductorPollicisTransverse_4", "Mesh_MC2", MWMath::Point3D{1.3, 10.0, -0.4} , "Mesh_PP0", MWMath::Point3D{3.5, 7.5, -7.2} ,  {"Mesh_MC0", "Mesh_MC1", "Mesh_MC2"}, {}, 2, OTHERMUSCLECOLOR },
+        
         // ==========================================
         // --- HYPOTHENAR (Kleiner Finger / Finger 4) ---
         // ==========================================
-        /*
-        { "FlexorDigitiMinimiBrevis_1", "Mesh_Carpals", MWMath::Point3D{12.0, -15.0, -21.0} , "Mesh_PP4", MWMath::Point3D{6.4, 11.0, -2.3} , {}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{6.4, 1.9, -3.9} } }, 3, FLEXORCOLOR },
-
-        { "AbductorDigitiMinimi_1", "Mesh_Carpals", MWMath::Point3D{12.0, -6.1, -25.0} , "Mesh_PP4", MWMath::Point3D{-0.631, 4.85, -4.56} , {}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{2.1, 5.34, -8.5} } }, 3, OTHERMUSCLECOLOR },
-        //{ "AbductorDigitiMinimi_2", "Mesh_Carpals", MWMath::Point3D{8.1, -5.6, -30.0} , "Mesh_PP4", MWMath::Point3D{1.25, 4.1, -5.85} , {}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{6.14, 4.745, -11.2} } }, 3, OTHERMUSCLECOLOR },
-
-        { "OpponensDigitiMinimi_1", "Mesh_Carpals", MWMath::Point3D{10.0, -22.0, -23.0} , "Mesh_MC4", MWMath::Point3D{2.3, -0.12, -4.0} , {}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{3.0, 9.2, -3.2} } }, 3, OTHERMUSCLECOLOR },
-        //{ "OpponensDigitiMinimi_2", "Mesh_Carpals", MWMath::Point3D{10.0, -20.0, -21.0} , "Mesh_MC4", MWMath::Point3D{2.1, -7.2, -4.0} , {}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{4.7, 8.7, 0.84} } }, 3, OTHERMUSCLECOLOR },
-        */
         
-        /*
+        //{ "FlexorDigitiMinimiBrevis_1", "Mesh_Carpals", MWMath::Point3D{12.0, -15.0, -21.0} , "Mesh_PP4", MWMath::Point3D{6.4, 11.0, -2.3} , {"Mesh_MC4"}, {}, 60, FLEXORCOLOR },
+        
+        //{ "AbductorDigitiMinimi_1", "Mesh_Carpals", MWMath::Point3D{12.0, -6.1, -25.0} , "Mesh_PP4", MWMath::Point3D{-0.631, 4.85, -4.56} , {"Mesh_MC4"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "AbductorDigitiMinimi_2", "Mesh_Carpals", MWMath::Point3D{8.1, -5.6, -30.0} , "Mesh_PP4", MWMath::Point3D{1.25, 4.1, -5.85} ,   {"Mesh_MC4"}, {} }, 10, OTHERMUSCLECOLOR },
+
+        //{ "OpponensDigitiMinimi_1", "Mesh_Carpals", MWMath::Point3D{10.0, -22.0, -23.0} , "Mesh_MC4", MWMath::Point3D{2.3, -0.12, -4.0} ,   {"Mesh_MC4"}, {}, 10, OTHERMUSCLECOLOR },
+        //{ "OpponensDigitiMinimi_2", "Mesh_Carpals", MWMath::Point3D{10.0, -20.0, -21.0} , "Mesh_MC4", MWMath::Point3D{2.1, -7.2, -4.0} ,  {"Mesh_MC4"}, {}, 10, OTHERMUSCLECOLOR },
+       
+        
+        
         // ==========================================
         // --- LUMBRICALS (Binnenmuskeln) ---
         // ==========================================
-        { "Lumbricals1_1", "Mesh_MC1", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP1", MWMath::Point3D{-2.0, 5.1, 3.7} ,  {"Mesh_MC1", "MeshMCP1_Joint"}, {}, 2, LUMBRICALCOLOR },
-        { "Lumbricals2_1", "Mesh_MC2", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP2", MWMath::Point3D{-0.36, 10.0, 4.1}, {"Mesh_MC2", "MeshMCP2_Joint"}, {}, 2, LUMBRICALCOLOR },
-        { "Lumbricals3_1", "Mesh_MC2", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP3", MWMath::Point3D{-3.4, 5.9, 3.5} ,  {"Mesh_MC2", "MeshMCP3_Joint"}, {}, 2, LUMBRICALCOLOR },
-        { "Lumbricals3_2", "Mesh_MC3", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP3", MWMath::Point3D{-2.1, 6.7, 4.1} ,  {"Mesh_MC3", "MeshMCP3_Joint"}, {}, 2, LUMBRICALCOLOR },
-        { "Lumbricals4_1", "Mesh_MC3", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP4", MWMath::Point3D{-0.038, 4.8, 3.2}, {"Mesh_MC3", "MeshMCP4_Joint"}, {}, 2, LUMBRICALCOLOR },
-        { "Lumbricals4_2", "Mesh_MC4", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP4", MWMath::Point3D{-0.6, 2.7, 2.7} ,  {"Mesh_MC4", "MeshMCP4_Joint"}, {}, 2, LUMBRICALCOLOR },
-         
+        { "Lumbricals1_1", "Mesh_MC1", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP1", MWMath::Point3D{-2.0, 5.1, 3.7} ,  {"Mesh_MC1", "Mesh_MCP1_Joint"}, {}, 10, LUMBRICALCOLOR },
+        { "Lumbricals2_1", "Mesh_MC2", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP2", MWMath::Point3D{-0.36, 10.0, 4.1}, {"Mesh_MC2", "Mesh_MCP2_Joint"}, {}, 10, LUMBRICALCOLOR },
+        { "Lumbricals3_1", "Mesh_MC2", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP3", MWMath::Point3D{-3.4, 5.9, 3.5} ,  {"Mesh_MC2", "Mesh_MCP3_Joint"}, {}, 10, LUMBRICALCOLOR },
+        { "Lumbricals3_2", "Mesh_MC3", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP3", MWMath::Point3D{-2.1, 6.7, 4.1} ,  {"Mesh_MC3", "Mesh_MCP3_Joint"}, {}, 10, LUMBRICALCOLOR },
+        { "Lumbricals4_1", "Mesh_MC3", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP4", MWMath::Point3D{-0.038, 4.8, 3.2}, {"Mesh_MC3", "Mesh_MCP4_Joint"}, {}, 10, LUMBRICALCOLOR },
+        { "Lumbricals4_2", "Mesh_MC4", MWMath::Point3D{10.0, 0.0, 0.0} , "Mesh_PP4", MWMath::Point3D{-0.6, 2.7, 2.7} ,  {"Mesh_MC4", "Mesh_MCP4_Joint"}, {}, 10, LUMBRICALCOLOR },
+        
+        /* 
         // ==========================================
         // --- PALMAR INTEROSSEI ---
         // ==========================================
-        { "PalmarInterossei1_1", "Mesh_MC1", MWMath::Point3D{0.2, -7.0, -2.6} , "Mesh_PP1", MWMath::Point3D{2.9, 8.1, -5.1} ,  {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{2.2, -14.0, -6.1} } }, 3, PINTEROSSEICCOLOR },
-        //{ "PalmarInterossei1_2", "Mesh_MC1", MWMath::Point3D{2.1, 11.0, -2.1} , "Mesh_PP1", MWMath::Point3D{1.51, 9.3, -5.6},{"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{2.0, -3.2, -7.5} } }, 3, PINTEROSSEICCOLOR },
-        
-        { "PalmarInterossei2_1", "Mesh_MC3", MWMath::Point3D{-0.53, 5.8, 1.6} , "Mesh_PP3", MWMath::Point3D{2.2, 12.0, 5.6} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{3.1, -0.49, 5.3} } }, 3, PINTEROSSEICCOLOR },
-        //{ "PalmarInterossei2_2", "Mesh_MC3", MWMath::Point3D{-0.42, -5.3, 2.5} , "Mesh_PP3", MWMath::Point3D{1.2, 14.0, 6.5} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{1.6, -10.7, 5.3} } }, 3, PINTEROSSEICCOLOR },
-        
-        { "PalmarInterossei3_1", "Mesh_MC4", MWMath::Point3D{-2.0, -4.8, 3.9} , "Mesh_PP4", MWMath::Point3D{2.3, 7.4, 4.7} , {"MeshMCP4_Joint"}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{0.0, -10.2, 5.2} } }, 3, PINTEROSSEICCOLOR },
-        //{ "PalmarInterossei3_2", "Mesh_MC4", MWMath::Point3D{-2.0, 5.9, 2.1} , "Mesh_PP4", MWMath::Point3D{3.1, 7.1, 4.2} , {"MeshMCP4_Joint"}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{-0.5, -0.98, 3.6} } }, 3, PINTEROSSEICCOLOR },
+        { "PalmarInterossei1_1", "Mesh_MC1", MWMath::Point3D{0.2, -7.0, -2.6} , "Mesh_PP1", MWMath::Point3D{2.9, 8.1, -5.1} ,  {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{2.2, -14.0, -6.1} } }, 10, PINTEROSSEICCOLOR },
+        //{ "PalmarInterossei1_2", "Mesh_MC1", MWMath::Point3D{2.1, 11.0, -2.1} , "Mesh_PP1", MWMath::Point3D{1.51, 9.3, -5.6},{"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{2.0, -3.2, -7.5} } }, 10, PINTEROSSEICCOLOR },
+        { "PalmarInterossei2_1", "Mesh_MC3", MWMath::Point3D{-0.53, 5.8, 1.6} , "Mesh_PP3", MWMath::Point3D{2.2, 12.0, 5.6} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{3.1, -0.49, 5.3} } }, 10, PINTEROSSEICCOLOR },
+        //{ "PalmarInterossei2_2", "Mesh_MC3", MWMath::Point3D{-0.42, -5.3, 2.5} , "Mesh_PP3", MWMath::Point3D{1.2, 14.0, 6.5} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{1.6, -10.7, 5.3} } }, 10, PINTEROSSEICCOLOR },
+        { "PalmarInterossei3_1", "Mesh_MC4", MWMath::Point3D{-2.0, -4.8, 3.9} , "Mesh_PP4", MWMath::Point3D{2.3, 7.4, 4.7} , {"MeshMCP4_Joint"}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{0.0, -10.2, 5.2} } }, 10, PINTEROSSEICCOLOR },
+        //{ "PalmarInterossei3_2", "Mesh_MC4", MWMath::Point3D{-2.0, 5.9, 2.1} , "Mesh_PP4", MWMath::Point3D{3.1, 7.1, 4.2} , {"MeshMCP4_Joint"}, { {"Via_1", "Mesh_MC4", MWMath::Point3D{-0.5, -0.98, 3.6} } }, 10, PINTEROSSEICCOLOR },
 
         // ==========================================
         // --- DORSAL INTEROSSEI ---
         // ==========================================
-        { "DorsalInterossei1_1", "Mesh_MC1", MWMath::Point3D{-2.7, 14.0, 5.5} , "Mesh_PP1", MWMath::Point3D{-2.0, 12.0, 9.1} , {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{0.81, 1.9, 8.5} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei1_2", "Mesh_MC1", MWMath::Point3D{-2.5, 1.4, 4.3} , "Mesh_PP1", MWMath::Point3D{-4.1, 12.0, 8.4} , {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{-1.6, 1.1, 6.5} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei1_3", "Mesh_MC1", MWMath::Point3D{-2.1, -10.0, 4.5} , "Mesh_PP1", MWMath::Point3D{-2.8, 14.0, 9.3} , {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC1", MWMath::Point3D{-1.1, 0.93, 11.0} } }, 3, DINTEROSSEICCOLOR },
-        { "DorsalInterossei1_4", "Mesh_MC0", MWMath::Point3D{1.2, 5.7, -4.3} , "Mesh_PP1", MWMath::Point3D{-2.1, 11.0, 8.2} , {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{7.0, 8.0, -15.0} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei1_5", "Mesh_MC0", MWMath::Point3D{0.88, -1.3, -4.7} , "Mesh_PP1", MWMath::Point3D{-3.8, 11.0, 7.6} , {"MeshMCP1_Joint"}, { {"Via_1", "Mesh_MC0", MWMath::Point3D{7.0, 0.0, -15.0} } }, 3, DINTEROSSEICCOLOR },
+        { "DorsalInterossei1_1", "Mesh_MC1", MWMath::Point3D{-2.7, 14.0, 5.5} , "Mesh_PP1", MWMath::Point3D{-2.0, 12.0, 9.1} , {"MeshMCP1_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei1_2", "Mesh_MC1", MWMath::Point3D{-2.5, 1.4, 4.3} , "Mesh_PP1", MWMath::Point3D{-4.1, 12.0, 8.4} , {"MeshMCP1_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei1_3", "Mesh_MC1", MWMath::Point3D{-2.1, -10.0, 4.5} , "Mesh_PP1", MWMath::Point3D{-2.8, 14.0, 9.3} , {"MeshMCP1_Joint"}, {} }, 10, DINTEROSSEICCOLOR },
+        { "DorsalInterossei1_4", "Mesh_MC0", MWMath::Point3D{1.2, 5.7, -4.3} , "Mesh_PP1", MWMath::Point3D{-2.1, 11.0, 8.2} , {"MeshMCP1_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei1_5", "Mesh_MC0", MWMath::Point3D{0.88, -1.3, -4.7} , "Mesh_PP1", MWMath::Point3D{-3.8, 11.0, 7.6} , {"MeshMCP1_Joint"}, {}, 10, DINTEROSSEICCOLOR },
 
-        { "DorsalInterossei2_1", "Mesh_MC1", MWMath::Point3D{-3.3, 13.0, -5.4} , "Mesh_PP2", MWMath::Point3D{-2.0, 10.0, 5.6} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-2.0, -9.0, 8.5} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei2_2", "Mesh_MC1", MWMath::Point3D{-3.7, 10.0, -4.7} , "Mesh_PP2", MWMath::Point3D{-2.6, 10.0, 5.6} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-2.6, -20.6, 8.5} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei2_3", "Mesh_MC1", MWMath::Point3D{-3.2, -9.5, -4.6} , "Mesh_PP2", MWMath::Point3D{-3.5, 10.0, 5.1} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-3.5, -29.6, 8.5} } }, 3, DINTEROSSEICCOLOR },
-        { "DorsalInterossei2_4", "Mesh_MC2", MWMath::Point3D{-5.6, -9.2, 3.4} , "Mesh_PP2", MWMath::Point3D{-3.3, 15.0, 4.6} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-4.3, -26.0, 5.9} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei2_5", "Mesh_MC2", MWMath::Point3D{-5.9, 0.49, 3.4} , "Mesh_PP2", MWMath::Point3D{-0.96, 15.0, 4.6} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-3.6, -26.0, 5.4} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei2_6", "Mesh_MC2", MWMath::Point3D{-5.6, 9.9, 2.5} , "Mesh_PP2", MWMath::Point3D{-5.6, 15.0, 4.6} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-2.9, -26.0, 5.1} } }, 3, DINTEROSSEICCOLOR },
+        { "DorsalInterossei2_1", "Mesh_MC1", MWMath::Point3D{-3.3, 13.0, -5.4} , "Mesh_PP2", MWMath::Point3D{-2.0, 10.0, 5.6} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei2_2", "Mesh_MC1", MWMath::Point3D{-3.7, 10.0, -4.7} , "Mesh_PP2", MWMath::Point3D{-2.6, 10.0, 5.6} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei2_3", "Mesh_MC1", MWMath::Point3D{-3.2, -9.5, -4.6} , "Mesh_PP2", MWMath::Point3D{-3.5, 10.0, 5.1} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        { "DorsalInterossei2_4", "Mesh_MC2", MWMath::Point3D{-5.6, -9.2, 3.4} , "Mesh_PP2", MWMath::Point3D{-3.3, 15.0, 4.6} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei2_5", "Mesh_MC2", MWMath::Point3D{-5.9, 0.49, 3.4} , "Mesh_PP2", MWMath::Point3D{-0.96, 15.0, 4.6} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei2_6", "Mesh_MC2", MWMath::Point3D{-5.6, 9.9, 2.5} , "Mesh_PP2", MWMath::Point3D{-5.6, 15.0, 4.6} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
     
-        { "DorsalInterossei3_1", "Mesh_MC2", MWMath::Point3D{-4.7, 9.8, -3.1} , "Mesh_PP2", MWMath::Point3D{-0.21, 16.0, -6.5} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-2.3, -21.0, -7.0} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei3_2", "Mesh_MC2", MWMath::Point3D{-4.2, 0.95, -3.7} , "Mesh_PP2", MWMath::Point3D{-2.9, 16.0, -5.0} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-3.0, -20.0, -6.5} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei3_3", "Mesh_MC2", MWMath::Point3D{-5.5, -8.8, -4.5} , "Mesh_PP2", MWMath::Point3D{-1.6, 17.0, -5.9} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-3.5, -21.0, -8.1} } }, 3, DINTEROSSEICCOLOR },
-        { "DorsalInterossei3_4", "Mesh_MC3", MWMath::Point3D{-3.3, 7.7, 2.6} , "Mesh_PP2", MWMath::Point3D{-1.8, 10.0, -5.6} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-1.3, 20.0, -9.4} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei3_5", "Mesh_MC3", MWMath::Point3D{-2.8, -6.1, 3.2} , "Mesh_PP2", MWMath::Point3D{-2.7, 10.0, -4.9} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-2.8, -19.0, -9.9} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei3_6", "Mesh_MC3", MWMath::Point3D{-2.2, 0.96, 2.7} , "Mesh_PP2", MWMath::Point3D{-0.18, 10.0, -6.2} , {"MeshMCP2_Joint"}, { {"Via_1", "Mesh_MC2", MWMath::Point3D{-1.7, -20.0, -8.6} } }, 3, DINTEROSSEICCOLOR },
+        { "DorsalInterossei3_1", "Mesh_MC2", MWMath::Point3D{-4.7, 9.8, -3.1} , "Mesh_PP2", MWMath::Point3D{-0.21, 16.0, -6.5} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei3_2", "Mesh_MC2", MWMath::Point3D{-4.2, 0.95, -3.7} , "Mesh_PP2", MWMath::Point3D{-2.9, 16.0, -5.0} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei3_3", "Mesh_MC2", MWMath::Point3D{-5.5, -8.8, -4.5} , "Mesh_PP2", MWMath::Point3D{-1.6, 17.0, -5.9} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        { "DorsalInterossei3_4", "Mesh_MC3", MWMath::Point3D{-3.3, 7.7, 2.6} , "Mesh_PP2", MWMath::Point3D{-1.8, 10.0, -5.6} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei3_5", "Mesh_MC3", MWMath::Point3D{-2.8, -6.1, 3.2} , "Mesh_PP2", MWMath::Point3D{-2.7, 10.0, -4.9} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei3_6", "Mesh_MC3", MWMath::Point3D{-2.2, 0.96, 2.7} , "Mesh_PP2", MWMath::Point3D{-0.18, 10.0, -6.2} , {"MeshMCP2_Joint"}, {}, 10, DINTEROSSEICCOLOR },
 
-        { "DorsalInterossei4_1", "Mesh_MC3", MWMath::Point3D{-2.4, -0.64, -4.4} , "Mesh_PP3", MWMath::Point3D{-2.2, 17.0, -6.4} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-1.9, -18.0, -7.1} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei4_2", "Mesh_MC3", MWMath::Point3D{-2.1, -6.7, -4.1} , "Mesh_PP3", MWMath::Point3D{-3.3, 17.0, -6.1} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-1.8, -18.0, -5.7} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei4_3", "Mesh_MC3", MWMath::Point3D{-2.7, 6.0, -4.1} , "Mesh_PP3", MWMath::Point3D{-1.3, 17.0, -6.6} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-0.56, -18.0, -6.0} } }, 3, DINTEROSSEICCOLOR },
-        { "DorsalInterossei4_4", "Mesh_MC4", MWMath::Point3D{-4.2, 7.1, 1.1} , "Mesh_PP3", MWMath::Point3D{-1.6, 6.0, -6.0} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-2.4, -16.0, -7.8} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei4_5", "Mesh_MC4", MWMath::Point3D{-4.8, 0.85, 1.8} , "Mesh_PP3", MWMath::Point3D{-1.1, 5.0, -6.0} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-2.1, -18.0, -6.3} } }, 3, DINTEROSSEICCOLOR },
-        //{ "DorsalInterossei4_6", "Mesh_MC4", MWMath::Point3D{-4.9, -6.4, 3.2} , "Mesh_PP3", MWMath::Point3D{-3.3, 5.0, -5.0} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-2.3, -16.0, -7.0} } }, 3, DINTEROSSEICCOLOR },
+        { "DorsalInterossei4_1", "Mesh_MC3", MWMath::Point3D{-2.4, -0.64, -4.4} , "Mesh_PP3", MWMath::Point3D{-2.2, 17.0, -6.4} , {"MeshMCP3_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei4_2", "Mesh_MC3", MWMath::Point3D{-2.1, -6.7, -4.1} , "Mesh_PP3", MWMath::Point3D{-3.3, 17.0, -6.1} , {"MeshMCP3_Joint"}, {}, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei4_3", "Mesh_MC3", MWMath::Point3D{-2.7, 6.0, -4.1} , "Mesh_PP3", MWMath::Point3D{-1.3, 17.0, -6.6} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-0.56, -18.0, -6.0} } }, 10, DINTEROSSEICCOLOR },
+        { "DorsalInterossei4_4", "Mesh_MC4", MWMath::Point3D{-4.2, 7.1, 1.1} , "Mesh_PP3", MWMath::Point3D{-1.6, 6.0, -6.0} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-2.4, -16.0, -7.8} } }, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei4_5", "Mesh_MC4", MWMath::Point3D{-4.8, 0.85, 1.8} , "Mesh_PP3", MWMath::Point3D{-1.1, 5.0, -6.0} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-2.1, -18.0, -6.3} } }, 10, DINTEROSSEICCOLOR },
+        //{ "DorsalInterossei4_6", "Mesh_MC4", MWMath::Point3D{-4.9, -6.4, 3.2} , "Mesh_PP3", MWMath::Point3D{-3.3, 5.0, -5.0} , {"MeshMCP3_Joint"}, { {"Via_1", "Mesh_MC3", MWMath::Point3D{-2.3, -16.0, -7.0} } }, 10, DINTEROSSEICCOLOR },
         */
        
         
         // ==========================================
         // --- EXTRINSIC FLEXORS (Von Unterarm) ---
         // ==========================================
-        /* 
-        { "FlexorCarpiUlnaris_1", "Mesh_Humerus", MWMath::Point3D{-17.5, -355.6, -20.3} , "Mesh_Carpals", MWMath::Point3D{10.77, 2.472, -20.86} , {"MeshVP_FCU"}, {}, 30, FLEXORCOLOR },
-        //{ "FlexorCarpiUlnaris_2", "Mesh_Humerus", MWMath::Point3D{-20.85, -359.3, -20.17} , "Mesh_Carpals", MWMath::Point3D{10.73, 3.284, -17.91} , {}, { {"Via_1", "Mesh_Ulna", MWMath::Point3D{23.29, 58.17, 10.73} } }, 30, FLEXORCOLOR },
         
-        { "FlexorCarpiRadialis_1", "Mesh_Humerus", MWMath::Point3D{-12.92, -359.6, -16.45} , "Mesh_MC1", MWMath::Point3D{2.84, 24.64, -4.447} , {"MeshVP_FCR"}, {}, 30, FLEXORCOLOR },
-        //{ "FlexorCarpiRadialis_2", "Mesh_Humerus", MWMath::Point3D{-13.64, -355.4, -13.84} , "Mesh_MC1", MWMath::Point3D{2.553, 28.05, -5.668} , {}, { {"Via_1", "Mesh_Ulna", MWMath::Point3D{12.88, 67.91, -18.02} } }, 30, FLEXORCOLOR },
-        */
+        { "FlexorCarpiUlnaris_1", "Mesh_Humerus", MWMath::Point3D{-17.5, -355.6, -20.3} , "Mesh_Carpals", MWMath::Point3D{10.77, 2.472, -20.86} ,   {"MeshVP_FCU"}, {}, 30, FLEXORCOLOR, 1.0 },
+        //{ "FlexorCarpiUlnaris_2", "Mesh_Humerus", MWMath::Point3D{-20.85, -359.3, -20.17} , "Mesh_Carpals", MWMath::Point3D{10.73, 3.284, -17.91},{"MeshVP_FCU"}, {}, 30, FLEXORCOLOR, 1.0 },
         /* 
-        { "FlexorPollicisLongus_1", "Mesh_Radius", MWMath::Point3D{-89.66, -8.361, -4.372} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} , {"MeshVP_FPL"}, {}, 3, FLEXORCOLOR },
-        //{ "FlexorPollicisLongus_2", "Mesh_Radius", MWMath::Point3D{-77.92, -8.64, -2.982} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-182.0, -8.82, -10.2} } }, 3, FLEXORCOLOR },
-        */
+        { "FlexorCarpiRadialis_1", "Mesh_Humerus", MWMath::Point3D{-12.92, -359.6, -16.45} , "Mesh_MC1", MWMath::Point3D{2.84, 24.64, -4.447} ,  {"MeshVP_FCR"}, {}, 30, FLEXORCOLOR, 1.0 },
+        //{ "FlexorCarpiRadialis_2", "Mesh_Humerus", MWMath::Point3D{-13.64, -355.4, -13.84} , "Mesh_MC1", MWMath::Point3D{2.553, 28.05, -5.668},{"MeshVP_FCR"}, {}, 30, FLEXORCOLOR, 1.0 },
+       
         
-        //{ "FlexorDigitorumSuperficialis_1_1", "Mesh_Radius", MWMath::Point3D{-61.7, -3.448, -4.993} , "Mesh_MP1", MWMath::Point3D{2.116, 6.523, 2.057} ,  {"MeshVP_FDS", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1"}, { }, 60, FLEXORCOLOR, 1.0},
-        //{ "FlexorDigitorumSuperficialis_1_2", "Mesh_Radius", MWMath::Point3D{-46.97, -0.906, -3.337} , "Mesh_MP1", MWMath::Point3D{2.393, 7.813, 2.173},  {"MeshVP_FDS", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint"}, { } }, 3, FLEXORCOLOR },
-        /*{ "FlexorDigitorumSuperficialis_2_1", "Mesh_Radius", MWMath::Point3D{-33.96, 1.06, -1.918} , "Mesh_MP2", MWMath::Point3D{2.047, 9.653, 0.5864},{},{"MeshVP_FDS", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint"}, 3, FLEXORCOLOR },
-        //{ "FlexorDigitorumSuperficialis_2_2", "Mesh_Radius", MWMath::Point3D{-21.14, 3.75, -2.235} , "Mesh_MP2", MWMath::Point3D{2.234, 8.336, -0.335},   {"MeshVP_FDS", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint"}, {}, 3, FLEXORCOLOR },
-        { "FlexorDigitorumSuperficialis_3_1", "Mesh_Humerus", MWMath::Point3D{-18.92, -330.2, -23.85} , "Mesh_MP3", MWMath::Point3D{2.652, 7.257, 2.47} ,   {"MeshVP_FDS", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint"}, {}, 3, FLEXORCOLOR },
-        //{ "FlexorDigitorumSuperficialis_3_2", "Mesh_Humerus", MWMath::Point3D{-17.97, -338.3, -24.45} , "Mesh_MP3", MWMath::Point3D{2.03, 9.25, 1.878} ,  {"MeshVP_FDS", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint"}, {}, 3, FLEXORCOLOR },
-        { "FlexorDigitorumSuperficialis_4_1", "Mesh_Humerus", MWMath::Point3D{-21.94, -368.0, -24.17} , "Mesh_MP4", MWMath::Point3D{1.495, 5.604, -1.007},  {"MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 3, FLEXORCOLOR },
-        //{ "FlexorDigitorumSuperficialis_4_2", "Mesh_Humerus", MWMath::Point3D{-21.41, -370.6, -23.6} , "Mesh_MP4", MWMath::Point3D{1.457, 5.692, -1.092}, {"MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 3, FLEXORCOLOR },
-        */
-        /* 
-        { "FlexorDigitorumProfundus_1_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP1", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {}, 50, FLEXORCOLOR },
-        //{ "FlexorDigitorumProfundus_1_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP1", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {} }, 50, FLEXORCOLOR },
-        { "FlexorDigitorumProfundus_2_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP2", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint", "Mesh_MP2", "MeshVPF_MP2", "Mesh_DIP2_Joint"}, {}, 50, FLEXORCOLOR },
-        //{ "FlexorDigitorumProfundus_2_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP2", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint", "Mesh_MP2", "MeshVPF_MP2", "Mesh_DIP2_Joint"}, {} }, 50, FLEXORCOLOR },
-        { "FlexorDigitorumProfundus_3_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP3", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPF_MP3", "Mesh_DIP3_Joint"}, {}, 50, FLEXORCOLOR },
-        //{ "FlexorDigitorumProfundus_3_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP3", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPF_MP3", "Mesh_DIP3_Joint"}, {} }, 50, FLEXORCOLOR },
-        { "FlexorDigitorumProfundus_4_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP4", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, { }, 50, FLEXORCOLOR },
-        //{ "FlexorDigitorumProfundus_4_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP4", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, {}, 50, FLEXORCOLOR },
-        */
-        //{ "PalmarisLongus_1", "Mesh_Humerus", MWMath::Point3D{-18.52, -363.9, -24.39} , "Mesh_Carpals", MWMath::Point3D{0.295, -4.826, 0.209} , {"MeshVP_FPL"}, {}, 50, FLEXORCOLOR },
+        { "FlexorPollicisLongus_1", "Mesh_Radius", MWMath::Point3D{-89.66, -8.361, -4.372} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} , {"MeshVP_FPL"}, {}, 10, FLEXORCOLOR, 1.0 },
+        //{ "FlexorPollicisLongus_2", "Mesh_Radius", MWMath::Point3D{-77.92, -8.64, -2.982} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} ,{"MeshVP_FPL"}, {}, 10, FLEXORCOLOR, 1.0 },
+       
+        
+        { "FlexorDigitorumSuperficialis_1_1", "Mesh_Radius", MWMath::Point3D{-61.7, -3.448, -4.993} , "Mesh_MP1", MWMath::Point3D{2.116, 6.523, 2.057} ,  {"MeshVP_FDS", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1"}, { }, 60, FLEXORCOLOR, 1.0},
+        //{ "FlexorDigitorumSuperficialis_1_2", "Mesh_Radius", MWMath::Point3D{-46.97, -0.906, -3.337} , "Mesh_MP1", MWMath::Point3D{2.393, 7.813, 2.173},  {"MeshVP_FDS", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint"}, { } }, 60, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumSuperficialis_2_1", "Mesh_Radius", MWMath::Point3D{-33.96, 1.06, -1.918} , "Mesh_MP2", MWMath::Point3D{2.047, 9.653, 0.5864},     {"MeshVP_FDS", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint"},  {}, 60, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumSuperficialis_2_2", "Mesh_Radius", MWMath::Point3D{-21.14, 3.75, -2.235} , "Mesh_MP2", MWMath::Point3D{2.234, 8.336, -0.335},   {"MeshVP_FDS", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint"}, {}, 60, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumSuperficialis_3_1", "Mesh_Humerus", MWMath::Point3D{-18.92, -330.2, -23.85} , "Mesh_MP3", MWMath::Point3D{2.652, 7.257, 2.47} ,   {"MeshVP_FDS", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint"}, {}, 60, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumSuperficialis_3_2", "Mesh_Humerus", MWMath::Point3D{-17.97, -338.3, -24.45} , "Mesh_MP3", MWMath::Point3D{2.03, 9.25, 1.878} ,  {"MeshVP_FDS", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint"}, {}, 60, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumSuperficialis_4_1", "Mesh_Humerus", MWMath::Point3D{-21.94, -368.0, -24.17} , "Mesh_MP4", MWMath::Point3D{1.495, 5.604, -1.007},  {"MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 60, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumSuperficialis_4_2", "Mesh_Humerus", MWMath::Point3D{-21.41, -370.6, -23.6} , "Mesh_MP4", MWMath::Point3D{1.457, 5.692, -1.092}, {"MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 60, FLEXORCOLOR, 1.0 },
+       
+        
+        { "FlexorDigitorumProfundus_1_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP1", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumProfundus_1_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP1", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {} }, 50, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumProfundus_2_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP2", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint", "Mesh_MP2", "MeshVPF_MP2", "Mesh_DIP2_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumProfundus_2_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP2", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint", "Mesh_MP2", "MeshVPF_MP2", "Mesh_DIP2_Joint"}, {} }, 50, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumProfundus_3_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP3", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPF_MP3", "Mesh_DIP3_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumProfundus_3_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP3", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPF_MP3", "Mesh_DIP3_Joint"}, {} }, 50, FLEXORCOLOR, 1.0 },
+       
+        { "FlexorDigitorumProfundus_4_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP4", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"Mesh_Carpals", "MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, { }, 50, FLEXORCOLOR, 1.0 },
+        //{ "FlexorDigitorumProfundus_4_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP4", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
+        
+        { "PalmarisLongus_1", "Mesh_Humerus", MWMath::Point3D{-18.52, -363.9, -24.39} , "Mesh_Carpals", MWMath::Point3D{0.295, -4.826, 0.209} , {"MeshVP_FPL"}, {}, 50, FLEXORCOLOR },
        
         // ==========================================
         // --- EXTRINSIC EXTENSORS (Table 7) ---
         // ==========================================
-        /* { "ExtensorCarpiRadialisLongus_1", "Mesh_Humerus", MWMath::Point3D{25.37, -320.2, 2.568} , "Mesh_MC1", MWMath::Point3D{-8.58, 28.16, 4.778} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{4.335, -17.12, 2.269} } }, 3, EXTENSORCOLOR },
-        //{ "ExtensorCarpiRadialisLongus_2", "Mesh_Humerus", MWMath::Point3D{32.2, -342.3, 1.9} , "Mesh_MC1", MWMath::Point3D{-8.56, 25.58, 4.415} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-3.796, -20.34, 10.88} } }, 3, EXTENSORCOLOR },
-        { "ExtensorCarpiRadialisBrevis_1", "Mesh_Humerus", MWMath::Point3D{39.0, -331.2, -1.775} , "Mesh_MC2", MWMath::Point3D{-12.26, 25.31, -0.861} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-33.14, -9.632, 16.33} } }, 3, EXTENSORCOLOR },
-        //{ "ExtensorCarpiRadialisBrevis_2", "Mesh_Humerus", MWMath::Point3D{39.98, -336.8, -4.294} , "Mesh_MC2", MWMath::Point3D{-11.96, 27.73, -0.582} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-34.24, -16.86, 11.73} } }, 3, EXTENSORCOLOR },
-        { "ExtensorCarpiUlnaris_1", "Mesh_Humerus", MWMath::Point3D{24.11, -346.4, 0.571} , "Mesh_MC4", MWMath::Point3D{-2.222, 17.97, -4.251} , {}, { {"Via_1", "Mesh_Ulna", MWMath::Point3D{-4.28, 109.4, 4.36} } }, 3, EXTENSORCOLOR },
-        //{ "ExtensorCarpiUlnaris_2", "Mesh_Humerus", MWMath::Point3D{30.96, -342.0, 2.139} , "Mesh_MC4", MWMath::Point3D{-2.792, 17.03, -4.285} , {}, { {"Via_1", "Mesh_Ulna", MWMath::Point3D{-2.785, 109.5, 2.853} } }, 3, EXTENSORCOLOR },
-         */
-
-        /* { "ExtensorDigitorum_1_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP1", MWMath::Point3D{-4.47, 4.714, -1.288} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR*1.0, 1.0},
-        //{ "ExtensorDigitorum_1_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP1", MWMath::Point3D{-4.524, 5.019, 0.458} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-89.21, -4.973, 14.83} } }, 3, EXTENSORCOLOR },
-        { "ExtensorDigitorum_2_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP2", MWMath::Point3D{-4.47, 4.714, -1.288} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPE_PP2", "Mesh_PIP2_Joint", "Mesh_MP2", "MeshVPE_MP2", "Mesh_DIP2_Joint"}, {}, 80, EXTENSORCOLOR*0.85, 1.0},
-        //{ "ExtensorDigitorum_2_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP2", MWMath::Point3D{-4.524, 5.019, 0.458} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-89.21, -4.973, 14.83} } }, 3, EXTENSORCOLOR },
-        { "ExtensorDigitorum_3_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP3", MWMath::Point3D{-4.47, 4.714, -1.288} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPE_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPE_MP3", "Mesh_DIP3_Joint"}, {}, 80, EXTENSORCOLOR*0.7, 1.0},
-        //{ "ExtensorDigitorum_3_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP3", MWMath::Point3D{-4.524, 5.019, 0.458} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-89.21, -4.973, 14.83} } }, 3, EXTENSORCOLOR },
-        { "ExtensorDigitorum_4_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP4", MWMath::Point3D{-4.47, 4.714, -1.288} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 100, EXTENSORCOLOR*0.55, 1.0},
-        //{ "ExtensorDigitorum_4_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP4", MWMath::Point3D{-4.524, 5.019, 0.458} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-89.21, -4.973, 14.83} } }, 3, EXTENSORCOLOR },
-        */
-
-        //{ "ExtensorDigitiMinimi_1", "Mesh_Humerus", MWMath::Point3D{26.15, -371.1, -3.214} , "Mesh_DP4", MWMath::Point3D{-3.714, 8.692, -0.0449} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
-        //{ "ExtensorDigitiMinimi_2", "Mesh_Humerus", MWMath::Point3D{23.89, -371.0, -2.115} , "Mesh_DP4", MWMath::Point3D{-5.486, 4.598, -3.015} , {}, { {"Via_1", "Mesh_UlnaPseudo", MWMath::Point3D{-0.121, 121.8, 6.031} } }, 3, EXTENSORCOLOR },
-
-        //{ "ExtensorIndicis_1", "Mesh_Ulna", MWMath::Point3D{10.83, 226.3, -3.307} , "Mesh_DP1", MWMath::Point3D{-4.342, 6.562, 1.834} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_EDM", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
-        //{ "ExtensorIndicis_2", "Mesh_Ulna", MWMath::Point3D{11.54, 210.5, -2.816} , "Mesh_DP1", MWMath::Point3D{-4.253, 5.784, 1.265} , {}, { {"Via_1", "Mesh_Radius", MWMath::Point3D{-219.8, -5.307, 22.61} } }, 3, EXTENSORCOLOR }
+        { "ExtensorCarpiRadialisLongus_1", "Mesh_Humerus", MWMath::Point3D{25.37, -320.2, 2.568} , "Mesh_MC1", MWMath::Point3D{-8.58, 28.16, 4.778} , {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
+        //{ "ExtensorCarpiRadialisLongus_2", "Mesh_Humerus", MWMath::Point3D{32.2, -342.3, 1.9} , "Mesh_MC1", MWMath::Point3D{-8.56, 25.58, 4.415} ,     {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
+        { "ExtensorCarpiRadialisBrevis_1", "Mesh_Humerus", MWMath::Point3D{39.0, -331.2, -1.775} , "Mesh_MC2", MWMath::Point3D{-12.26, 25.31, -0.861} ,  {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
+        //{ "ExtensorCarpiRadialisBrevis_2", "Mesh_Humerus", MWMath::Point3D{39.98, -336.8, -4.294} , "Mesh_MC2", MWMath::Point3D{-11.96, 27.73, -0.582},{"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
+        { "ExtensorCarpiUlnaris_1", "Mesh_Humerus", MWMath::Point3D{24.11, -346.4, 0.571} , "Mesh_MC4", MWMath::Point3D{-2.222, 17.97, -4.251} ,         {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
+        //{ "ExtensorCarpiUlnaris_2", "Mesh_Humerus", MWMath::Point3D{30.96, -342.0, 2.139} , "Mesh_MC4", MWMath::Point3D{-2.792, 17.03, -4.285} ,       {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
         
+
+        { "ExtensorDigitorum_1_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP1", MWMath::Point3D{-4.47, 4.714, -1.288} ,{"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
+        //{ "ExtensorDigitorum_1_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP1", MWMath::Point3D{-4.524, 5.019, 0.458} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR },
+        { "ExtensorDigitorum_2_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP2", MWMath::Point3D{-4.47, 4.714, -1.288} ,   {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPE_PP2", "Mesh_PIP2_Joint", "Mesh_MP2", "MeshVPE_MP2", "Mesh_DIP2_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
+        //{ "ExtensorDigitorum_2_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP2", MWMath::Point3D{-4.524, 5.019, 0.458} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR },
+        { "ExtensorDigitorum_3_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP3", MWMath::Point3D{-4.47, 4.714, -1.288} ,   {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPE_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPE_MP3", "Mesh_DIP3_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
+        //{ "ExtensorDigitorum_3_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP3", MWMath::Point3D{-4.524, 5.019, 0.458} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {} }, 80, EXTENSORCOLOR },
+       { "ExtensorDigitorum_4_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP4", MWMath::Point3D{-4.47, 4.714, -1.288} ,   {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
+        //{ "ExtensorDigitorum_4_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP4", MWMath::Point3D{-4.524, 5.019, 0.458} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR },
+        
+
+        { "ExtensorDigitiMinimi_1", "Mesh_Humerus", MWMath::Point3D{26.15, -371.1, -3.214} , "Mesh_DP4", MWMath::Point3D{-3.714, 8.692, -0.0449} ,{"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
+        //{ "ExtensorDigitiMinimi_2", "Mesh_Humerus", MWMath::Point3D{23.89, -371.0, -2.115} , "Mesh_DP4", MWMath::Point3D{-5.486, 4.598, -3.015} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 80, EXTENSORCOLOR },
+
+        { "ExtensorIndicis_1", "Mesh_Ulna", MWMath::Point3D{10.83, 226.3, -3.307} , "Mesh_DP1", MWMath::Point3D{-4.342, 6.562, 1.834} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_EDM", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 80, EXTENSORCOLOR, 1.0},
+        //{ "ExtensorIndicis_2", "Mesh_Ulna", MWMath::Point3D{11.54, 210.5, -2.816} , "Mesh_DP1", MWMath::Point3D{-4.253, 5.784, 1.265} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_EDM", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {} }, 80, EXTENSORCOLOR }
+         */
     };
     
     inline std::vector<MuscleDef> muscleDefsExcelOld = {
@@ -1448,29 +1448,44 @@ inline std::string createMusclePathHand(std::shared_ptr<SSBody>& rootSystem, std
 
         MWMath::Point3D boneOffset(0.f,0.f,0.f);
         MWMath::RotMatrix3x3 boneRotOffset;
+        bool bIsExtrinsic = false;
         if (muscleD.originMeshName == "Mesh_Humerus") {
             boneOffset = Hand::WristToHumerusMM;
             boneRotOffset = Hand::RotCarpalsToHumerus;
+            bIsExtrinsic = true;
         } 
         else if (muscleD.originMeshName == "Mesh_Radius") {
             boneOffset = Hand::WristToRadiusMM;
             boneRotOffset = Hand::RotCarpalsToRadius;
+            bIsExtrinsic = true;
         } 
         else if (muscleD.originMeshName == "Mesh_Ulna") {
             boneOffset = Hand::WristToUlnaMM;
             boneRotOffset = Hand::RotCarpalsToUlna;
+            bIsExtrinsic = true;
         }
 
-        SSTissue* oriBody = (dynamic_cast<SSMesh*>(oriMesh)) ? oriMesh->Parent.get() : rootSystem.get();
-        MWMath::Point3D oriPos = oriBody->PositionGlobal + (Hand::RotWristToWorld * boneOffset * scaleFMira) + (Hand::RotWristToWorld * boneRotOffset * muscleD.originRelPos * scaleFMira);
-        SSTissue* insBody = (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get(); //dynamic_cast<SSBody*>(insMesh->Parent.get()); //s (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get();
-        MWMath::Point3D insPos = muscleD.insertionRelPos * scaleFExcel + MWMath::Point3D(0., -dynamic_cast<SSEllipsoidMesh*>(insMesh)->C, 0.);
+        SSTissue* oriBody;
+        MWMath::Point3D oriPos;
+        SSTissue* insBody;
+        MWMath::Point3D insPos;
+        if (bIsExtrinsic){
+            oriBody = (dynamic_cast<SSMesh*>(oriMesh)) ? oriMesh->Parent.get() : rootSystem.get();
+            oriPos = oriBody->PositionGlobal + (Hand::RotWristToWorld * boneOffset * scaleFMira) + (Hand::RotWristToWorld * boneRotOffset * muscleD.originRelPos * scaleFMira);
+            insBody = (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get(); //dynamic_cast<SSBody*>(insMesh->Parent.get()); //s (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get();
+            insPos = muscleD.insertionRelPos * scaleFExcel + MWMath::Point3D(0., -dynamic_cast<SSEllipsoidMesh*>(insMesh)->C, 0.);  
+        }
+        else{
+            oriBody = (oriMesh != nullptr) ? dynamic_cast<SSTissue*>(oriMesh) : rootSystem.get(); // (dynamic_cast<SSMesh*>(oriMesh)) ? oriMesh->Parent.get() : rootSystem.get();
+            qDebug() << "  [ORIGIN] Parent Mesh: " << muscleD.originMeshName.c_str() << "->" << oriBody->Name.c_str() << " (Mesh Ptr: " << oriBody << ")";
+            oriPos = muscleD.originRelPos * scaleFExcel; // + muscleD.originRelPos * scaleFExcel;// + (Hand::RotWristToWorld * boneOffset * scaleFMira) + (Hand::RotWristToWorld * boneRotOffset * muscleD.originRelPos * scaleFMira);
+            insBody = (insMesh != nullptr) ? dynamic_cast<SSTissue*>(insMesh) : rootSystem.get(); //(dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get(); //dynamic_cast<SSBody*>(insMesh->Parent.get()); //s (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get();
+            qDebug() << "  [INSERT] Parent Mesh: " << muscleD.insertionMeshName.c_str() << "->" << insBody->Name.c_str() << " (Mesh Ptr: " << insBody << ")";
+            insPos = muscleD.insertionRelPos * scaleFExcel;
+            //MWMath::Point3D insPos = muscleD.insertionRelPos * scaleFExcel + MWMath::Point3D(0., -dynamic_cast<SSEllipsoidMesh*>(insMesh)->C, 0.);
+        }
         
 
-        //SSTissue* oriBody = oriMesh; // (dynamic_cast<SSMesh*>(oriMesh)) ? oriMesh->Parent.get() : rootSystem.get();
-        //MWMath::Point3D oriPos = muscleD.originRelPos * scaleFExcel; // + muscleD.originRelPos * scaleFExcel;// + (Hand::RotWristToWorld * boneOffset * scaleFMira) + (Hand::RotWristToWorld * boneRotOffset * muscleD.originRelPos * scaleFMira);
-        //SSTissue* insBody = (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get(); //dynamic_cast<SSBody*>(insMesh->Parent.get()); //s (dynamic_cast<SSMesh*>(insMesh)) ? insMesh->Parent.get() : rootSystem.get();
-        //MWMath::Point3D insPos = muscleD.insertionRelPos * scaleFExcel + MWMath::Point3D(0., -dynamic_cast<SSEllipsoidMesh*>(insMesh)->C, 0.);
         
         // ---------------------------------------------------------
         // DEBUG LOGGING: Positionen überprüfen
@@ -1492,8 +1507,9 @@ inline std::string createMusclePathHand(std::shared_ptr<SSBody>& rootSystem, std
         qDebug() << "  [INSERT] Calculated insPos: X:" << insPos.x << " Y:"  << insPos.y << " Z:" << insPos.z;
         qDebug() << "==================================================";*/
         // ---------------------------------------------------------
-        //int numNodes = cfg.muscleNumPoints.empty() ? 2 : cfg.muscleNumPoints[0];
-        SSMuscle* muscle = new SSMuscle(mDef.name, cfg.muscleNumPoints[0], oriBody, oriPos, insBody, insPos);
+        //int nodesCount = cfg.muscleNumPoints.empty() ? 2 : cfg.muscleNumPoints[0];
+        int nodesCount = mDef.numNodes;
+        SSMuscle* muscle = new SSMuscle(mDef.name, nodesCount, oriBody, oriPos, insBody, insPos);
         muscle->meshPtrs = pathMeshes;
         muscle->MeshColor = muscleD.mcolor;
         createdMuscleNames.push_back(mDef.name);
@@ -1502,6 +1518,7 @@ inline std::string createMusclePathHand(std::shared_ptr<SSBody>& rootSystem, std
         muscle->createMusclePointsComplexPath();
         muscle->updateMusclePointsParentsLocal();
         muscles.push_back(muscle);
+        qDebug() << "bis hierH";
     }
 
     return "Created muscles: " + std::to_string(createdMuscleNames.size());
@@ -2859,7 +2876,7 @@ inline std::string buildOHandModelOldExpandedViaX05(std::vector<std::shared_ptr<
     double carpalThickness = 0.01*scale; // width[0] * 0.5; 
     double carpalLength = 0.174*HL*0.5; // relativ zur hand nach prometheus abbildung //0.02*scale; //width[0] * 1.25;    
     double carpalWidth = 1.6*carpalLength; // relativ zur hand nach prometheus abbildung //0.045*scale; // width[0] * 0.5 * 3.5;     
-    auto meshCarpals = std::make_shared<SSEllipsoidMesh>(carpalThickness*1.7, carpalLength, carpalWidth, "Mesh_Carpals", carpals, MWMath::Point3D(0, 0.0*scale, 0), MWMath::RotMatrix3x3(), COLORF1);
+    auto meshCarpals = std::make_shared<SSEllipsoidMesh>(carpalThickness*1.7*0.7, carpalLength, carpalWidth, "Mesh_Carpals", carpals, MWMath::Point3D(-0.017, 0.0*scale, 0), MWMath::RotMatrix3x3(), COLORF1);
     //auto meshCarpals = std::make_shared<SSCylinderMesh>(carpalThickness*1.7, carpalWidth, "Mesh_Carpals", carpals, MWMath::Point3D(0, 0.0*scale, 0), MWMath::RotMatrix3x3(), COLORF1);
     meshes.push_back(meshCarpals);
     MeshMap["Mesh_Carpals"] = meshCarpals.get();

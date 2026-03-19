@@ -4112,12 +4112,11 @@ int main(int argc, char** argv)
         //...setupScene(currentScene, meshes, musclePtrs);
 
         // bool bParameterStudy = true;
-        std::vector<double> params = { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
+        std::vector<double> params =  {0.0, -60.0, 90.0,  0.0, 100.0, 80.0}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
         bool bSetupF = 0;
         if (bSetupF){
            setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
         else{
-            qDebug () << "Marlene hat keinen pla";
             //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
             //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
             currentScene = buildOHandModelOldExpandedViaX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params);

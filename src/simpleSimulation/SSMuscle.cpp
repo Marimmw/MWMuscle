@@ -8,14 +8,31 @@
 
 void SSMuscle::createMusclePoints()
 {
-    qDebug() << "Create Muscle Points for Muscle: " << QString::fromStdString(Name);
+    qDebug() << "     [createMusclePoints] Create Muscle Points for Muscle: " << QString::fromStdString(Name);
     MusclePointsGlobal.clear();
     MNodes.clear();
     MusclePointsGlobal.reserve(MNodesCount);
     MNodes.reserve(MNodesCount);
 
-    OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
-    InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
+    if (parentMeshOrigin == nullptr || parentMeshInsertion == nullptr) {
+        qDebug() << "     [createMusclePoints] ERROR: parentMeshOrigin or parentMeshInsertion is nullptr. Cannot create complex muscle points.";
+        return;
+    }
+
+    if (dynamic_cast<SSMesh*>(parentMeshOrigin)) {
+        OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
+        qDebug() << "     [createMusclePoints] OriginPointGlobal calculated using Parent: " << QString::fromStdString(parentMeshOrigin->Name) << "->" << QString::fromStdString(parentMeshOrigin->Parent ? parentMeshOrigin->Parent->Name : "nullptr") << " as reference.";
+    }
+    else{
+        OriginPointGlobal = parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
+        qDebug() << "     [createMusclePoints] OriginPointGlobal calculated using this: " << QString::fromStdString(parentMeshOrigin->Name);
+    }
+    if (dynamic_cast<SSMesh*>(parentMeshInsertion)) {
+        InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
+    }
+    else{
+        InsertionPointGlobal = parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
+    }
     
     MWMath::Point3D direction = (InsertionPointGlobal - OriginPointGlobal) * (1/distance(InsertionPointGlobal, OriginPointGlobal));
     for (int i = 0; i < MNodesCount; ++i) {
@@ -63,6 +80,11 @@ void SSMuscle::createMusclePoints()
 void SSMuscle::createMusclePointsComplexPath(){
 
     qDebug() << "          Create Complex Muscle Points for Muscle: " << QString::fromStdString(Name);
+    if (parentMeshOrigin == nullptr || parentMeshInsertion == nullptr) {
+        qDebug() << "     [createMusclePointsComplexPath] ERROR: parentMeshOrigin or parentMeshInsertion is nullptr. Cannot create complex muscle points.";
+        return;
+    }
+    
     OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
     InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
 
@@ -79,8 +101,9 @@ void SSMuscle::createMusclePointsComplexPath(){
     }
 
     if (viaPointsGlobal.empty()) {
-        qDebug() << "Keine Torus-Meshes gefunden. Erstelle einfache Muskelpunkte.";
+        qDebug() << "     [createMusclePointsComplexPath] Keine Torus-Meshes gefunden. Erstelle einfache Muskelpunkte.";
         createMusclePoints();
+        qDebug() << "     [createMusclePointsComplexPath] Created Simple MusclePath"; 
         return;
     }
 
@@ -180,84 +203,85 @@ void SSMuscle::createMusclePointsComplexPath(){
 void SSMuscle::updateMusclePointsParents()
 {
     for (size_t k = 1; k < MNodes.size()-1; ++k) {
-            if (!MNodes[k].bParentIsFixed) {
-                auto& node = MNodes[k];
-                
-                // Optimierte Position übernehmen
-                node.PositionGlobal = MusclePointsGlobal[k];
+        if (!MNodes[k].bParentIsFixed) {
+            auto& node = MNodes[k];
+            
+            // Optimierte Position übernehmen
+            node.PositionGlobal = MusclePointsGlobal[k];
 
-                // Nächstes Mesh finden
-                double minDist = 1e10;
-                SSMesh* bestParent = nullptr;
-                
-                if (bMeshDistanceDebug) {
-                    qDebug() << "   Node " << k << "(" << node.PositionGlobal.x << "," << node.PositionGlobal.y << "," << node.PositionGlobal.z << "):";
+            // Nächstes Mesh finden
+            double minDist = 1e10;
+            SSMesh* bestParent = nullptr;
+            
+            if (bMeshDistanceDebug) {
+                qDebug() << "   Node " << k << "(" << node.PositionGlobal.x << "," << node.PositionGlobal.y << "," << node.PositionGlobal.z << "):";
+            }
+            for (auto& m : meshPtrs) {
+                // avoid cylinder meshes (just because i think last time might didnt work yet)
+                if (dynamic_cast<SSCylinderMesh*>(m)) {
+                    continue;
                 }
-                for (auto& m : meshPtrs) {
-                    // avoid cylinder meshes (just because i think last time might didnt work yet)
-                    if (dynamic_cast<SSCylinderMesh*>(m)) {
-                        continue;
-                    }
-                    /* if (dynamic_cast<SSTorusMesh*>(m)) {
-                        continue;
-                    } */
-                    // avoid via point meshes -> because for parent choice the distance to the COM is currently used, and via points (if not moving but near to a joint tend to produce points inside meshes for the next step)
-                    /* if (m->bIsViaPoint) {
-                        continue;
-                    } */
-                    if(m->bIsJointMesh){
-                        continue;
-                    }
-
-                    double d = m->getDistanceNumerically(node.PositionGlobal);
-                    if (bMeshDistanceDebug) {qDebug() << "       Prüfe Mesh" << QString::fromStdString(m->Name) << "(" << m->MeshColor.x << "," << m->MeshColor.y << "," << m->MeshColor.z << ") Distanz =" << d << "m";}
-                    if (d < minDist) {
-                        minDist = d;
-                        bestParent = m;
-                    }
-                }
-
-                /* // Schwellwert: Wenn zu weit weg, kein Parent zuweisen
-                if (minDist > tooFarAwayThreshold) {
-                    node.parentMesh = nullptr;
-                    node.PositionLocal = node.PositionGlobal;
-                    if (bParentDebug) {qDebug() << "  Node" << k << "-> Kein Parent (Distanz:" << minDist << "m)";}
-                } else {
-                    node.parentMesh = bestParent;
-                    node.PositionLocal = node.parentMesh->OrientationGlobal.transposed().transform(
-                        node.PositionGlobal - node.parentMesh->PositionGlobal);
-                    if (bParentDebug) {qDebug() << "  Node" << k << "-> Parent:"  << QString::fromStdString(bestParent->Name) << "(Distanz:" << minDist << "m)";}
+                /* if (dynamic_cast<SSTorusMesh*>(m)) {
+                    continue;
                 } */
-                // Schwellwert: Wenn zu weit weg, kein Parent zuweisen
-                if (minDist > tooFarAwayThreshold) {
-                    node.parentMesh = nullptr;
-                    node.PositionLocal = node.PositionGlobal;
-                    if (bParentDebug) {qDebug() << "  Node" << k << "-> Kein Parent (Distanz:" << minDist << "m)";}
-                } else {
-                    node.parentMesh = bestParent;
-                    MWMath::Point3D parentOfMeshPos = bestParent->Parent->PositionGlobal;
-                    MWMath::RotMatrix3x3 parentOfMeshR = bestParent->Parent->OrientationGlobal;
-
-                    node.PositionLocal = parentOfMeshR.transposed().transform(
-                        node.PositionGlobal - parentOfMeshPos);
-                    if (bParentDebug) {qDebug() << "  Node" << k << "-> Parent:"  << QString::fromStdString(bestParent->Name) << "(Distanz:" << minDist << "m)";}
+                // avoid via point meshes -> because for parent choice the distance to the COM is currently used, and via points (if not moving but near to a joint tend to produce points inside meshes for the next step)
+                /* if (m->bIsViaPoint) {
+                    continue;
+                } */
+                if(m->bIsJointMesh){
+                    continue;
                 }
 
-                bool bBigDebug = false;
-                if (bBigDebug){
-                    QString parentName = node.parentMesh ? QString::fromStdString(node.parentMesh->Name) : "Kein Parent";
-                    QString possibleParents = "";
-                    for (auto& m : meshPtrs) {
-                        double d = std::abs(m->getDistanceNumerically(node.PositionGlobal));
-                        possibleParents += QString::fromStdString(m->Name) + "(d=" + QString::number(d, 'f', 3) + "m), ";
-                    }
-                    qDebug() << "  Node" << k << "PositionGlobal: (" << node.PositionGlobal.x << "," << node.PositionGlobal.y << "," << node.PositionGlobal.z << ")"
-                             << "       Parent:" << parentName
-                             // << "       PossibleParents: " << possibleParents
-                             << "       PositionLocal: (" << node.PositionLocal.x << "," << node.PositionLocal.y << "," << node.PositionLocal.z << ")";
+                double d = m->getDistanceNumerically(node.PositionGlobal);
+                if (bMeshDistanceDebug) {qDebug() << "       Prüfe Mesh" << QString::fromStdString(m->Name) << "(" << m->MeshColor.x << "," << m->MeshColor.y << "," << m->MeshColor.z << ") Distanz =" << d << "m";}
+                if (d < minDist) {
+                    minDist = d;
+                    bestParent = m;
                 }
             }
+
+            /* // Schwellwert: Wenn zu weit weg, kein Parent zuweisen
+            if (minDist > tooFarAwayThreshold) {
+                node.parentMesh = nullptr;
+                node.PositionLocal = node.PositionGlobal;
+                if (bParentDebug) {qDebug() << "  Node" << k << "-> Kein Parent (Distanz:" << minDist << "m)";}
+            } else {
+                node.parentMesh = bestParent;
+                node.PositionLocal = node.parentMesh->OrientationGlobal.transposed().transform(
+                    node.PositionGlobal - node.parentMesh->PositionGlobal);
+                if (bParentDebug) {qDebug() << "  Node" << k << "-> Parent:"  << QString::fromStdString(bestParent->Name) << "(Distanz:" << minDist << "m)";}
+            } */
+            // Schwellwert: Wenn zu weit weg, kein Parent zuweisen
+            if (minDist > tooFarAwayThreshold) {
+                node.parentMesh = nullptr;
+                node.PositionLocal = node.PositionGlobal;
+                if (bParentDebug) {qDebug() << "  Node" << k << "-> Kein Parent (Distanz:" << minDist << "m)";}
+            } else {
+                node.parentMesh = bestParent;
+                MWMath::Point3D parentOfMeshPos = bestParent->Parent->PositionGlobal;
+                MWMath::RotMatrix3x3 parentOfMeshR = bestParent->Parent->OrientationGlobal;
+
+                node.PositionLocal = parentOfMeshR.transposed().transform(
+                    node.PositionGlobal - parentOfMeshPos);
+                if (bParentDebug) {qDebug() << "  Node" << k << "-> Parent:"  << QString::fromStdString(bestParent->Name) << "(Distanz:" << minDist << "m)";}
+            }
+
+            bool bBigDebug = false;
+            if (bBigDebug){
+                QString parentName = node.parentMesh ? QString::fromStdString(node.parentMesh->Name) : "Kein Parent";
+                QString possibleParents = "";
+                for (auto& m : meshPtrs) {
+                    double d = std::abs(m->getDistanceNumerically(node.PositionGlobal));
+                    possibleParents += QString::fromStdString(m->Name) + "(d=" + QString::number(d, 'f', 3) + "m), ";
+                }
+                qDebug() << "  Node" << k << "PositionGlobal: (" << node.PositionGlobal.x << "," << node.PositionGlobal.y << "," << node.PositionGlobal.z << ")"
+                            << "       Parent:" << parentName
+                            // << "       PossibleParents: " << possibleParents
+                            << "       PositionLocal: (" << node.PositionLocal.x << "," << node.PositionLocal.y << "," << node.PositionLocal.z << ")";
+            }
         }
+    }
+    qDebug() << "     [updateMusclePointsParents] Finished updating muscle point parents.";
 }
 
 void SSMuscle::updateMusclePointsParentsLocal()
