@@ -4124,7 +4124,7 @@ int main(int argc, char** argv)
             std::vector<std::vector<std::string>> viewerText;
             
             // LADE SZENE AUS JSON
-            QString loadPath = "../examples/results/SceneExport_20260320_111847.json"; // Deinen Dateinamen einsetzen
+            QString loadPath = "../examples/results/SceneExport_20260320_113445.json"; // Deinen Dateinamen einsetzen
             if (loadSceneFromJson(loadPath, tissue, meshes, musclePtrs, rootSystem, numTimeSteps)) {
                 
                 int numMuscles = musclePtrs.size();
@@ -4495,7 +4495,16 @@ int main(int argc, char** argv)
                 }
 
                 exportMuscleLengthLog(musclePtrs, joints);
-                exportFullSceneToJson(tissue, meshes, musclePtrs);
+                exportFullSceneToJson(tissue, meshes, musclePtrs,
+                      true,                    // globalComputation (falls hardcodiert oder aus cfg)
+                      cfg.objFunc,             // objType
+                      cfg.bSumPhiEta,          // bSumPhiEta
+                      cfg.bUseWarmstartEtas,   // bUseWarmstartEtas
+                      1.0,                     // WarmstartEtaScaling
+                      1000,                    // maxIterations
+                      1e-4,                    // maxTol
+                      cfg.bUseManualJacobian,  // bUseOwnGradient
+                      numTimeSteps);           // numTimeSteps
             }
 
             return app.exec();

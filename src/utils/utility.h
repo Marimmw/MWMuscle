@@ -862,7 +862,38 @@ inline void addMusclesToJson(QJsonObject& rootJson, const std::vector<SSMuscle*>
     rootJson["Muscles"] = musclesArray;
 }
 
-inline void exportFullSceneToJson(const std::vector<std::shared_ptr<SSTissue>>& tissues, const std::vector<std::shared_ptr<SSMesh>>& meshes, const std::vector<SSMuscle*>& muscles) 
+inline void addSettingsToJson(QJsonObject& rootJson, bool globalComputation, int objType, bool bSumPhiEta, bool bUseWarmstartEtas, double WarmstartEtaScaling, int maxIterations, double maxTol, bool bUseOwnGradient, int numTimeSteps) 
+{   
+    /* qDebug() << "Exportiere Simulationseinstellungen: " 
+             << "\n  globalComputation:" << globalComputation
+             << "\n  objType:" << objType
+             << "\n  bSumPhiEta:" << bSumPhiEta
+             << "\n  bUseWarmstartEtas:" << bUseWarmstartEtas
+             << "\n  WarmstartEtaScaling:" << WarmstartEtaScaling
+             << "\n  maxIterations:" << maxIterations
+             << "\n  maxTol:" << maxTol
+             << "\n  bUseOwnGradient:" << bUseOwnGradient
+             << "\n  numTimeSteps:" << numTimeSteps; */
+    QJsonObject cfgObj;
+    
+    // CasADi & Solver Settings
+    cfgObj["globalComputation"] = globalComputation;
+    cfgObj["objType"] = objType;
+    cfgObj["bSumPhiEta"] = bSumPhiEta;
+    cfgObj["bUseWarmstartEtas"] = bUseWarmstartEtas;
+    cfgObj["WarmstartEtaScaling"] = WarmstartEtaScaling;
+    cfgObj["maxIterations"] = maxIterations;
+    cfgObj["maxTol"] = maxTol;
+    cfgObj["bUseOwnGradient"] = bUseOwnGradient;
+    
+    // Globale Simulationseinstellungen
+    cfgObj["numTimeSteps"] = numTimeSteps;
+
+    // Alles unter dem Schlüssel "SimulationSettings" speichern
+    rootJson["SimulationSettings"] = cfgObj;
+}
+
+inline void exportFullSceneToJson(const std::vector<std::shared_ptr<SSTissue>>& tissues, const std::vector<std::shared_ptr<SSMesh>>& meshes, const std::vector<SSMuscle*>& muscles,bool globalComputation, int objType, bool bSumPhiEta, bool bUseWarmstartEtas, double WarmstartEtaScaling, int maxIterations, double maxTol, bool bUseOwnGradient, int numTimeSteps) 
 {
     std::vector<std::shared_ptr<SSTissue>> bodies;
     std::vector<std::shared_ptr<SSJoint>> joints;
@@ -890,6 +921,10 @@ inline void exportFullSceneToJson(const std::vector<std::shared_ptr<SSTissue>>& 
     QString fullPath = dir.filePath(filename);
 
     QJsonObject sceneJson;
+
+    addSettingsToJson(sceneJson, globalComputation, objType, bSumPhiEta, 
+                      bUseWarmstartEtas, WarmstartEtaScaling, maxIterations, 
+                      maxTol, bUseOwnGradient, numTimeSteps);
     addBodiesToJson(sceneJson, bodies);
     addJointsToJson(sceneJson, joints);
     addMeshesToJson(sceneJson, meshes);
@@ -928,6 +963,11 @@ inline bool loadSceneFromJson(const QString& filepath,
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
     QJsonObject rootJson = doc.object();
     file.close();
+
+    // LOADING SIM SETTINGS
+    QJsonObject cfgObj = rootJson["SimulationSettings"].toObject();
+    outNumTimeSteps = cfgObj["numTimeSteps"].toInt();
+    // ...further
 
     // Hilfs-Maps zum schnellen Finden über den Namen
     std::map<std::string, std::shared_ptr<SSTissue>> tissueMap;
