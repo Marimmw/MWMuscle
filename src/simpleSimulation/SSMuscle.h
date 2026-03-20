@@ -34,6 +34,7 @@ public:
     // for visualizing/checking local parametrization
     std::vector<MWMath::Point3D> MNodeParentPosSteps;
     std::vector<MWMath::RotMatrix3x3> MNodeParentRotSteps;
+    std::vector<SSTissue*> MNodeParentSteps = {};
 
     std::vector<std::vector<double>> MNodeEtaSteps; // [ [eta_mesh1, eta_mesh2, ...], [eta_mesh1, eta_mesh2, ...], ... ]
     std::vector<std::vector<double>> MNodePhiSteps; // [ [phi_mesh1, phi_mesh2, ...], [phi_mesh1, phi_mesh2, ...], ... ] -> Phi-Werte für alle Meshes für jeden Schritt

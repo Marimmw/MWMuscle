@@ -900,7 +900,7 @@ namespace Hand {
         //{ "AbductorPollicisLongus_3", "Mesh_Radius", MWMath::Point3D{-80.71, -1.14, 3.914} , "Mesh_MC0", MWMath::Point3D{-8.15, 11.34, -2.948} , {"MeshVP_APL", "Mesh_Carpals"}, {}, 50, EXTENSORCOLOR, 1.0 },
         //{ "AbductorPollicisLongus_4", "Mesh_Radius", MWMath::Point3D{-68.12, 1.48, 4.362} , "Mesh_MC0", MWMath::Point3D{-7.44, 10.35, -4.149} , {"MeshVP_APL", "Mesh_Carpals"}, {}, 50, EXTENSORCOLOR, 1.0 },
 
-        {"ExtensorPollicisLongus_1", "Mesh_Ulna", MWMath::Point3D{11.53, 197.9, 3.395} , "Mesh_DP0", MWMath::Point3D{-5.998, 7.305, -1.757} , {"MeshVP_EPL", "Mesh_Carpals", "MeshVPE_MC0", "Mesh_MC0_Joint", "MeshVPE_PP0", "Mesh_PP0", "Mesh_IP0_Joint", "MeshVPE_DP0"}, {}, 30, OTHERMUSCLECOLOR },
+        {"ExtensorPollicisLongus_1", "Mesh_Ulna", MWMath::Point3D{11.53, 197.9, 3.395} , "Mesh_DP0", MWMath::Point3D{-5.998, 7.305, -1.757} , {"MeshVP_EPL", "Mesh_Carpals", "MeshVPE_MC0", "Mesh_MCP0_Joint", "MeshVPE_PP0", "Mesh_PP0", "Mesh_IP0_Joint", "MeshVPE_DP0"}, {}, 30, OTHERMUSCLECOLOR },
         // {"ExtensorPollicisLongus_2", "Mesh_Ulna", MWMath::Point3D{9.356, 134.1, 1.838} , "Mesh_DP0", MWMath::Point3D{-6.048, 8.096, -0.257} , {"MeshVP_EPL", "Mesh_Carpals", "MeshVPE_MC0", "Mesh_MC0_Joint", "Mesh_PP0", "Mesh_IP0_Joint", "Mesh_PP0_Joint"}, {}, 40, OTHERMUSCLECOLOR },
 
         {"ExtensorPollicisBrevis_1", "Mesh_Radius", MWMath::Point3D{-167.6, 2.166, -0.1964} , "Mesh_PP0", MWMath::Point3D{-7.834, 13.34, -3.043} , {"MeshVP_EPB", "Mesh_Carpals", "MeshVPE_MC0", "Mesh_MCP0_Joint"}, {}, 30, OTHERMUSCLECOLOR },
@@ -984,7 +984,7 @@ namespace Hand {
         //{ "FlexorCarpiRadialis_2", "Mesh_Humerus", MWMath::Point3D{-13.64, -355.4, -13.84} , "Mesh_MC1", MWMath::Point3D{2.553, 28.05, -5.668},{"MeshVP_FCR"}, {}, 30, FLEXORCOLOR, 1.0 },
        
         */
-        { "FlexorPollicisLongus_1", "Mesh_Radius", MWMath::Point3D{-89.66, -8.361, -4.372} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} , {"MeshVP_FPL", "MeshVPF_MC0", "Mesh_MC0", "Mesh_MCP0_Joint", "Mesh_PP0", "Mesh_IP0_Joint", "MeshVPF_PP0"}, {}, 50, FLEXORCOLOR, 1.0 },
+        { "FlexorPollicisLongus_1", "Mesh_Radius", MWMath::Point3D{-89.66, -8.361, -4.372} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} , {"Mesh_Carpals", "MeshVP_FPL", "MeshVPF_MC0", "Mesh_MC0", "Mesh_MCP0_Joint", "Mesh_PP0", "Mesh_IP0_Joint", "MeshVPF_PP0"}, {}, 50, FLEXORCOLOR, 1.0 },
         //{ "FlexorPollicisLongus_2", "Mesh_Radius", MWMath::Point3D{-77.92, -8.64, -2.982} , "Mesh_DP0", MWMath::Point3D{0.997, 5.414, 3.404} ,{"MeshVP_FPL", "MeshVP_MC0", "Mesh_MC0", "Mesh_MCP0_Joint", "Mesh_PP0", "Mesh_MCP0_Joint", "MeshVPF_PP0"}, {}, 10, FLEXORCOLOR, 1.0 },
         /*
         
@@ -2962,7 +2962,7 @@ inline std::string buildOHandModelOldExpandedViaX05(std::vector<std::shared_ptr<
     // ==============================================================================
     // FINGER AUFBAU (Index Finger = fidx 1)
     // ==============================================================================
-    for (int i = 1; i < 5; i++){
+    for (int i = 1; i < 2; i++){
         // ------------------------------------
         // INIT AND PARAMETERS
         // ------------------------------------

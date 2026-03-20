@@ -10,9 +10,18 @@
 #include <QString>
 #include <string>
 
+#include <QDir>
+#include <QDateTime>
+#include <QFile>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <memory>
+
 #include "simpleSimulation/SSMuscle.h"
 #include "utils/MWMath.h"
 #include "simpleSimulation/SSBody.h"
+#include "simpleSimulation/SSMeshes.h"
 
 // In utility.h ganz oben (nach den #includes):
 
@@ -494,4 +503,668 @@ inline void exportParameterLog(const std::vector<std::vector<double>>& values,
 
     outFile.close();
     std::cout << "Parameter erfolgreich gespeichert unter: " << fs::absolute(fullPath) << std::endl;
+}
+
+
+
+
+
+
+// export System
+inline void addBodiesToJson(QJsonObject& rootJson, const std::vector<std::shared_ptr<SSTissue>>& bodies) {
+    QJsonArray bodiesArray;
+
+    for (const auto& body : bodies) {
+        if (!body) continue; // Sicherheitshalber leere Pointer überspringen
+
+        QJsonObject bodyObj;
+
+        // 1. Name
+        bodyObj["Name"] = QString::fromStdString(body->Name);
+
+        // 2. Parent Name (Fallback zu "World")
+        if (body->Parent != nullptr) {
+            bodyObj["Parent"] = QString::fromStdString(body->Parent->Name);
+        } else {
+            bodyObj["Parent"] = "World";
+        }
+
+        // 3. MeshColor als Array [x, y, z]
+        QJsonArray colorArray = {
+            body->MeshColor.x, 
+            body->MeshColor.y, 
+            body->MeshColor.z
+        };
+        bodyObj["MeshColor"] = colorArray;
+
+        // 4. Relative Position als Array [x, y, z]
+        QJsonArray posArray = {
+            body->Position2ParentRelInParentFrame.x, 
+            body->Position2ParentRelInParentFrame.y, 
+            body->Position2ParentRelInParentFrame.z
+        };
+        bodyObj["Position2ParentRelInParentFrame"] = posArray;
+
+        // 5. Relative Orientierung als 3x3 Array (Array von Arrays)
+        QJsonArray oriMatrix;
+        for (int r = 0; r < 3; ++r) {
+            QJsonArray rowArray = {
+                body->Orientation2ParentRel.m[r][0],
+                body->Orientation2ParentRel.m[r][1],
+                body->Orientation2ParentRel.m[r][2]
+            };
+            oriMatrix.append(rowArray);
+        }
+        bodyObj["Orientation2ParentRel"] = oriMatrix;
+
+        // 6. Children als Array von Strings
+        QJsonArray childrenArray;
+        for (const auto& child : body->Children) {
+            if (child) {
+                childrenArray.append(QString::fromStdString(child->Name));
+            }
+        }
+        bodyObj["Children"] = childrenArray;
+
+        QJsonArray meshNamesArray;
+        for (const auto& mesh : body->Meshes) {
+            if (mesh) {
+                meshNamesArray.append(QString::fromStdString(mesh->Name));
+            }
+        }
+        bodyObj["Meshes"] = meshNamesArray;
+
+        // Das fertige Body-Objekt zum Haupt-Array hinzufügen
+        bodiesArray.append(bodyObj);
+    }
+
+    // Das Array unter dem Schlüssel "Bodies" im Root-JSON speichern
+    rootJson["Bodies"] = bodiesArray;
+}
+
+inline void addJointsToJson(QJsonObject& rootJson, const std::vector<std::shared_ptr<SSJoint>>& joints) {
+    QJsonArray jointsArray;
+
+    for (const auto& joint : joints) {
+        if (!joint) continue;
+
+        QJsonObject jointObj;
+
+        // ==========================================
+        // 1. BASIS-WERTE (von SSTissue geerbt)
+        // ==========================================
+        jointObj["Name"] = QString::fromStdString(joint->Name);
+
+        if (joint->Parent != nullptr) {
+            jointObj["Parent"] = QString::fromStdString(joint->Parent->Name);
+        } else {
+            jointObj["Parent"] = "World";
+        }
+
+        QJsonArray colorArray = {
+            joint->MeshColor.x, 
+            joint->MeshColor.y, 
+            joint->MeshColor.z
+        };
+        jointObj["MeshColor"] = colorArray;
+
+        QJsonArray posArray = {
+            joint->Position2ParentRelInParentFrame.x, 
+            joint->Position2ParentRelInParentFrame.y, 
+            joint->Position2ParentRelInParentFrame.z
+        };
+        jointObj["Position2ParentRelInParentFrame"] = posArray;
+
+        QJsonArray oriMatrix;
+        for (int r = 0; r < 3; ++r) {
+            QJsonArray rowArray = {
+                joint->Orientation2ParentRel.m[r][0],
+                joint->Orientation2ParentRel.m[r][1],
+                joint->Orientation2ParentRel.m[r][2]
+            };
+            oriMatrix.append(rowArray);
+        }
+        jointObj["Orientation2ParentRel"] = oriMatrix;
+
+        QJsonArray childrenArray;
+        for (const auto& child : joint->Children) {
+            if (child) {
+                childrenArray.append(QString::fromStdString(child->Name));
+            }
+        }
+        jointObj["Children"] = childrenArray;
+
+        QJsonArray meshNamesArray;
+        for (const auto& mesh : joint->Meshes) {
+            if (mesh) {
+                meshNamesArray.append(QString::fromStdString(mesh->Name));
+            }
+        }
+        jointObj["Meshes"] = meshNamesArray;
+
+        // ==========================================
+        // 2. SSJOINT SPEZIFISCHE WERTE 
+        // ==========================================
+        
+        // DoneAngleSteps -> AngleSteps
+        QJsonArray angleStepsArray;
+        for (double angle : joint->DoneAngleSteps) {
+            angleStepsArray.append(angle);
+        }
+        jointObj["AngleSteps"] = angleStepsArray;
+
+        // MaxAngles
+        jointObj["MaxAngles"] = joint->MaxAngles;
+
+        // RotationAxes als [x, y, z]
+        QJsonArray rotAxisArray = {
+            joint->RotationAxes.x,
+            joint->RotationAxes.y,
+            joint->RotationAxes.z
+        };
+        jointObj["RotationAxes"] = rotAxisArray;
+
+        // TotalSteps
+        jointObj["TotalSteps"] = joint->TotalSteps;
+
+        // ==========================================
+
+        jointsArray.append(jointObj);
+    }
+
+    // Unter dem Schlüssel "Joints" im JSON speichern
+    rootJson["Joints"] = jointsArray; 
+}
+
+inline void addMeshesToJson(QJsonObject& rootJson, const std::vector<std::shared_ptr<SSMesh>>& meshes) {
+    QJsonArray meshesArray;
+
+    for (const auto& mesh : meshes) {
+        if (!mesh) continue;
+
+        QJsonObject meshObj;
+
+        // ==========================================
+        // 1. BASIS-WERTE (von SSTissue geerbt)
+        // ==========================================
+        meshObj["Name"] = QString::fromStdString(mesh->Name);
+
+        if (mesh->Parent != nullptr) {
+            meshObj["Parent"] = QString::fromStdString(mesh->Parent->Name);
+        } else {
+            meshObj["Parent"] = "World";
+        }
+
+        QJsonArray colorArray = {
+            mesh->MeshColor.x, 
+            mesh->MeshColor.y, 
+            mesh->MeshColor.z
+        };
+        meshObj["MeshColor"] = colorArray;
+
+        QJsonArray posArray = {
+            mesh->Position2ParentRelInParentFrame.x, 
+            mesh->Position2ParentRelInParentFrame.y, 
+            mesh->Position2ParentRelInParentFrame.z
+        };
+        meshObj["Position2ParentRelInParentFrame"] = posArray;
+
+        QJsonArray oriMatrix;
+        for (int r = 0; r < 3; ++r) {
+            QJsonArray rowArray = {
+                mesh->Orientation2ParentRel.m[r][0],
+                mesh->Orientation2ParentRel.m[r][1],
+                mesh->Orientation2ParentRel.m[r][2]
+            };
+            oriMatrix.append(rowArray);
+        }
+        meshObj["Orientation2ParentRel"] = oriMatrix;
+
+        QJsonArray childrenArray;
+        for (const auto& child : mesh->Children) {
+            if (child) {
+                childrenArray.append(QString::fromStdString(child->Name));
+            }
+        }
+        meshObj["Children"] = childrenArray;
+
+        // ==========================================
+        // 2. SSMESH SPEZIFISCHE WERTE
+        // ==========================================
+        
+        // ViaPoint-Flag
+        meshObj["bIsViaPoint"] = mesh->bIsViaPoint;
+
+        // Typ und Dimensionen dynamisch ermitteln
+        QString typeString = "UnknownMesh";
+        QJsonArray dimensionsArray;
+
+        // Prüfen auf Ellipsoid
+        if (auto ell = dynamic_cast<SSEllipsoidMesh*>(mesh.get())) {
+            typeString = "SSEllipsoidMesh";
+            dimensionsArray = {ell->A, ell->B, ell->C};
+        } 
+        // Prüfen auf Zylinder
+        else if (auto cyl = dynamic_cast<SSCylinderMesh*>(mesh.get())) {
+            typeString = "SSCylinderMesh";
+            dimensionsArray = {cyl->Radius, cyl->Height};
+        } 
+        // Prüfen auf Torus
+        else if (auto tor = dynamic_cast<SSTorusMesh*>(mesh.get())) {
+            typeString = "SSTorusMesh";
+            // Da du im VTK-Code tor->A, tor->B, tor->C als Scale nutzt, 
+            // packen wir sie der Vollständigkeit halber mit rein: [R, r, A, B, C]
+            dimensionsArray = {tor->R, tor->r, tor->A, tor->B, tor->C};
+        }
+
+        meshObj["Type"] = typeString;
+        meshObj["Dimensions"] = dimensionsArray;
+
+        // ==========================================
+
+        meshesArray.append(meshObj);
+    }
+
+    // Unter dem Schlüssel "Meshes" im JSON speichern
+    rootJson["Meshes"] = meshesArray; 
+}
+
+inline void addMusclesToJson(QJsonObject& rootJson, const std::vector<SSMuscle*>& muscles) {
+    QJsonArray musclesArray;
+
+    for (const auto* mus : muscles) {
+        if (!mus) continue;
+
+        QJsonObject musObj;
+
+        // Muskel Basis-Werte
+        musObj["Name"] = QString::fromStdString(mus->Name);
+        musObj["MNodesCount"] = mus->MNodesCount;
+        musObj["MeshColor"] = QJsonArray{mus->MeshColor.x, mus->MeshColor.y, mus->MeshColor.z};
+        
+        musObj["OriginPointLocal"] = QJsonArray{mus->OriginPointLocal.x, mus->OriginPointLocal.y, mus->OriginPointLocal.z};
+        musObj["parentMeshOrigin"] = (mus->parentMeshOrigin != nullptr) ? QString::fromStdString(mus->parentMeshOrigin->Name) : "World";
+        musObj["InsertionPointLocal"] = QJsonArray{mus->InsertionPointLocal.x, mus->InsertionPointLocal.y, mus->InsertionPointLocal.z};
+        musObj["parentMeshInsertion"] = (mus->parentMeshInsertion != nullptr) ? QString::fromStdString(mus->parentMeshInsertion->Name) : "World";
+
+        QJsonArray meshPtrsArray;
+        for (const auto* m : mus->meshPtrs) {
+            if (m) meshPtrsArray.append(QString::fromStdString(m->Name));
+        }
+        musObj["meshPtrs"] = meshPtrsArray;
+
+        // ==========================================
+        // MUSCLE NODES & HISTORIE (Timesteps)
+        // ==========================================
+        QJsonArray nodesArray;
+        for (const auto& node : mus->MNodes) {
+            QJsonObject nodeObj;
+            
+            // Konstante Werte des Knotens
+            nodeObj["bParentIsFixed"] = node.bParentIsFixed;
+
+            // Zeitschritte durchlaufen
+            QJsonArray timeStepsArray;
+            size_t numSteps = node.MNodeGlobalSteps.size();
+
+            for (size_t t = 0; t < numSteps; ++t) {
+                QJsonObject stepObj; // Unser "Struct" für diesen Zeitschritt
+
+                // 1. NEU: Parent-Mesh für EXAKT diesen Zeitschritt!
+                // (Setzt voraus, dass du MNodeParentSteps in der MuscleNode Klasse hast)
+                if (t < node.MNodeParentSteps.size() && node.MNodeParentSteps[t] != nullptr) {
+                    stepObj["parentMesh"] = QString::fromStdString(node.MNodeParentSteps[t]->Name);
+                } else {
+                    stepObj["parentMesh"] = "None"; // Fallback
+                }
+
+                // 2. Globale Position
+                if (t < node.MNodeGlobalSteps.size()) {
+                    stepObj["GlobalPos"] = QJsonArray{
+                        node.MNodeGlobalSteps[t].x, 
+                        node.MNodeGlobalSteps[t].y, 
+                        node.MNodeGlobalSteps[t].z
+                    };
+                }
+
+                // 3. Initial Guess
+                if (t < node.MNodeInitialGuessSteps.size()) {
+                    stepObj["InitialGuess"] = QJsonArray{
+                        node.MNodeInitialGuessSteps[t].x, 
+                        node.MNodeInitialGuessSteps[t].y, 
+                        node.MNodeInitialGuessSteps[t].z
+                    };
+                }
+
+                // 4. Initial Guess Farbe
+                if (t < node.MNodeInitialGuessColorSteps.size()) {
+                    stepObj["InitialGuessColor"] = QJsonArray{
+                        node.MNodeInitialGuessColorSteps[t].x, 
+                        node.MNodeInitialGuessColorSteps[t].y, 
+                        node.MNodeInitialGuessColorSteps[t].z
+                    };
+                }
+
+                timeStepsArray.append(stepObj);
+            }
+
+            nodeObj["TimeSteps"] = timeStepsArray;
+            
+            // HIER wird der Node-Array befüllt (alles bleibt schön innerhalb des Muskels)
+            nodesArray.append(nodeObj);
+        }
+
+        // HIER wird die Node-Liste dem Muskel zugewiesen
+        musObj["MNodes"] = nodesArray;
+        musclesArray.append(musObj);
+    }
+
+    rootJson["Muscles"] = musclesArray;
+}
+
+inline void exportFullSceneToJson(const std::vector<std::shared_ptr<SSTissue>>& tissues, const std::vector<std::shared_ptr<SSMesh>>& meshes, const std::vector<SSMuscle*>& muscles) 
+{
+    std::vector<std::shared_ptr<SSTissue>> bodies;
+    std::vector<std::shared_ptr<SSJoint>> joints;
+
+    for (const auto& tissue : tissues) {
+        // Versuche, das Tissue als SSJoint zu casten
+        if (auto joint = std::dynamic_pointer_cast<SSJoint>(tissue)) {
+            // Cast war erfolgreich -> Es ist ein Gelenk!
+            joints.push_back(joint);
+        } else {
+            // Cast fehlgeschlagen -> Es ist ein normaler Body (Bone etc.)
+            bodies.push_back(tissue);
+        }
+    }
+
+    // 1. Ordnerpfad festlegen und erstellen, falls er nicht existiert
+    QString outputFolder = "../examples/results/";
+    QDir dir(outputFolder);
+    if (!dir.exists()) {
+        dir.mkpath("."); // Erstellt alle nötigen Unterordner
+    }
+
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    QString filename = "SceneExport_" + timestamp + ".json";
+    QString fullPath = dir.filePath(filename);
+
+    QJsonObject sceneJson;
+    addBodiesToJson(sceneJson, bodies);
+    addJointsToJson(sceneJson, joints);
+    addMeshesToJson(sceneJson, meshes);
+    addMusclesToJson(sceneJson, muscles);
+
+    
+    QJsonDocument doc(sceneJson);
+    QFile jsonFile(fullPath);
+    
+    if (jsonFile.open(QIODevice::WriteOnly)) {
+        // Indented sorgt für die schöne, gut lesbare Formatierung
+        jsonFile.write(doc.toJson(QJsonDocument::Indented));
+        jsonFile.close();
+        qDebug() << "[JSON Export] Szene erfolgreich gespeichert unter:" << fullPath;
+    } else {
+        qDebug() << "[JSON Export] FEHLER: Konnte die Datei nicht erstellen:" << fullPath;
+    }
+}
+
+
+
+
+inline bool loadSceneFromJson(const QString& filepath, 
+                              std::vector<std::shared_ptr<SSTissue>>& outTissues, 
+                              std::vector<std::shared_ptr<SSMesh>>& outMeshes, 
+                              std::vector<SSMuscle*>& outMuscles,
+                              std::shared_ptr<SSBody>& outRootSystem,
+                              int& outNumTimeSteps) 
+{
+    QFile file(filepath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << "[JSON Import] Fehler: Konnte Datei nicht oeffnen:" << filepath;
+        return false;
+    }
+
+    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+    QJsonObject rootJson = doc.object();
+    file.close();
+
+    // Hilfs-Maps zum schnellen Finden über den Namen
+    std::map<std::string, std::shared_ptr<SSTissue>> tissueMap;
+    std::map<std::string, std::shared_ptr<SSMesh>> meshMap;
+
+    // Hilfs-Lambdas zum Lesen von Arrays
+    auto parsePoint3D = [](const QJsonArray& arr) {
+        return MWMath::Point3D(arr[0].toDouble(), arr[1].toDouble(), arr[2].toDouble());
+    };
+    auto parseRotMatrix = [](const QJsonArray& arr) {
+        MWMath::RotMatrix3x3 mat;
+        for (int i = 0; i < 3; ++i) {
+            QJsonArray row = arr[i].toArray();
+            mat.m[i][0] = row[0].toDouble();
+            mat.m[i][1] = row[1].toDouble();
+            mat.m[i][2] = row[2].toDouble();
+        }
+        return mat;
+    };
+
+    // =======================================================
+    // PHASE 1: INSTANZIIERUNG (Bodies, Joints, Meshes)
+    // =======================================================
+    
+    // 1.1 Bodies laden
+    QJsonArray bodiesArray = rootJson["Bodies"].toArray();
+    for (int i = 0; i < bodiesArray.size(); ++i) {
+        QJsonObject bObj = bodiesArray[i].toObject();
+        auto body = std::make_shared<SSBody>();
+        body->Name = bObj["Name"].toString().toStdString();
+        body->MeshColor = parsePoint3D(bObj["MeshColor"].toArray());
+        body->Position2ParentRelInParentFrame = parsePoint3D(bObj["Position2ParentRelInParentFrame"].toArray());
+        body->Orientation2ParentRel = parseRotMatrix(bObj["Orientation2ParentRel"].toArray());
+        
+        tissueMap[body->Name] = body;
+        outTissues.push_back(body);
+    }
+
+    // 1.2 Joints laden
+    QJsonArray jointsArray = rootJson["Joints"].toArray();
+    for (int i = 0; i < jointsArray.size(); ++i) {
+        QJsonObject jObj = jointsArray[i].toObject();
+        auto joint = std::make_shared<SSJoint>();
+        joint->Name = jObj["Name"].toString().toStdString();
+        joint->MeshColor = parsePoint3D(jObj["MeshColor"].toArray());
+        joint->Position2ParentRelInParentFrame = parsePoint3D(jObj["Position2ParentRelInParentFrame"].toArray());
+        joint->Orientation2ParentRel = parseRotMatrix(jObj["Orientation2ParentRel"].toArray());
+        
+        // Joint-spezifisch
+        joint->MaxAngles = jObj["MaxAngles"].toDouble();
+        joint->TotalSteps = jObj["TotalSteps"].toInt();
+        joint->RotationAxes = parsePoint3D(jObj["RotationAxes"].toArray());
+        
+        QJsonArray anglesArr = jObj["AngleSteps"].toArray();
+        for (int a = 0; a < anglesArr.size(); ++a) joint->DoneAngleSteps.push_back(anglesArr[a].toDouble());
+        
+        outNumTimeSteps = std::max(outNumTimeSteps, joint->TotalSteps); // Ermittle numTimeSteps
+        tissueMap[joint->Name] = joint;
+        outTissues.push_back(joint);
+    }
+
+    // 1.3 Meshes laden
+    QJsonArray meshesArray = rootJson["Meshes"].toArray();
+    for (int i = 0; i < meshesArray.size(); ++i) {
+        QJsonObject mObj = meshesArray[i].toObject();
+        std::string type = mObj["Type"].toString().toStdString();
+        std::string name = mObj["Name"].toString().toStdString();
+        QJsonArray dims = mObj["Dimensions"].toArray();
+
+        std::shared_ptr<SSMesh> mesh;
+        
+        // Konstruktoren OHNE den Namen aufrufen!
+        if (type == "SSEllipsoidMesh") {
+            mesh = std::make_shared<SSEllipsoidMesh>(dims[0].toDouble(), dims[1].toDouble(), dims[2].toDouble());
+        } else if (type == "SSCylinderMesh") {
+            mesh = std::make_shared<SSCylinderMesh>(dims[0].toDouble(), dims[1].toDouble());
+        } else if (type == "SSTorusMesh") {
+            mesh = std::make_shared<SSTorusMesh>(dims[0].toDouble(), dims[1].toDouble());
+        } else {
+            qDebug() << "[JSON Import] Unbekannter Mesh-Typ:" << QString::fromStdString(type) << "nutze Fallback.";
+            // Fallback auf ein winziges Ellipsoid, da SSMesh abstrakt ist und nicht direkt erstellt werden darf
+            mesh = std::make_shared<SSEllipsoidMesh>(0.01, 0.01, 0.01); 
+        }
+
+        // Namen NACHTRÄGLICH setzen
+        mesh->Name = name;
+        
+        mesh->bIsViaPoint = mObj["bIsViaPoint"].toBool();
+        mesh->MeshColor = parsePoint3D(mObj["MeshColor"].toArray());
+        mesh->Position2ParentRelInParentFrame = parsePoint3D(mObj["Position2ParentRelInParentFrame"].toArray());
+        mesh->Orientation2ParentRel = parseRotMatrix(mObj["Orientation2ParentRel"].toArray());
+
+        meshMap[mesh->Name] = mesh;
+        outMeshes.push_back(mesh);
+    }
+
+    // =======================================================
+    // PHASE 2: BAUM VERKNÜPFEN (Parent, Children, Meshes)
+    // =======================================================
+    // Wir gehen durch die JSON nochmal durch und verknüpfen die Pointer
+    
+    auto linkTissue = [&](QJsonArray arr) {
+        for (int i = 0; i < arr.size(); ++i) {
+            QJsonObject obj = arr[i].toObject();
+            auto tissue = tissueMap[obj["Name"].toString().toStdString()];
+            
+            // Parent setzen
+            std::string parentName = obj["Parent"].toString().toStdString();
+            if (parentName == "World") {
+                outRootSystem = std::dynamic_pointer_cast<SSBody>(tissue);
+            } else if (tissueMap.count(parentName)) {
+                tissue->Parent = tissueMap[parentName];
+            }
+
+            // Children setzen
+            QJsonArray childrenArr = obj["Children"].toArray();
+            for (int c = 0; c < childrenArr.size(); ++c) {
+                std::string childName = childrenArr[c].toString().toStdString();
+                if (tissueMap.count(childName)) tissue->Children.push_back(tissueMap[childName]);
+            }
+
+            // Meshes setzen
+            QJsonArray meshArr = obj["Meshes"].toArray();
+            for (int m = 0; m < meshArr.size(); ++m) {
+                std::string mName = meshArr[m].toString().toStdString();
+                if (meshMap.count(mName)) {
+                    tissue->Meshes.push_back(meshMap[mName]);
+                    meshMap[mName]->Parent = tissue; // Mesh bekommt den Tissue als Parent
+                }
+            }
+        }
+    };
+    linkTissue(bodiesArray);
+    linkTissue(jointsArray);
+
+    // =======================================================
+    // PHASE 3: KINEMATISCHER PASS (Simulation abspielen)
+    // =======================================================
+    qDebug() << "[JSON Import] Rekonstruiere Kinematik für" << outNumTimeSteps << "Schritte...";
+    if (outRootSystem) {
+        for (int t = 0; t < outNumTimeSteps; ++t) {
+            outRootSystem->update(t); // Update kaskadiert durch alle Children!
+            
+            // Mesh Historie füllen (analog zu deiner main.cpp)
+            for (auto& m : outMeshes) {
+                m->MeshPointsGlobal.push_back(m->PositionGlobal);
+                m->allRMatrixGlobal.push_back(m->OrientationGlobal);
+            }
+            // Tissues Historie füllen
+            for (auto& tObj : outTissues) {
+                tObj->MeshPointsGlobal.push_back(tObj->PositionGlobal);
+                tObj->allRMatrixGlobal.push_back(tObj->OrientationGlobal);
+            }
+        }
+    } else {
+        qDebug() << "[JSON Import] WARNUNG: Kein RootSystem gefunden!";
+    }
+
+    // =======================================================
+    // PHASE 4: MUSKELN LADEN
+    // =======================================================
+    QJsonArray musclesArray = rootJson["Muscles"].toArray();
+    for (int i = 0; i < musclesArray.size(); ++i) {
+        QJsonObject musObj = musclesArray[i].toObject();
+        
+        // Parent Tissues ermitteln
+        std::string oParentStr = musObj["parentMeshOrigin"].toString().toStdString();
+        std::string iParentStr = musObj["parentMeshInsertion"].toString().toStdString();
+        SSTissue* oriTissue = tissueMap.count(oParentStr) ? tissueMap[oParentStr].get() : outRootSystem.get();
+        SSTissue* insTissue = tissueMap.count(iParentStr) ? tissueMap[iParentStr].get() : outRootSystem.get();
+
+        MWMath::Point3D oriPos = parsePoint3D(musObj["OriginPointLocal"].toArray());
+        MWMath::Point3D insPos = parsePoint3D(musObj["InsertionPointLocal"].toArray());
+        int nodesCount = musObj["MNodesCount"].toInt();
+        std::string name = musObj["Name"].toString().toStdString();
+
+        SSMuscle* mus = new SSMuscle(name, nodesCount, oriTissue, oriPos, insTissue, insPos);
+        mus->MeshColor = parsePoint3D(musObj["MeshColor"].toArray());
+
+        // Verknüpfte Meshes
+        QJsonArray mPtrsArr = musObj["meshPtrs"].toArray();
+        for (int p = 0; p < mPtrsArr.size(); ++p) {
+            std::string ptrName = mPtrsArr[p].toString().toStdString();
+            if (meshMap.count(ptrName)) mus->meshPtrs.push_back(meshMap[ptrName].get());
+        }
+
+        // ===============================================
+        // FEHLERBEHEBUNG: Vektor für Knoten reservieren!
+        // ===============================================
+        QJsonArray nodesArr = musObj["MNodes"].toArray();
+        mus->MNodes.resize(nodesArr.size()); 
+
+        for (int n = 0; n < nodesArr.size(); ++n) {
+            QJsonObject nObj = nodesArr[n].toObject();
+            mus->MNodes[n].bParentIsFixed = nObj["bParentIsFixed"].toBool();
+            
+            QJsonArray timeStepsArr = nObj["TimeSteps"].toArray();
+            
+            // Platz reservieren, um Neuallokationen zu sparen
+            mus->MNodes[n].MNodeGlobalSteps.reserve(timeStepsArr.size());
+            mus->MNodes[n].MNodeInitialGuessSteps.reserve(timeStepsArr.size());
+            mus->MNodes[n].MNodeInitialGuessColorSteps.reserve(timeStepsArr.size());
+            mus->MNodes[n].MNodeParentSteps.reserve(timeStepsArr.size());
+
+            for (int t = 0; t < timeStepsArr.size(); ++t) {
+                QJsonObject stepObj = timeStepsArr[t].toObject();
+                
+                // Globale Position laden
+                mus->MNodes[n].MNodeGlobalSteps.push_back(parsePoint3D(stepObj["GlobalPos"].toArray()));
+                
+                // Initial Guess laden (falls vorhanden)
+                if (stepObj.contains("InitialGuess")) {
+                    mus->MNodes[n].MNodeInitialGuessSteps.push_back(parsePoint3D(stepObj["InitialGuess"].toArray()));
+                }
+                
+                // Farben laden (falls vorhanden)
+                if (stepObj.contains("InitialGuessColor")) {
+                    mus->MNodes[n].MNodeInitialGuessColorSteps.push_back(parsePoint3D(stepObj["InitialGuessColor"].toArray()));
+                }
+
+                // Parent Mesh des Knotens laden (Wichtig für dynamische Reparametrisierung!)
+                if (stepObj.contains("parentMesh")) {
+                    std::string pName = stepObj["parentMesh"].toString().toStdString();
+                    if (tissueMap.count(pName)) {
+                        mus->MNodes[n].MNodeParentSteps.push_back(tissueMap[pName].get());
+                    } else {
+                        mus->MNodes[n].MNodeParentSteps.push_back(nullptr);
+                    }
+                }
+            }
+        }
+        
+        outMuscles.push_back(mus);
+    }
+
+    qDebug() << "[JSON Import] Erfolg! Geladen:" << outTissues.size() << "Tissues," 
+             << outMeshes.size() << "Meshes," << outMuscles.size() << "Muscles.";
+    
+    return true;
 }
