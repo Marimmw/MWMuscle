@@ -153,7 +153,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
     std::string scoreHeader = "Score(<" + std::to_string(goodScore) + ")";
 
     // Header schreiben
-    outFile << std::left << std::setw(20) << "Pose Name" << "\t" 
+    outFile << std::left << std::setw(30) << "Pose Name" << "\t" 
             << std::setw(35) << "Casadi System" << "\t"
             << std::setw(15) << scoreHeader << "\t" 
             << std::setw(15) << "Successes" << "\t";
@@ -498,11 +498,13 @@ std::vector<std::string> SimulationManager::runSingleSimulation(const std::vecto
 std::vector<PoseDef> SimulationManager::createPoseDefs()
 {
     // 1. Erweitere die Header-Namen um die neue Spalte für die Knoten
-    std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes"};
+    std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes", "VP_Size"};
     
     // 2. Deine Parameter
-    std::vector<double> numNodes = {100};//{75, 100, 125, 150, 200};
-    
+    std::vector<double> numNodes = {50,70};//,80,90,100};//{40,50,55,60,65,70,75,80,85,90,95,100,125,150};
+    std::vector<double> vpSize = {0.02,0.03};//,0.04,0.05,0.06};
+
+    std::vector<std::vector<double>> extraParameters = {numNodes, vpSize};
     // 3. Temporäre Struktur für die Basis-Posen (ohne numNodes)
     struct BasePose {
         std::string name;
@@ -511,32 +513,38 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     
     std::vector<BasePose> basePoses = {
         {"Krampf Pose",    { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}},
-        {"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
-        {"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
-        {"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
+        //{"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        //{"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
+        //{"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
         {"Schraeger Griff",{ 0.0,   0.0, 45.0, 20.0,  45.0, 45.0}},
-        {"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
-        {"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}
+        //{"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        //{"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}
     };
     
     std::vector<PoseDef> variantList;
     
     // 4. Verschachtelte Schleife: Kombiniere jede Pose mit jeder Knotenanzahl
     for (const auto& bp : basePoses) {
-        for (double nodes : numNodes) {
+    for (double nodes : numNodes) {
+        for (double vp : vpSize) {
+
             PoseDef p;
-            
-            // Name anpassen (z.B. "Full Fist (N=75)")
-            p.PoseName = bp.name + " (N=" + std::to_string(static_cast<int>(nodes)) + ")";
+
+            p.PoseName = bp.name + 
+                " (N=" + std::to_string(static_cast<int>(nodes)) +
+                ", vp=" + std::to_string(vp) + ")";
+
             p.JointNames = jointNames;
-            
-            // Winkel übernehmen und am Ende die Knotenanzahl anhängen
+
             p.SimulationJointAngles = bp.angles;
-            p.SimulationJointAngles.push_back(nodes); 
-            
+
+            p.SimulationJointAngles.push_back(nodes); // NumNodes
+            p.SimulationJointAngles.push_back(vp);    // vpSize
+
             variantList.push_back(p);
         }
     }
+}
     
     return variantList;
 }

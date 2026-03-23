@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <unordered_map>
 #include <cmath>
+#include <iostream>
 
 // test
 #include "simpleSimulation/casadiSystem.h"
@@ -4052,7 +4053,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 0; // 0=normal, 1=Parameterstudie, 2=PoseStudy
+    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -4219,7 +4220,7 @@ int main(int argc, char** argv)
         } else {
 
             // bool bParameterStudy = true;
-            std::vector<double> params =  {0.0, -60.0, 90.0,  0.0, 100.0, 80.0}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
+            std::vector<double> params =  {0.0,   0.0, 45.0, 20.0,  45.0, 45.0}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
             bool bSetupF = 0;
             if (bSetupF){
             setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
@@ -4415,7 +4416,24 @@ int main(int argc, char** argv)
                 qDebug() << "=== Solver Convergence - " << QString::fromStdString(sys->CasadiSystemName) << "===";
                 int i = 0;
                 for (const auto& msg : sys->SolverConvergenceMessages) {
-                    qDebug() << "Step " << i << "/" << sys->SolverConvergenceMessages.size()-1 << ": " << QString::fromStdString(msg) << " (Iter: " << sys->SolverConvergenceSteps[i] << ")";
+                    
+                    std::string coloredMsg;
+
+                    if (msg.find("Solve_Succeeded") != std::string::npos) {
+                        coloredMsg = "\033[32m" + msg + "\033[0m";  // grün
+                    }
+                    else if (msg.find("Maximum_Iteration") != std::string::npos) {
+                        coloredMsg = "\033[33m" + msg + "\033[0m";  // gelb
+                    }
+                    else {
+                        coloredMsg = "\033[31m" + msg + "\033[0m";  // rot
+                    }
+
+                    std::cout << "Step " << i << "/"
+                            << sys->SolverConvergenceMessages.size() - 1
+                            << ": " << coloredMsg
+                            << " (Iter: " << sys->SolverConvergenceSteps[i] << ")"
+                            << std::endl;
                     i++;
                     for (auto* mus : sys->m_muscles) {
                         double len = mus->MuscleLengthSteps[i];
