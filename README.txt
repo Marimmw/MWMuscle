@@ -22,7 +22,6 @@ Git push
 UMITTELBAR
 -> check AbductorPollicisLongus_1 -> ist weit draußen
 -> check FlexorPollicisLongus_1 -> has still 1 problems
--> intrinsicher vs extrinsische working machen
 -> Ideen:
     -> 2 torus ( ineinender)
     -> 3 tori seperat

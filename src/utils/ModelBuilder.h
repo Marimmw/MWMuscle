@@ -1693,29 +1693,32 @@ inline void buildWristViaPoints(std::vector<std::shared_ptr<SSMesh>>& meshes, st
     // Offsets (y = 0 in der gedrehten Ebene)
     std::vector<VPDef> vpDefs = {
         // in cm
-        {"MeshVP_EDM",  -1.8,  1.8, 0},
-        {"MeshVP_ED",  -1.8,  0.0, 0},
-        {"MeshVP_ECRB", -1.8, -1.8, 0},
-        {"MeshVP_EPL",  -1.8, -2.5, 2},
-        {"MeshVP_ECRL", -1.0, -3.0, 0},
-        {"MeshVP_EPB",   0.8, -4.0, 2},
-        {"MeshVP_APL",   1.5, -4.0, 2},
-        {"MeshVP_FCR",   2.5, -1.8, 1},
-        {"MeshVP_FCU",   2.3,  2.5, 1},
-        {"MeshVP_ADMB",  1.0,  3.3, 3},
-        {"MeshVP_ECU",  -1.0,  2.8, 0},
-        {"MeshVP_FPL",   1.5,  -1., 1},
-        {"MeshVP_FDP",   1.5,  0.0, 1},
-        {"MeshVP_FDS",   2.0,  0.0, 1}
+        {"MeshVP_EDM",  -0.555, 0.47 , 0}, // {"MeshVP_EDM",  -1.8,  1.8, 0},
+        {"MeshVP_ED",  -0.061,  0.546, 0}, // {"MeshVP_ED",  -1.8,  0.0, 0},
+        {"MeshVP_ECRB", 0.525, 0.488, 0}, // {"MeshVP_ECRB", -1.8, -1.8, 0},
+        {"MeshVP_EPL",  0.221, 0.546, 2}, // {"MeshVP_EPL",  -1.8, -2.5, 2},
+        {"MeshVP_ECRL", 0.717, 0.316, 0}, // {"MeshVP_ECRL", -1.0, -3.0, 0},
+        {"MeshVP_EPB",   0.881, 0.09, 2}, // {"MeshVP_EPB",   0.8, -4.0, 2},
+        {"MeshVP_APL",   0.872, 0.141, 2}, // {"MeshVP_APL",   1.5, -4.0, 2},
+        {"MeshVP_FCR",   0.368, -0.568, 1}, // {"MeshVP_FCR",   2.5, -1.8, 1},
+        {"MeshVP_FCU",   -0.674, -0.547 , 1}, // {"MeshVP_FCU",   2.3,  2.5, 1},
+        //{"MeshVP_ADMB",  0. , 0. , 3}, // {"MeshVP_ADMB",  1.0,  3.3, 3},
+        {"MeshVP_ECU",   -0.869 , 0.282 , 0}, // {"MeshVP_ECU",  -1.0,  2.8, 0},
+        {"MeshVP_FPL",   0.216 , -0.455 , 1}, // {"MeshVP_FPL",   1.5,  -1., 1},
+        {"MeshVP_FDP",   -0.103 , -0.403 , 1}, // {"MeshVP_FDP",   1.5,  0.0, 1},
+        {"MeshVP_FDS",   -0.103 , -0.57 , 1}, // {"MeshVP_FDS",   2.0,  0.0, 1}
     };
     
+    // new
+    double WB = 7.0*0.5; // half wrist breadth in cm
+    MWMath::RotMatrix3x3 rot = MWMath::axisAngle(MWMath::Point3D(1, 0, 0), 180.) * MWMath::axisAngle(MWMath::Point3D(0, 1, 0), 90.);
 
     for (const auto& def : vpDefs) {
         
         // Punkt in der ungedrehten lokalen Ebene (Y=0) konstruieren (mit Skalierung)
-        MWMath::Point3D baseOffset(def.x*.01f * scale, 0.0, -def.z*.01f * scale);
+        MWMath::Point3D baseOffset(def.x*WB*.01f * scale, -0.13, -def.z*WB*.01f * scale); // MWMath::Point3D baseOffset(def.x*.01f * scale, 0.0, -def.z*.01f * scale);
         // Punkt in die um 10° gedrehte Ebene projizieren
-        MWMath::Point3D rotatedOffset = planeRotation * baseOffset;
+        MWMath::Point3D rotatedOffset = planeRotation * rot * baseOffset;
         
         MWMath::Point3D COLOR_VP;
         if (def.isThumb==1){ COLOR_VP = MWMath::Point3D(0.6, 0.1, 0.1);}

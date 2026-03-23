@@ -4111,7 +4111,7 @@ int main(int argc, char** argv)
         // hier szene objektorientert aufbauen per funktion
         //...setupScene(currentScene, meshes, musclePtrs);
 
-        bool bLoadFromJson = true; // Flag zum Laden
+        bool bLoadFromJson = cfg.bLoadFromJson; // Flag zum Laden
 
         if (bLoadFromJson) {
             // Container für den Viewer (werden entweder durch Laden oder durch Simulation gefüllt)
@@ -4124,7 +4124,7 @@ int main(int argc, char** argv)
             std::vector<std::vector<std::string>> viewerText;
             
             // LADE SZENE AUS JSON
-            QString loadPath = "../examples/results/SceneExport_20260320_113445.json"; // Deinen Dateinamen einsetzen
+            QString loadPath = QString::fromStdString(cfg.loadPath);//"../examples/results/SceneExport_20260320_113445.json"; // Deinen Dateinamen einsetzen
             if (loadSceneFromJson(loadPath, tissue, meshes, musclePtrs, rootSystem, numTimeSteps)) {
                 
                 int numMuscles = musclePtrs.size();

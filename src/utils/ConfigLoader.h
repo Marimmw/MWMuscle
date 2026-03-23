@@ -32,6 +32,8 @@ struct SimSettings {
     bool bShowSolverInVisualization = false;
     bool bSumPhiEta = false;
     bool bUseWarmstartEtas = true;
+    bool bLoadFromJson = false;
+    std::string loadPath = "";
 };
 
 class ConfigManager {
@@ -78,6 +80,8 @@ public:
             else if (key == "bShowSolverInVisualization") ss >> settings.bShowSolverInVisualization;
             else if (key == "bSumPhiEta") ss >> settings.bSumPhiEta;
             else if (key == "bUseWarmstartEtas") ss >> settings.bUseWarmstartEtas;
+            else if (key == "bLoadFromJson") ss >> settings.bLoadFromJson;
+            else if (key == "loadPath") ss >> settings.loadPath;
         }
 
         qDebug() << "-------------- CONFIG --------------";
@@ -97,6 +101,8 @@ public:
         qDebug() << "   bShowSolverInVisualization:" << settings.bShowSolverInVisualization;
         qDebug() << "   bSumPhiEta:" << settings.bSumPhiEta;
         qDebug() << "   bUseWarmstartEtas:" << settings.bUseWarmstartEtas;
+        qDebug() << "   bLoadFromJson:" << settings.bLoadFromJson;
+        qDebug() << "   loadPath:" << QString::fromStdString(settings.loadPath);
         qDebug() << "------------------------------------";
         return settings;
     }

@@ -11,12 +11,15 @@ muscleNumPoints 10 25
 
 # Scene & Time
 currentScene VIAPOINT_PLUSMESH #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 3
+numTimeSteps 1
 objFunc 0
 discretization 11
 dynamicReparametrization 0
 bShowDiscretization 0
 bShowSolverInVisualization 1
+
+bLoadFromJson 0
+loadPath ../examples/results/SceneExport_20260320_113445.json
 
 # Solver Settingsc
 casadiParametrization global
