@@ -1424,7 +1424,7 @@ inline std::string createMusclePathHand(std::shared_ptr<SSBody>& rootSystem, std
     std::vector<std::string> createdMuscleNames;
 
     for (const auto& mDef : allMusclesExcel) {
-        qDebug() << "Processing muscle: " << mDef.name.c_str();
+        qDebug() << "     Processing muscle: " << mDef.name.c_str();
         // get meshes to consider/wrap
         std::vector<SSMesh*> pathMeshes;
         for (const auto& meshName : mDef.meshes) {

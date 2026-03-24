@@ -303,7 +303,9 @@ std::vector<std::string> SimulationManager::runSingleSimulation(const std::vecto
 
     // 2. Modell aufbauen (Hier gibst du deine Parameter p1-p4 an die Funktion weiter!)
     std::string buildResult = buildOHandModelOldExpandedViaX05(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    qDebug() << "        | ------------------------------------------------------- |";
     qDebug() << "        | Using System: " << QString::fromStdString(buildResult);
+    qDebug() << "        | ------------------------------------------------------- |";
 
     for (auto& m : meshes) {
         m->discretizeMesh(m_cfg.discretization);
@@ -369,69 +371,7 @@ std::vector<std::string> SimulationManager::runSingleSimulation(const std::vecto
             muscle->checkTorusSnapThrough();
         }
     }
-
-    /* // ==============================================================================
-    // AUSWERTUNG DER CASADI LOGS
-    // ==============================================================================
-    int score = 0;
-    int successCount = 0;
-    std::string stepResults = "";
-
-    // Wir werten das erste CasadiSystem aus (da dort die Logs deines Muskels liegen)
-    if (!systems.empty()) {
-        auto* sys = systems[0];
-        
-        for (size_t t = 0; t < sys->SolverConvergenceMessages.size(); ++t) {
-            std::string msg = sys->SolverConvergenceMessages[t];
-            int iters = sys->SolverConvergenceSteps[t];
-            
-            // Jeder Iterationsschritt kostet 1 Punkt
-            score += iters;
-
-            int statusCode = 3; // Fallback
-            if (msg.find("Succeeded") != std::string::npos || msg.find("Success") != std::string::npos) {
-                statusCode = 0;
-                successCount++;
-            } 
-            else if (msg.find("Max") != std::string::npos || msg.find("Maximum") != std::string::npos) {
-                statusCode = 1;
-                // Optional: score += 5000; (Falls Max-Iter auch leicht bestraft werden soll)
-            } 
-            else if (msg.find("Infeasible") != std::string::npos) {
-                statusCode = 2;
-                score += 20000; // Harte Strafe für Infeasible
-            }
-
-            // String bauen: z.B. "0(45) "
-            stepResults += std::to_string(statusCode) + "(" + std::to_string(iters) + ")  ";
-        }
-    }
-
-    // MEMORY CLEANUP
-    for (auto* sys : systems) delete sys;
-    for (auto* mus : musclePtrs) delete mus;
-
-    // ==============================================================================
-    // TABELLEN-ZEILE GENERIEREN
-    // ==============================================================================
-    std::string systemName = "Unknown_System";
-    if (!musclePtrs.empty()) {
-        systemName = "CasSys_" + musclePtrs[0]->Name;
-    }
-
-    std::string succStr = std::to_string(successCount) + "/" + std::to_string(m_cfg.numTimeSteps);
-    std::stringstream ss;
-    ss << std::left 
-       << std::setw(35) << systemName << "\t"
-       << std::setw(15) << score
-       << std::setw(15) << succStr;
-       
-    for (double p : params) {
-        ss << std::setw(15) << p; // Parameter einfügen
-    }
-    ss << stepResults; // Am Ende die Historie anheften
-    qDebug() << "        | Result Line: " << QString::fromStdString(ss.str());
-    return ss.str(); */
+    
     // ==============================================================================
     // AUSWERTUNG DER CASADI LOGS FÜR ALLE SYSTEME
     // ==============================================================================
