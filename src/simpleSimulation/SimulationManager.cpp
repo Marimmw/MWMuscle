@@ -153,7 +153,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
     std::string scoreHeader = "Score(<" + std::to_string(goodScore) + ")";
 
     // Header schreiben
-    outFile << std::left << std::setw(30) << "Pose Name" << "\t" 
+    outFile << std::left << std::setw(35) << "Pose Name" << "\t" 
             << std::setw(35) << "Casadi System" << "\t"
             << std::setw(15) << scoreHeader << "\t" 
             << std::setw(15) << "Successes" << "\t";
@@ -217,7 +217,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
             
             // Wir schreiben für jeden Muskel eine eigene Zeile (mit demselben Posen-Namen davor)
             for (const auto& line : resultLines) {
-                outFile << std::left << std::setw(20) << poses[i].PoseName << "\t" << line << "\n";
+                outFile << std::left << std::setw(25) << poses[i].PoseName << "\t" << line << "\n";
             }
             outFile.flush();
             
@@ -501,8 +501,8 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes", "VP_Size"};
     
     // 2. Deine Parameter
-    std::vector<double> numNodes = {50,70};//,80,90,100};//{40,50,55,60,65,70,75,80,85,90,95,100,125,150};
-    std::vector<double> vpSize = {0.02,0.03};//,0.04,0.05,0.06};
+    std::vector<double> numNodes = {40,50,60,65,70,75,80,85,90,100,125};
+    std::vector<double> vpSize = {0.05};
 
     std::vector<std::vector<double>> extraParameters = {numNodes, vpSize};
     // 3. Temporäre Struktur für die Basis-Posen (ohne numNodes)
@@ -513,38 +513,71 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     
     std::vector<BasePose> basePoses = {
         {"Krampf Pose",    { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}},
-        //{"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
-        //{"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
-        //{"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
+        {"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        {"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
+        {"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
         {"Schraeger Griff",{ 0.0,   0.0, 45.0, 20.0,  45.0, 45.0}},
-        //{"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
-        //{"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}
+        {"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        {"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}
     };
     
     std::vector<PoseDef> variantList;
     
     // 4. Verschachtelte Schleife: Kombiniere jede Pose mit jeder Knotenanzahl
-    for (const auto& bp : basePoses) {
-    for (double nodes : numNodes) {
+    bool bReverseOrder = true; // Wenn true, werden die Knoten von groß nach klein kombiniert
+    if (bReverseOrder){
         for (double vp : vpSize) {
+            for (double nodes : numNodes) {
+                for (const auto& bp : basePoses) {
 
-            PoseDef p;
+                    PoseDef p;
 
-            p.PoseName = bp.name + 
-                " (N=" + std::to_string(static_cast<int>(nodes)) +
-                ", vp=" + std::to_string(vp) + ")";
+                    std::ostringstream vpStream;
+                    vpStream << std::fixed << std::setprecision(4) << vp;
 
-            p.JointNames = jointNames;
+                    p.PoseName = bp.name + 
+                        " (N=" + std::to_string(static_cast<int>(nodes)) +
+                        ", vp=" + vpStream.str() + ")";
 
-            p.SimulationJointAngles = bp.angles;
+                    p.JointNames = jointNames;
 
-            p.SimulationJointAngles.push_back(nodes); // NumNodes
-            p.SimulationJointAngles.push_back(vp);    // vpSize
+                    // Reihenfolge bleibt: nodes, vp vorne
+                    p.SimulationJointAngles = {nodes, vp};
 
-            variantList.push_back(p);
+                    p.SimulationJointAngles.insert(
+                        p.SimulationJointAngles.end(),
+                        bp.angles.begin(),
+                        bp.angles.end()
+                    );
+
+                    variantList.push_back(p);
+                }
+            }
         }
     }
-}
+    else {
+        for (const auto& bp : basePoses) {
+            for (double nodes : numNodes) {
+                for (double vp : vpSize) {
+
+                    PoseDef p;
+
+                    p.PoseName = bp.name + 
+                        " (N=" + std::to_string(static_cast<int>(nodes)) +
+                        ", vp=" + std::to_string(vp) + ")";
+
+                    p.JointNames = jointNames;
+
+                    p.SimulationJointAngles = bp.angles;
+
+                    p.SimulationJointAngles.push_back(nodes); // NumNodes
+                    p.SimulationJointAngles.push_back(vp);    // vpSize
+
+                    variantList.push_back(p);
+                }
+            }
+        }
+    }
     
     return variantList;
 }

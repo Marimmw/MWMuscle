@@ -1020,7 +1020,7 @@ namespace Hand {
         //{ "ExtensorCarpiRadialisBrevis_2", "Mesh_Humerus", MWMath::Point3D{39.98, -336.8, -4.294} , "Mesh_MC2", MWMath::Point3D{-11.96, 27.73, -0.582},{"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
         { "ExtensorCarpiUlnaris_1", "Mesh_Humerus", MWMath::Point3D{24.11, -346.4, 0.571} , "Mesh_MC4", MWMath::Point3D{-2.222, 17.97, -4.251} ,         {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
         //{ "ExtensorCarpiUlnaris_2", "Mesh_Humerus", MWMath::Point3D{30.96, -342.0, 2.139} , "Mesh_MC4", MWMath::Point3D{-2.792, 17.03, -4.285} ,       {"MeshVP_ECRL"}, {}, 10, EXTENSORCOLOR, 1.0 },
-         */
+         */ 
 
         { "ExtensorDigitorum_1_1", "Mesh_Humerus", MWMath::Point3D{34.87, -339.1, -3.738} , "Mesh_DP1", MWMath::Point3D{-4.47, 4.714, -1.288} ,   {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 50, EXTENSORCOLOR, 1.0},
         //{ "ExtensorDigitorum_1_2", "Mesh_Humerus", MWMath::Point3D{30.49, -340.9, -4.776} , "Mesh_DP1", MWMath::Point3D{-4.524, 5.019, 0.458} , {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 50, EXTENSORCOLOR },
@@ -1033,7 +1033,7 @@ namespace Hand {
         { "ExtensorDigitiMinimi_1", "Mesh_Humerus", MWMath::Point3D{26.15, -371.1, -3.214} , "Mesh_DP4", MWMath::Point3D{-3.714, 8.692, -0.0449} ,{"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 50, EXTENSORCOLOR, 1.0},
         //{ "ExtensorDigitiMinimi_2", "Mesh_Humerus", MWMath::Point3D{23.89, -371.0, -2.115} , "Mesh_DP4", MWMath::Point3D{-5.486, 4.598, -3.015},{"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPE_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPE_MP4", "Mesh_DIP4_Joint"}, {}, 50, EXTENSORCOLOR },
 
-        //{ "ExtensorIndicis_1", "Mesh_Ulna", MWMath::Point3D{10.83, 226.3, -3.307} , "Mesh_DP1", MWMath::Point3D{-4.342, 6.562, 1.834} ,           {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 50, EXTENSORCOLOR, 1.0},
+        { "ExtensorIndicis_1", "Mesh_Ulna", MWMath::Point3D{10.83, 226.3, -3.307} , "Mesh_DP1", MWMath::Point3D{-4.342, 6.562, 1.834} ,           {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"}, {}, 50, EXTENSORCOLOR, 1.0},
         //{ "ExtensorIndicis_2", "Mesh_Ulna", MWMath::Point3D{11.54, 210.5, -2.816} , "Mesh_DP1", MWMath::Point3D{-4.253, 5.784, 1.265} ,         {"Mesh_UlnaPseudo", "Mesh_Carpals", "MeshVP_ED", "MeshVPE_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPE_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPE_MP1", "Mesh_DIP1_Joint"},{}}, 50, EXTENSORCOLOR }
         
     };
@@ -2849,9 +2849,16 @@ inline std::string buildOHandModelOldExpandedViaX05(std::vector<std::shared_ptr<
     std::vector<double> HAngles = processParams.empty() ? std::vector<double>{0.0,  0.0, 0.0,  0.0, 0.0, 0.0} : processParams;
     // HAngles = { 0.0,  0.0, 90.0,  0.0, 100.0, 80.0}; qDebug() << "      Using default HAngles for 'buildOHandModelOldExpandedVia', since processParams is empty.";
     int numPoints = cfg.muscleNumPoints[0];
-    if (processParams.size() > 6) numPoints = static_cast<int>(processParams[6]);
-    std::vector<double> FWAngles = {HAngles[0], HAngles[1]}; // Wrist Abduction, Wrist Flexion
-    std::vector<double> FJAngles = {HAngles[2], HAngles[3], HAngles[4], HAngles[5]}; // MCP1, MCP2, PIP, DIP 
+
+    double viaPointR = 0.05;
+    if (processParams.size() > 7) {
+        viaPointR = processParams[1];
+    }
+    if (processParams.size() > 6) numPoints = static_cast<int>(processParams[0]);
+    int spo = 2;
+    std::vector<double> FWAngles = {HAngles[0+spo], HAngles[1+spo]}; // Wrist Abduction, Wrist Flexion
+    std::vector<double> FJAngles = {HAngles[2+spo], HAngles[3+spo], HAngles[4+spo], HAngles[5+spo]}; // MCP1, MCP2, PIP, DIP 
+
     double BCol = 0.8;
     const MWMath::Point3D COLORF1 = MWMath::Point3D(BCol, BCol, BCol); // MWMath::Point3D(0.50, 0.00, 1.00); 
     const MWMath::Point3D COLORF2 = MWMath::Point3D(BCol, BCol, BCol); // MWMath::Point3D(0.30, 0.30, 1.00); 
@@ -2862,7 +2869,7 @@ inline std::string buildOHandModelOldExpandedViaX05(std::vector<std::shared_ptr<
     const MWMath::Point3D COLORJOINT = MWMath::Point3D(0.00, 0.90, 1.00); // MWMath::Point3D(0.0, 0.9, 0.3);
     const MWMath::Point3D COLORFDEACTIVE = MWMath::Point3D(0.5, 0.5, 0.5);
     const bool bShowBody = true;
-    qDebug ()<< "      Running 'buildOHandModelOldExpandedViaX' with HAngles: "<< HAngles[0] << ", "<< HAngles[1] << ", "<< HAngles[2] << ", "<< HAngles[3] << ", "<< HAngles[4] << ", "<< HAngles[5] << " and numPoints: " << numPoints;
+    qDebug ()<< "      Running 'buildOHandModelOldExpandedViaX' with HAngles: "<< HAngles[0+spo] << ", "<< HAngles[1+spo] << ", "<< HAngles[2+spo] << ", "<< HAngles[3+spo] << ", "<< HAngles[4+spo] << ", "<< HAngles[5+spo] << " and numPoints: " << numPoints;
     
 
     // --- PARAMETER ---
@@ -2873,10 +2880,7 @@ inline std::string buildOHandModelOldExpandedViaX05(std::vector<std::shared_ptr<
     float GS = 1.0;
     double rWF = 0.5;
     std::vector<double> width = {0.15*GS*rWF, 0.1*GS*rWF, 0.07*GS*rWF, 0.05*GS*rWF}; 
-    double viaPointR = 0.05;
-    if (processParams.size() > 7) {
-        viaPointR = processParams[7];
-    }
+    
 
     // --- TORI ---
     std::vector<double> relTorusPos = {0.7, 0.55, 0.45}; //{0.6, 0.42, 0.32};
