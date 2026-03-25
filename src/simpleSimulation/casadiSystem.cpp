@@ -607,7 +607,7 @@ void CasadiSystem::setupCasadiVia()
         // ==========================================================
         std::vector<MX> h_via_list; 
         // Parameter für Via-Points
-        double alpha = 100.0; // bei 50.0 ist der punkt weiter weg vom Mesh, ab 300 "Invalid_Number" fehler
+        double alpha = 50.0; // bei 50.0 ist der punkt weiter weg vom Mesh, sinnvoll ist 50-100 ab 300 "Invalid_Number_Detected" fehler
         double eps = 1e-8;
         for (int v = 0; v < num_via; ++v) {
             MX v_pos = p_mus(Slice(p_offset_via + v * 3, p_offset_via + (v + 1) * 3));
@@ -620,10 +620,10 @@ void CasadiSystem::setupCasadiVia()
             double r_sq = r_tol * r_tol;
 
             MX d_vector = MX::vertcat({});
-            /* for (int k = 0; k < num_inner; ++k) {
-                MX g_k = x_mus(Slice(k * 3, (k + 1) * 3));
-                d_vector = MX::vertcat({d_vector, sum1(sq(g_k - v_pos))});
-            } */
+            // for (int k = 0; k < num_inner; ++k) {
+            //     MX g_k = x_mus(Slice(k * 3, (k + 1) * 3));
+            //     d_vector = MX::vertcat({d_vector, sum1(sq(g_k - v_pos))});
+            // }
             for (int k = 0; k < num_inner; ++k) {
                 MX g_k = x_mus(Slice(k * 3, (k + 1) * 3));
                 // LINEARE DISTANZ: sqrt( (dx)^2 + (dy)^2 + (dz)^2 + eps )
@@ -634,13 +634,15 @@ void CasadiSystem::setupCasadiVia()
             d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))});
 
             MX D_v = -casadi::MX::logsumexp(-alpha * d_vector) / alpha;
-            MX h_v = r_sq - D_v; 
+            MX h_v = r_sq - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
             h_via_list.push_back(h_v);
 
             // Constraints für Via-Points
             all_g = MX::vertcat({all_g, h_v * eta_v}); 
             all_g = MX::vertcat({all_g, h_v});         
         }
+
+        // #####################################
 
         // Gradienten für Via-Points vorab berechnen
         std::vector<MX> grad_h_via_full_list;
@@ -726,8 +728,7 @@ void CasadiSystem::setupCasadiVia()
 
 
 // VIA LINE POINTS
-void CasadiSystem::solveStepViaLine()
-{
+void CasadiSystem::solveStepViaLine() {
     qDebug() << "Solving step with ViaLine Point formulation...";
     using namespace casadi;
 
@@ -770,6 +771,7 @@ void CasadiSystem::solveStepViaLine()
         } else {
             for (int e = 0; e < num_etas_total; ++e) x0_all.push_back(0.0);
         }
+        
 
         // ==========================================================
         // 2. PARAMETER (p)
@@ -1019,12 +1021,11 @@ void CasadiSystem::setupCasadiViaLine()
         // ==========================================================
         // 3. GLOBALE VIA-POINT BERECHNUNG (LINIEN-SEGMENTE!)
         // ==========================================================
+        
         std::vector<MX> h_via_list; 
-        double alpha = 200.0; // WICHTIG: 200.0 ist ideal für lineare Distanzen
+        double alpha = 150.0; // Besserer Wert für Linien
         double eps = 1e-8;
 
-        // Hilfs-Array: Alle Knoten in Reihe (Origin -> innere Knoten -> Insertion)
-        // Dadurch können wir elegant über die Liniensegmente iterieren
         std::vector<MX> path_nodes;
         path_nodes.push_back(P_orig);
         for (int k = 0; k < num_inner; ++k) {
@@ -1036,50 +1037,52 @@ void CasadiSystem::setupCasadiViaLine()
             MX v_pos = p_mus(Slice(p_offset_via + v * 3, p_offset_via + (v + 1) * 3));
             MX eta_v = x_mus(offset_via_etas + v);
             
-            // HIER HOLEN WIR UNS DEINE ECHTE C++ TOLERANZ!
             double r_tol = via_meshes[v]->MViaPointTolerance * 0.5; 
             if (r_tol <= 0.0001) r_tol = 0.005; 
 
             MX d_vector = MX::vertcat({});
             
-            // --- NEU: DISTANZ ZU LINIENSEGMENTEN ---
             for (size_t i = 0; i < path_nodes.size() - 1; ++i) {
                 MX p1 = path_nodes[i];
                 MX p2 = path_nodes[i+1];
                 
-                MX u = p2 - p1;          // Vektor des Segments
-                MX w = v_pos - p1;       // Vektor vom Segment-Start zum ViaPoint
+                MX u = p2 - p1;          
+                MX w = v_pos - p1;       
                 
-                // Projektion (t) des ViaPoints auf die unendliche Linie: (w dot u) / (u dot u)
                 MX c1 = sum1(w * u);
-                MX c2 = sum1(u * u) + 1e-8; // Verhindert Division durch 0 bei übereinanderliegenden Knoten
+                MX c2 = sum1(u * u) + 1e-6; 
                 MX t = c1 / c2;
                 
-                // Begrenzen auf das reale Segment [0, 1] (fmax/fmin sind CasADi Funktionen)
-                MX t_clamped = fmax(0.0, fmin(1.0, t));
+                double eps_smooth = 1e-5; 
+                MX t_min = 0.5 * (t + 1.0 - sqrt(sq(t - 1.0) + eps_smooth));
+                MX t_clamped = 0.5 * (t_min + sqrt(sq(t_min) + eps_smooth));
                 
-                // Der Punkt auf dem Segment, der am nächsten zum ViaPoint liegt
                 MX closest_point = p1 + t_clamped * u;
-                
-                // Echte, lineare euklidische Distanz berechnen
                 MX dist = sqrt(sum1(sq(closest_point - v_pos)) + eps);
                 d_vector = MX::vertcat({d_vector, dist});
             }
 
-            // Smooth Minimum über alle Segment-Distanzen
-            MX D_v = -casadi::MX::logsumexp(-alpha * d_vector) / alpha;
+            // HIER HAT DIE KORREKTUR GEFEHLT! (+ log(n_segments)/alpha)
+            double n_segments = path_nodes.size() - 1.0;
+            MX D_v = -casadi::MX::logsumexp(-alpha * d_vector) / alpha + (log(n_segments) / alpha);
+            
             MX h_v = r_tol - D_v; 
             h_via_list.push_back(h_v);
 
-            // REGULARISIERUNG: Geisterkräfte bestrafen! (Extrem wichtig für Konvergenz)
+            // Regularisierung für eta_v
             obj += 1e-5 * sq(eta_v);
 
-            // Constraints für Via-Points
             all_g = MX::vertcat({all_g, h_v * eta_v}); 
             all_g = MX::vertcat({all_g, h_v});         
         }
 
-        // Gradienten für Via-Points vorab berechnen
+        // HIER HAT DIE LÄNGEN-REGULARISIERUNG GEFEHLT!
+        // Verhindert, dass Knoten unendlich weit auseinander rutschen
+        for (size_t i = 0; i < path_nodes.size() - 1; ++i) {
+            obj += 1e-5 * sum1(sq(path_nodes[i] - path_nodes[i+1]));
+        }
+        
+
         std::vector<MX> grad_h_via_full_list;
         for (int v = 0; v < num_via; ++v) {
             grad_h_via_full_list.push_back(MX::gradient(h_via_list[v], x_mus));

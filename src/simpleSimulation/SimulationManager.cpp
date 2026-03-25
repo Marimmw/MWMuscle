@@ -441,7 +441,7 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     std::vector<std::string> jointNames = {"Wrist_F", "Wrist_A", "MCP_F", "MCP_A", "PIP", "DIP", "NumNodes", "VP_Size"};
     
     // 2. Deine Parameter
-    std::vector<double> numNodes = {40,50,60,65,70,75,80,85,90,100,125};
+    std::vector<double> numNodes = {50};
     std::vector<double> vpSize = {0.05};
 
     std::vector<std::vector<double>> extraParameters = {numNodes, vpSize};
