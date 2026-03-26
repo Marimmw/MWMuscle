@@ -4227,7 +4227,7 @@ int main(int argc, char** argv)
             else{
                 //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
                 //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-                std::vector<std::vector<double>> handJointAngles = {}; // Hand::HandJointAngles_Spread;
+                std::vector<std::vector<double>> handJointAngles = Hand::HandJointAngles_Spread; // Hand::HandJointAngles_Spread;
                 currentScene = buildOHandModelOldExpandedViaX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
                 //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});

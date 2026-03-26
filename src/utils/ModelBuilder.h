@@ -988,14 +988,14 @@ namespace Hand {
         { "PalmarisLongus_1", "Mesh_Humerus", MWMath::Point3D{-18.52, -363.9, -24.39} , "Mesh_Carpals", MWMath::Point3D{0.295, -4.826, 0.209} , {"Mesh_Carpals", "MeshVP_FPL"}, {}, 50, FLEXORCOLOR },
         */
         
-        /* 
+        
         { "FlexorDigitorumSuperficialis_1_1", "Mesh_Radius", MWMath::Point3D{-61.7, -3.448, -4.993} , "Mesh_MP1", MWMath::Point3D{2.116, 6.523, 2.057} ,    {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1"}, { }, 50, FLEXORCOLOR, 1.0},
         //{ "FlexorDigitorumSuperficialis_1_2", "Mesh_Radius", MWMath::Point3D{-46.97, -0.906, -3.337} , "Mesh_MP1", MWMath::Point3D{2.393, 7.813, 2.173},  {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint"}, { } }, 50, FLEXORCOLOR, 1.0 },
         { "FlexorDigitorumSuperficialis_2_1", "Mesh_Radius", MWMath::Point3D{-33.96, 1.06, -1.918} , "Mesh_MP2", MWMath::Point3D{2.047, 9.653, 0.5864},     {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint"},  {}, 30, FLEXORCOLOR, 1.0 },
         //{ "FlexorDigitorumSuperficialis_2_2", "Mesh_Radius", MWMath::Point3D{-21.14, 3.75, -2.235} , "Mesh_MP2", MWMath::Point3D{2.234, 8.336, -0.335},   {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC2", "MeshVPF_MC2", "Mesh_MCP2_Joint", "Mesh_PP2" , "MeshVPF_PP2", "Mesh_PIP2_Joint"}, {}, 30, FLEXORCOLOR, 1.0 },
         { "FlexorDigitorumSuperficialis_3_1", "Mesh_Humerus", MWMath::Point3D{-18.92, -330.2, -23.85} , "Mesh_MP3", MWMath::Point3D{2.652, 7.257, 2.47} ,   {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint"}, {}, 30, FLEXORCOLOR, 1.0 },
         //{ "FlexorDigitorumSuperficialis_3_2", "Mesh_Humerus", MWMath::Point3D{-17.97, -338.3, -24.45} , "Mesh_MP3", MWMath::Point3D{2.03, 9.25, 1.878} ,  {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint"}, {}, 30, FLEXORCOLOR, 1.0 },
-        { "FlexorDigitorumSuperficialis_4_1", "Mesh_Humerus", MWMath::Point3D{-21.94, -368.0, -24.17} , "Mesh_MP4", MWMath::Point3D{1.495, 5.604, -1.007},  {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 30, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumSuperficialis_4_1", "Mesh_Humerus", MWMath::Point3D{-21.94, -368.0, -24.17} , "Mesh_MP4", MWMath::Point3D{1.495, 5.604, -1.007},  {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
         //{ "FlexorDigitorumSuperficialis_4_2", "Mesh_Humerus", MWMath::Point3D{-21.41, -370.6, -23.6} , "Mesh_MP4", MWMath::Point3D{1.457, 5.692, -1.092}, {"Mesh_Carpals", "MeshVP_FDS", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint"}, {}, 30, FLEXORCOLOR, 1.0 },
        
         
@@ -1007,7 +1007,7 @@ namespace Hand {
         //{ "FlexorDigitorumProfundus_3_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP3", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"Mesh_Carpals", "MeshVP_FDP", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPF_MP3", "Mesh_DIP3_Joint"}, {} }, 50, FLEXORCOLOR, 1.0 },
         { "FlexorDigitorumProfundus_4_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP4", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"Mesh_Carpals", "MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, { }, 50, FLEXORCOLOR, 1.0 },
         //{ "FlexorDigitorumProfundus_4_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP4", MWMath::Point3D{1.54, 3.546, 2.038} ,          {"Mesh_Carpals", "MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
-         */
+        
         
         
         // ==========================================

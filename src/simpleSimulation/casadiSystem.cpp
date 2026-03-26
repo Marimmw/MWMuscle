@@ -607,7 +607,7 @@ void CasadiSystem::setupCasadiVia()
         // ==========================================================
         std::vector<MX> h_via_list; 
         // Parameter für Via-Points
-        double alpha = 50.0; // bei 50.0 ist der punkt weiter weg vom Mesh, sinnvoll ist 50-100 ab 300 "Invalid_Number_Detected" fehler
+        double alpha = 100.0; // bei 50.0 ist der punkt weiter weg vom Mesh, sinnvoll ist 50-100 ab 300 "Invalid_Number_Detected" fehler
         double eps = 1e-8;
         for (int v = 0; v < num_via; ++v) {
             MX v_pos = p_mus(Slice(p_offset_via + v * 3, p_offset_via + (v + 1) * 3));
