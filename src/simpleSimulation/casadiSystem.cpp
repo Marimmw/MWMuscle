@@ -17,7 +17,7 @@ CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::str
         setupCasadi();
     } */
 
-    setupCasadiVia();
+    setupCasadiViaSum();
     
     
     
@@ -28,7 +28,7 @@ void CasadiSystem::solveStepX(){
         solveStepSum();
     }
     else{solveStep();} */
-    solveStepVia();
+    solveStepViaSum();
 }
 
 void CasadiSystem::setupCasadiSum()
@@ -724,6 +724,431 @@ void CasadiSystem::setupCasadiVia()
              << "Total variables:" << all_x.size1()
              << "Total constraints:" << all_g.size1();
 }
+
+
+
+// VIA POINTS SUM
+void CasadiSystem::solveStepViaSum()
+{
+    qDebug() << "          Solving step with Via Point Sum formulation...";
+    using namespace casadi;
+
+    std::vector<double> x0_all, p_all, lbg_all, ubg_all, lbx_all, ubx_all;
+
+    for (auto* mus : m_muscles) {
+        int num_inner = mus->MNodes.size() - 2;
+
+        // ==========================================================
+        // 0. MESHES SORTIEREN
+        // ==========================================================
+        std::vector<SSMesh*> sig_meshes;
+        std::vector<SSMesh*> via_meshes;
+        for (auto* mesh : mus->meshPtrs) {
+            if (mesh->bIsViaPoint) via_meshes.push_back(mesh);
+            else sig_meshes.push_back(mesh);
+        }
+        
+        int num_sig = sig_meshes.size();
+        int num_via = via_meshes.size();
+        int num_etas_sig = num_inner * num_sig;
+        int num_etas_via = num_via;
+        int num_etas_total = num_etas_sig + num_etas_via;
+
+        // ==========================================================
+        // 1. INITIAL GUESS (x0)
+        // ==========================================================
+        for (size_t k = 1; k < mus->MNodes.size() - 1; ++k) {
+            MWMath::Point3D pWarm = mus->MNodes[k].predictNewGlobal();
+            x0_all.push_back(pWarm.x);
+            x0_all.push_back(pWarm.y);
+            x0_all.push_back(pWarm.z);
+        }
+        
+        // Warmstart für BEIDE Eta-Arten
+        if (mus->lastEtas.size() == (size_t)num_etas_total && bUseWarmstartEtas) {
+            for (double eta : mus->lastEtas) {
+                x0_all.push_back(eta * WarmstartEtaScaling);
+            }
+        } else {
+            for (int e = 0; e < num_etas_total; ++e) x0_all.push_back(0.0);
+        }
+
+        // ==========================================================
+        // 2. PARAMETER (p)
+        // ==========================================================
+        // A. Signorini Meshes (12 Parameter: Pos + Rot Matrix)
+        for (auto* mesh : sig_meshes) {
+            p_all.push_back(mesh->PositionGlobal.x);
+            p_all.push_back(mesh->PositionGlobal.y);
+            p_all.push_back(mesh->PositionGlobal.z);
+            
+            MWMath::RotMatrix3x3 R = mesh->OrientationGlobal;
+            for (int col = 0; col < 3; ++col) {
+                for (int row = 0; row < 3; ++row) {
+                    p_all.push_back(R.m[row][col]);
+                }
+            }
+        }
+        
+        // B. Via-Point Meshes (Nur 3 Parameter: Position)
+        for (auto* mesh : via_meshes) {
+            p_all.push_back(mesh->PositionGlobal.x);
+            p_all.push_back(mesh->PositionGlobal.y);
+            p_all.push_back(mesh->PositionGlobal.z);
+        }
+        
+        // C. Origin & Insertion
+        p_all.push_back(mus->OriginPointGlobal.x);
+        p_all.push_back(mus->OriginPointGlobal.y);
+        p_all.push_back(mus->OriginPointGlobal.z);
+        
+        p_all.push_back(mus->InsertionPointGlobal.x);
+        p_all.push_back(mus->InsertionPointGlobal.y);
+        p_all.push_back(mus->InsertionPointGlobal.z);
+
+        // ==========================================================
+        // 3. CONSTRAINT BOUNDS (lbg/ubg)
+        // ==========================================================
+        // A. Globale Via-Points
+        for (int v = 0; v < num_via; ++v) {
+            // NUR NOCH Distanz-Constraint: h_v >= 0
+            lbg_all.push_back(0.0); 
+            ubg_all.push_back(inf);
+        }
+        // Summierte Via-Point-Komplementarität (sum(h_v * eta_v) == 0)
+        if (num_via > 0) {
+            lbg_all.push_back(-inf); // Exakt 0.0, wie von dir gewünscht!
+            ubg_all.push_back(0.0);
+        }
+
+
+        // B. Knoten-Schleife (Signorini + Euler-Lagrange)
+        for (int k = 0; k < num_inner; ++k) {
+            // Non-penetration für jedes Signorini-Mesh (h_s >= 0)
+            for (int s = 0; s < num_sig; ++s) {
+                lbg_all.push_back(0.0); 
+                ubg_all.push_back(inf);
+            }
+            // Summierte Signorini-Komplementarität (sum(h*eta) == 0)
+            if (num_sig > 0) {
+                lbg_all.push_back(0.0); 
+                ubg_all.push_back(0.0);
+            }
+            // Euler-Lagrange Kraftbilanz (x, y, z == 0)
+            for (int d = 0; d < 3; ++d) { 
+                lbg_all.push_back(0.0); 
+                ubg_all.push_back(0.0); 
+            }
+        }
+
+        // ==========================================================
+        // 4. VARIABLE BOUNDS (lbx/ubx)
+        // ==========================================================
+        // Gamma (Punkte)
+        for (int i = 0; i < num_inner * 3; ++i) {
+            lbx_all.push_back(-inf); ubx_all.push_back(inf);
+        }
+        // Alle Etas (Signorini + Via-Points) dürfen nur ziehen/drücken (>= 0)
+        for (int i = 0; i < num_etas_total; ++i) {
+            lbx_all.push_back(0.0); ubx_all.push_back(inf);
+        }
+    }
+
+    // ==========================================================
+    // SOLVER AUFRUF
+    // ==========================================================
+    DMDict arg = {{"x0", x0_all}, {"p", p_all}, {"lbg", lbg_all}, {"ubg", ubg_all}, {"lbx", lbx_all}, {"ubx", ubx_all}};
+    DMDict res = solver(arg);
+
+    // ==========================================================
+    // ERGEBNISSE EXTRAHIEREN
+    // ==========================================================
+    std::vector<double> res_x = std::vector<double>(res.at("x"));
+    auto solverInfo = solver.stats();
+    std::string status = solverInfo.at("return_status");
+
+    const std::string C_RED   = "\033[31m";
+    const std::string C_GREEN = "\033[32m";
+    const std::string C_RESET = "\033[0m";
+    int convSteps = int(solverInfo.at("iter_count"));
+    if (true) { // Dein if(true) oder if(bDebug)
+        std::string stepColor = (status == "Solve_Succeeded") ? C_GREEN : C_RED;
+        std::string fullMessage = stepColor + "    Solver finished after " + std::to_string(convSteps) + " iterations" + "(" + status + ")" + C_RESET;
+        qDebug().noquote() << QString::fromStdString(fullMessage);
+    }
+    
+    SolverConvergenceMessages.push_back(status);
+    SolverConvergenceSteps.push_back(convSteps);
+    
+    int current_x_offset = 0;
+    for (auto* mus : m_muscles) {
+        int num_inner = mus->MNodes.size() - 2;
+        int num_sig = 0, num_via = 0;
+        for (auto* mesh : mus->meshPtrs) {
+            if (mesh->bIsViaPoint) num_via++; else num_sig++;
+        }
+        
+        int offset_nodes    = current_x_offset;
+        int offset_sig_etas = offset_nodes + (num_inner * 3);
+        int offset_via_etas = offset_sig_etas + (num_inner * num_sig);
+
+        // 1. Positionen zurückschreiben
+        for (int i = 0; i < num_inner; ++i) {
+            int mIdx = i + 1;
+            MWMath::Point3D p(
+                res_x[offset_nodes + i * 3 + 0],
+                res_x[offset_nodes + i * 3 + 1],
+                res_x[offset_nodes + i * 3 + 2]
+            );
+            mus->MusclePointsGlobal[mIdx] = p;
+            mus->MNodes[mIdx].PositionGlobal = p;
+            mus->MNodes[mIdx].updateLocalFrame();
+        }
+
+        // 2. Globale Etas für Warmstart speichern
+        int num_etas_total = (num_inner * num_sig) + num_via;
+        mus->lastEtas.assign(res_x.begin() + offset_sig_etas, res_x.begin() + offset_sig_etas + num_etas_total);
+
+        // ==========================================================
+        // 3. MAPPING-TRICK FÜR EXPORT/VISUALISIERUNG
+        // Wir dröseln die Ergebnisse für die alte Struktur wieder auf!
+        // ==========================================================
+        
+        // Zuerst: Welcher Knoten ist jedem Via-Point am nächsten?
+        std::vector<int> closest_node_for_via(num_via, -1);
+        int via_counter = 0;
+        for (auto* mesh : mus->meshPtrs) {
+            if (!mesh->bIsViaPoint) continue;
+            
+            MWMath::Point3D v_pos = mesh->PositionGlobal;
+            double min_dist = 1e9;
+            int best_k = 0;
+            
+            for (int k = 0; k < num_inner; ++k) {
+                double d = MWMath::distance(mus->MNodes[k + 1].PositionGlobal, v_pos);
+                if (d < min_dist) { min_dist = d; best_k = k; }
+            }
+            closest_node_for_via[via_counter] = best_k;
+            via_counter++;
+        }
+
+        // Nun füllen wir das Array für JEDEN Knoten
+        for (int k = 0; k < num_inner; ++k) {
+            int mIdx = k + 1;
+            std::vector<double> currentStepEtas(mus->meshPtrs.size(), 0.0);
+
+            int sig_idx = 0;
+            int via_idx = 0;
+
+            for (size_t m = 0; m < mus->meshPtrs.size(); ++m) {
+                if (mus->meshPtrs[m]->bIsViaPoint) {
+                    // Via-Point Kraft nur eintragen, wenn das der nächste Knoten ist
+                    if (closest_node_for_via[via_idx] == k) {
+                        currentStepEtas[m] = res_x[offset_via_etas + via_idx];
+                    }
+                    via_idx++;
+                } else {
+                    // Signorini Kraft ganz regulär auslesen
+                    currentStepEtas[m] = res_x[offset_sig_etas + (k * num_sig) + sig_idx];
+                    sig_idx++;
+                }
+            }
+            
+            mus->MNodes[mIdx].MNodeEtaSteps.push_back(currentStepEtas);
+            mus->MNodes[mIdx].lastEtas = mus->lastEtas; 
+        }
+
+        current_x_offset += (num_inner * 3) + num_etas_total;
+    }
+}
+
+void CasadiSystem::setupCasadiViaSum()
+{
+    qDebug() << "     Setting up CasadiSystem with Via Point formulation...";
+    using namespace casadi;
+    MX all_x = MX::vertcat({});
+    MX all_g = MX::vertcat({});
+    MX all_p = MX::vertcat({});
+    MX obj = 0;
+    
+    
+
+    for (size_t m = 0; m < m_muscles.size(); ++m) {
+        SSMuscle* mus = m_muscles[m];
+        int num_inner = mus->MNodes.size() - 2;
+        int K = mus->MNodes.size() - 1;
+
+        // ==========================================================
+        // 0. MESHES SORTIEREN
+        // ==========================================================
+        std::vector<SSMesh*> sig_meshes;
+        std::vector<SSMesh*> via_meshes;
+        for (auto* mesh : mus->meshPtrs) {
+            if (mesh->bIsViaPoint) via_meshes.push_back(mesh);
+            else sig_meshes.push_back(mesh);
+        }
+        int num_sig = sig_meshes.size();
+        int num_via = via_meshes.size();
+
+        // ==========================================================
+        // 1. VARIABLEN DEFINIEREN (X-Vektor)
+        // Aufbau: [ 3*N Knoten | N * M_sig Etas | M_via Etas ]
+        // ==========================================================
+        int num_etas_sig = num_inner * num_sig;
+        int num_etas_via = num_via;
+        
+        MX x_mus = MX::sym("x_" + std::to_string(m), (num_inner * 3) + num_etas_sig + num_etas_via);
+        all_x = MX::vertcat({all_x, x_mus});
+
+        // Offsets zum Herausschneiden aus x_mus
+        int offset_nodes    = 0;
+        int offset_sig_etas = num_inner * 3;
+        int offset_via_etas = offset_sig_etas + num_etas_sig;
+
+        // ==========================================================
+        // 2. PARAMETER DEFINIEREN (P-Vektor)
+        // Aufbau: [ 12*M_sig Parameter | 3*M_via Parameter | 3 Orig | 3 Ins ]
+        // ==========================================================
+        MX p_mus = MX::sym("p_" + std::to_string(m), (12 * num_sig) + (3 * num_via) + 6);
+        all_p = MX::vertcat({all_p, p_mus});
+
+        // Offsets zum Herausschneiden aus p_mus
+        int p_offset_sig  = 0;
+        int p_offset_via  = num_sig * 12;
+        int p_offset_ends = p_offset_via + (num_via * 3);
+
+        MX P_orig = p_mus(Slice(p_offset_ends, p_offset_ends + 3));
+        MX P_ins  = p_mus(Slice(p_offset_ends + 3, p_offset_ends + 6));
+
+        // ==========================================================
+        // 3. GLOBALE VIA-POINT BERECHNUNG (Wie bisher)
+        // ==========================================================
+        std::vector<MX> h_via_list; 
+        MX sum_h_eta_via = 0;
+        // Parameter für Via-Points
+        double alpha = 100.0; // bei 50.0 ist der punkt weiter weg vom Mesh, sinnvoll ist 50-100 ab 300 "Invalid_Number_Detected" fehler
+        double eps = 1e-8;
+        for (int v = 0; v < num_via; ++v) {
+            MX v_pos = p_mus(Slice(p_offset_via + v * 3, p_offset_via + (v + 1) * 3));
+            MX eta_v = x_mus(offset_via_etas + v);
+            
+            // HIER HOLEN WIR UNS DEINE ECHTE C++ TOLERANZ!
+            double r_tol = via_meshes[v]->MViaPointTolerance * 0.5; // ohne "0.5" irgendwie abstand zu groß 
+            // Fallback
+            if (r_tol <= 0.0001) r_tol = 0.005; 
+            double r_sq = r_tol * r_tol;
+
+            MX d_vector = MX::vertcat({});
+            // for (int k = 0; k < num_inner; ++k) {
+            //     MX g_k = x_mus(Slice(k * 3, (k + 1) * 3));
+            //     d_vector = MX::vertcat({d_vector, sum1(sq(g_k - v_pos))});
+            // }
+            for (int k = 0; k < num_inner; ++k) {
+                MX g_k = x_mus(Slice(k * 3, (k + 1) * 3));
+                // LINEARE DISTANZ: sqrt( (dx)^2 + (dy)^2 + (dz)^2 + eps )
+                MX dist = sqrt(sum1(sq(g_k - v_pos)) + eps);
+                d_vector = MX::vertcat({d_vector, dist});
+            }
+            d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
+            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))});
+
+            MX D_v = -casadi::MX::logsumexp(-alpha * d_vector) / alpha;
+            MX h_v = r_sq - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            h_via_list.push_back(h_v);
+
+            sum_h_eta_via += h_v * eta_v;
+
+            // Constraints für Via-Points: NUR NOCH DIE DISTANZ EINZELN HINZUFÜGEN
+            all_g = MX::vertcat({all_g, h_v});     
+        }
+        // NEU: GLOBALES CONSTRAINT FÜR ALLE VIA-POINTS ANFÜGEN
+        if (num_via > 0) {
+            all_g = MX::vertcat({all_g, sum_h_eta_via});
+        }
+        // #####################################
+
+        // Gradienten für Via-Points vorab berechnen
+        std::vector<MX> grad_h_via_full_list;
+        for (int v = 0; v < num_via; ++v) {
+            grad_h_via_full_list.push_back(MX::gradient(h_via_list[v], x_mus));
+        }
+
+        // ==========================================================
+        // 4. KNOTEN-SCHLEIFE (Signorini & Euler-Lagrange)
+        // ==========================================================
+        for (int k = 0; k < num_inner; ++k) {
+            MX g_k = x_mus(Slice(k * 3, (k + 1) * 3));
+            MX g_prev = (k == 0) ? P_orig : x_mus(Slice((k - 1) * 3, k * 3));
+            MX g_next = (k == num_inner - 1) ? P_ins : x_mus(Slice((k + 1) * 3, (k + 2) * 3));
+
+            MX total_sig_force = 0;
+            MX total_via_force = 0;
+            MX sum_h_eta_sig = 0; 
+
+            // --- A. SIGNORINI KRÄFTE (Klassisch aufsummiert) ---
+            for (int s = 0; s < num_sig; ++s) {
+                MX q_s = p_mus(Slice(p_offset_sig + s * 12, p_offset_sig + (s + 1) * 12));
+                MX eta_ks = x_mus(offset_sig_etas + k * num_sig + s);
+                
+                MX h_s = sig_meshes[s]->constraintDistance(g_k, q_s);
+
+                MX grad_h_s;
+                if (bUseOwnGradient) grad_h_s = sig_meshes[s]->constraintJacobian(g_k, q_s);
+                else {
+                    MX grad_full = MX::gradient(h_s, x_mus);
+                    grad_h_s = grad_full(Slice(k * 3, (k + 1) * 3));
+                }
+
+                total_sig_force += eta_ks * grad_h_s;
+                sum_h_eta_sig += h_s * eta_ks;
+                
+                all_g = MX::vertcat({all_g, h_s}); // Non-penetration: h >= 0
+            }
+
+            // Summierte Signorini-Komplementarität hinzufügen
+            if (num_sig > 0) {
+                all_g = MX::vertcat({all_g, sum_h_eta_sig}); // sum(h*eta) == 0
+            }
+
+            // --- B. VIA-POINT KRÄFTE ---
+            for (int v = 0; v < num_via; ++v) {
+                MX eta_v = x_mus(offset_via_etas + v);
+                MX grad_h_v = grad_h_via_full_list[v](Slice(k * 3, (k + 1) * 3)); 
+                
+                total_via_force += eta_v * grad_h_v;
+            }
+
+            // --- C. EULER-LAGRANGE KRAFTBILANZ ---
+            // Summiere BEIDE Kontaktkraft-Arten in die Lagrange-Gleichung!
+            MX total_contact_force = total_sig_force + total_via_force;
+            MX eq_el = (-g_prev + 2.0 * g_k - g_next) * K - (1.0 / K) * total_contact_force;
+            all_g = MX::vertcat({all_g, eq_el});
+        }
+    }
+
+    // ==========================================================
+    // SOLVER CONFIG (Bleibt unverändert)
+    // ==========================================================
+    opts["print_time"] = false;
+    opts["record_time"] = false;
+    opts["ipopt.print_level"] = 0;
+    opts["ipopt.max_iter"] = maxIterations;
+    opts["ipopt.tol"] = maxTol;
+    opts["ipopt.linear_solver"] = "mumps";
+    opts["ipopt.hessian_approximation"] = "limited-memory"; 
+    
+    // ... [Dein Code zum Schreiben der Datei hier] ...
+
+    MXDict nlp = {{"x", all_x}, {"f", obj}, {"g", all_g}, {"p", all_p}};
+    solver = nlpsol("f", "ipopt", nlp, opts);
+
+    if (bDebug) qDebug() << "CasadiSystem initialized with"
+             << M << "muscles,"
+             << "Total variables:" << all_x.size1()
+             << "Total constraints:" << all_g.size1();
+}
+
+
 
 
 

@@ -43,6 +43,9 @@ public:
     void solveStepVia();
     void setupCasadiVia();
 
+    void solveStepViaSum();
+    void setupCasadiViaSum();
+
     void solveStepViaLine();
     void setupCasadiViaLine();
     

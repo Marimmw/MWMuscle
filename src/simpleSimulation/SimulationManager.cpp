@@ -1,4 +1,5 @@
 #include "SimulationManager.h"
+#include "utils/utility.h"
 #include <iomanip>  // Für std::setw und std::left
 #include <sstream>  // Für std::stringstream
 #include <omp.h>
@@ -149,6 +150,7 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
 
     // 1. DATEI VORBEREITEN
     std::ofstream outFile("../examples/results/PoseStudy_Summary.txt");
+    std::string fpath = "../examples/results/PoseStudy_Summary.txt";
     int goodScore = m_cfg.numTimeSteps * 40;
     std::string scoreHeader = "Score(<" + std::to_string(goodScore) + ")";
 
@@ -244,9 +246,16 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
                       << std::endl;
         }
 
+        if (currentRun % 25 == 0 && currentRun > 1) {
+            std::cout << COLOR_YELLOW << "INFO: Alle Posen wird die bisherige Zusammenfassung in die FAUbox hochgeladen..." << COLOR_RESET << std::endl;
+            uploadPoseStudyToFAUbox(QString::fromStdString(fpath));
+        }
+
     }
 
+    
     outFile.close();
+    uploadPoseStudyToFAUbox(QString::fromStdString(fpath));
     auto endTime = std::chrono::high_resolution_clock::now();
     auto total_min = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime).count();
     std::cout << "\n" << COLOR_GREEN << "Posen-Studie erfolgreich beendet in " << total_min << " Minuten!" << COLOR_RESET << std::endl;
@@ -453,9 +462,9 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     
     std::vector<BasePose> basePoses = {
         {"Krampf Pose",    { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}},
-        {"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
+        //{"Full Fist",      { 0.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
         {"Dach-Position",  { 0.0,   0.0, 90.0,  0.0,   0.0,  0.0}},
-        {"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
+        //{"Krallengriff",   { 0.0,   0.0,  0.0,  0.0, 100.0, 80.0}},
         {"Schraeger Griff",{ 0.0,   0.0, 45.0, 20.0,  45.0, 45.0}},
         {"Power Grip",     {20.0,   0.0, 90.0,  0.0, 100.0, 80.0}},
         {"Dart-Wurf",      { 0.0, -60.0, 90.0,  0.0, 100.0, 80.0}}

@@ -4053,7 +4053,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 0; // 0=normal, 1=Parameterstudie, 2=PoseStudy
+    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -4220,15 +4220,15 @@ int main(int argc, char** argv)
         } else {
 
             // bool bParameterStudy = true;
-            std::vector<double> params =  {0.0,   0.0, 45.0, 20.0,  45.0, 45.0}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
+            std::vector<double> params =  { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
             bool bSetupF = 0;
             if (bSetupF){
             setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
             else{
                 //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
                 //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-                std::vector<std::vector<double>> handJointAngles = Hand::HandJointAngles_Spread; // Hand::HandJointAngles_Spread;
-                currentScene = buildOHandModelOldExpandedViaX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
+                std::vector<std::vector<double>> handJointAngles = {}; // Hand::HandJointAngles_Spread;
+                currentScene = buildOHandModelOldExpandedTorusX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
                 //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});

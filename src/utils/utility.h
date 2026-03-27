@@ -8,6 +8,8 @@
 #include <filesystem>   // Braucht C++17 (in CMake sicherstellen!)
 #include <QDebug>
 #include <QString>
+#include <QProcess>
+#include <QStringList>
 #include <string>
 
 #include <QDir>
@@ -507,6 +509,34 @@ inline void exportParameterLog(const std::vector<std::vector<double>>& values,
 
 
 
+
+inline void uploadPoseStudyToFAUbox(const QString& txtFilePath) {
+    qDebug() << "Starte FAUbox-Upload via Python...";
+
+    QString pythonScript = "../examples/sendReport.py"; 
+
+    QStringList arguments;
+    arguments << pythonScript << txtFilePath;
+
+    QProcess* process = new QProcess();
+    
+    QObject::connect(process, &QProcess::readyReadStandardOutput, [process]() {
+        qDebug() << "FAUbox Upload Info:" << process->readAllStandardOutput().trimmed();
+    });
+    QObject::connect(process, &QProcess::readyReadStandardError, [process]() {
+        qDebug() << "FAUbox Upload Error:" << process->readAllStandardError().trimmed();
+    });
+
+    process->start("python3", arguments);
+    
+    if (!process->waitForFinished(15000)) { // 15 Sekunden Timeout
+        qDebug() << "FEHLER: Python-Skript hat nicht rechtzeitig geantwortet.";
+    } else {
+        qDebug() << "Upload-Skript beendet.";
+    }
+    
+    process->deleteLater();
+}
 
 
 
