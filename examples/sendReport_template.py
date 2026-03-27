@@ -2,9 +2,11 @@ import sys
 import os
 import requests
 
-USERNAME = "" 
-PASSWORD = ""
-BASE_WEBDAV_URL = ""
+# === FAUbox Einstellungen ===
+USERNAME = "ke71baxy@uni-erlangen.de" # z.B. ab12cdef
+PASSWORD = "12e9Nr5YGBBK5LziZ9Fcx-11F6T6Rq5wwipwSePrB2Sf9eVseEoRq2mHia8sSL9HLtcFKDjHFnB"
+BASE_WEBDAV_URL = "https://faubox.rrze.uni-erlangen.de/webdav/MasterArbeit/Simulationen/"
+
 # ============================
 
 def upload_to_faubox(file_path):
