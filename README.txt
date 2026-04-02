@@ -33,9 +33,9 @@ UMITTELBAR
 WICHTIG
 -> wichtig muscle auf body refernzieren! -> habe jetzt das expandedloop an expanded angegelichen
 -> via points nicht zu tief in mesh 
+-> initial guess durch torus -> weiter weg vom zentrum torus ist stabiler (zB funktioniert createMusclePoints besser als createMusclePointsComplexPath)
 
 WEITER MIT:
-- "exact" hand model
 - wie viele körper infeasible?
 
 

@@ -89,3 +89,79 @@ int SSJoint::update(int step)
     //qDebug() << "Global Position: " << Name.c_str() << "=" <<  PositionGlobal.print().c_str();
     return 0;
 }
+
+
+// -----------------------------------------------------
+
+int SSTranslationalJoint::update(int step)
+{  
+    if (bDebug == true && step == 0) qDebug() << QString("   ").repeated(SystemLayer) << "|->" << " Updating Translational Joint: " <<  QString::fromStdString(Name);
+    
+    double newTranslation = 0.0;
+    MWMath::Point3D axis = TranslationAxis;
+    
+    // 1. Berechne die aktuelle Auslenkung
+    if (TranslationSteps.empty()) {
+        double denominator = (TotalSteps > 1) ? (double)(TotalSteps - 1) : 1.0;
+        double progress = (double)step / denominator;
+        newTranslation = MaxTranslation * progress;
+    }
+    else {
+        if (step < TranslationSteps.size()) {
+            newTranslation = TranslationSteps[step];
+        }
+        else {
+            newTranslation = TranslationSteps.back(); // Letzten Wert beibehalten
+        }
+    }
+
+    CurrentTranslation = newTranslation;
+    DoneTranslationSteps.push_back(newTranslation);
+
+    // Vektor der Translation (Lokal)
+    MWMath::Point3D localTranslation = axis * newTranslation;
+    MWMath::Point3D localHalfTranslation = axis * (newTranslation * 0.5);
+
+    // 2. Globale Transformationen berechnen
+    if (Parent) {
+        // Orientierung wird 1:1 vom Parent übernommen + Initiales Offset (keine Bewegung)
+        OrientationGlobal = Parent->OrientationGlobal * Orientation2ParentRel;
+        
+        // Die Basis-Position des Gelenks an sich
+        MWMath::Point3D basePos = Parent->PositionGlobal + Parent->OrientationGlobal.transform(Position2ParentRelInParentFrame);
+        
+        // Die neue Position wird entlang der lokalen Achse des Gelenks verschoben
+        PositionGlobal = basePos + OrientationGlobal.transform(localTranslation);
+        JointHalfTranslation = basePos + OrientationGlobal.transform(localHalfTranslation);
+    }
+    else {
+        OrientationGlobal = Orientation2ParentRel;
+        PositionGlobal = Position2ParentRelInParentFrame + OrientationGlobal.transform(localTranslation);
+        JointHalfTranslation = Position2ParentRelInParentFrame + OrientationGlobal.transform(localHalfTranslation);
+    }
+
+    // 3. Update Children
+    for (auto& child : Children) {
+        child->update(step);
+    }
+
+    // 4. Update Meshes
+    for (auto& mesh : Meshes) {
+        mesh->OrientationGlobal = OrientationGlobal * mesh->Orientation2ParentRel;
+        
+        if (mesh->bIsJointMesh) {
+            // Wenn das Mesh das Gelenk selbst repräsentiert, platzieren wir es in der Mitte der Auslenkung!
+            mesh->PositionGlobal = JointHalfTranslation + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame);
+            // Optional: Wenn du einen Zylinder hast, der "mitwachsen" soll, könntest du hier mesh->C = newTranslation setzen.
+        }
+        else {
+            // Reguläre Meshes wandern voll mit der Spitze des Gelenks mit
+            mesh->PositionGlobal = PositionGlobal + mesh->OrientationGlobal.transform(mesh->Position2ParentRelInParentFrame);
+        }
+    }
+
+    return 0;
+}
+
+
+

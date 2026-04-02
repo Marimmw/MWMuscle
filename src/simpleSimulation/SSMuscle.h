@@ -175,6 +175,7 @@ public:
 
     int checkCollision(std::vector<SSMesh*> allToCheckMeshes = {});
     int checkTorusSnapThrough();
+    void checkViaPoint(bool& insideVP, double& distanceToVP, double& relDistanceToVP);
 
     // std::vector<SSMesh*> getReferencedMeshes(std::vector<std::string> meshNames);
     void getAttractorNodeInfo();

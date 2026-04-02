@@ -1076,8 +1076,10 @@ namespace Hand {
         //{ "FlexorDigitorumProfundus_3_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP3", MWMath::Point3D{1.54, 3.546, 2.038} ,          { "MeshVP_FDP", "Mesh_MC3", "MeshVPF_MC3", "Mesh_MCP3_Joint", "Mesh_PP3" , "MeshVPF_PP3", "Mesh_PIP3_Joint", "Mesh_MP3", "MeshVPF_MP3", "Mesh_DIP3_Joint"}, {} }, 50, FLEXORCOLOR, 1.0 },
         { "FlexorDigitorumProfundus_4_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP4", MWMath::Point3D{0.918, 1.99, 1.897} ,            { "MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, { }, 50, FLEXORCOLOR, 1.0 },
         //{ "FlexorDigitorumProfundus_4_2", "Mesh_Ulna", MWMath::Point3D{18.29, 75.68, -11.29} , "Mesh_DP4", MWMath::Point3D{1.54, 3.546, 2.038} ,          { "MeshVP_FDP", "Mesh_MC4", "MeshVPF_MC4", "Mesh_MCP4_Joint", "Mesh_PP4" , "MeshVPF_PP4", "Mesh_PIP4_Joint", "Mesh_MP4", "MeshVPF_MP4", "Mesh_DIP4_Joint"}, {}, 50, FLEXORCOLOR, 1.0 },
-         */
         { "FlexorDigitorumProfundus_1_1", "Mesh_Ulna", MWMath::Point3D{20.25, 100.3, -17.71} , "Mesh_DP1", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"MeshVP_FDP", "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {}, 100, FLEXORCOLOR, 1.0 },
+         */
+        //{ "FlexorDigitorumProfundus_1Test", "Mesh_Ulna",  MWMath::Point3D{-0., 300., -30.} , "Mesh_DP1", MWMath::Point3D{0.918, 1.99, 1.897} ,            {"Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {}, 40, FLEXORCOLOR, 1.0 },
+        { "FlexorDigitorumProfundus_1Test", "Mesh_MC1",  MWMath::Point3D{10., 0., -0.} , "Mesh_DP1", MWMath::Point3D{0.918, 1.99, 1.897} ,            { "Mesh_MC1", "MeshVPF_MC1", "Mesh_MCP1_Joint", "Mesh_PP1" , "MeshVPF_PP1", "Mesh_PIP1_Joint", "Mesh_MP1", "MeshVPF_MP1", "Mesh_DIP1_Joint"}, {}, 300, FLEXORCOLOR, 1.0 },
         
         
         // ==========================================
@@ -4299,7 +4301,6 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
         meshName = "MeshVPF_MC" + prefN;
         auto mVPF1 = std::make_shared<SSTorusMesh>(width[0]*relTorusR[0], width[0]*relTorusr[0], 
                 meshName, body1, MWMath::Point3D(width[0]*off, -L1*0.5 * relTorusPos[0], 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPFLEXOR);
-        mVPF1->bIsViaPoint = true;
         meshes.push_back(mVPF1);
         MeshMap[meshName] = mVPF1.get();
         
@@ -4325,7 +4326,6 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
         meshName = "MeshVPE_MC" + prefN;
         auto mVPE1 = std::make_shared<SSTorusMesh>(width[0]*relTorusR[0],width[0]*relTorusr[0], 
                 meshName, joint, MWMath::Point3D(-jointSize1*1.2, 0., 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPEXTENSOR);
-        mVPE1->bIsViaPoint = true;
         meshes.push_back(mVPE1);
         MeshMap[meshName] = mVPE1.get();
         
@@ -4357,16 +4357,9 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
         meshName = "MeshVPF_PP" + prefN;
         auto mVPF2 = std::make_shared<SSTorusMesh>(width[1]*relTorusR[1],width[1]*relTorusr[1], 
                 meshName, body2, MWMath::Point3D(width[1]*off, -L2*0.5 * relTorusPos[1], 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPFLEXOR);
-        mVPF2->bIsViaPoint = true;
         meshes.push_back(mVPF2);
         MeshMap[meshName] = mVPF2.get();
 
-        /* meshName = "MeshVPE_PP" + prefN;
-        auto mVPE2 = std::make_shared<SSEllipsoidMesh>(viaPointR, viaPointR, viaPointR, 
-                meshName, body2, MWMath::Point3D(-width[1]*off, -L2*0.5 * relTorusPos[1], 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPEXTENSOR);
-        mVPE2->bIsViaPoint = true;
-        meshes.push_back(mVPE2);
-        MeshMap[meshName] = mVPE2.get(); */
 
         MWMath::Point3D jointPosRel2 = MWMath::Point3D(0, -L2*0.5, 0);
         auto joint2 = std::make_shared<SSJoint>("Joint_2", 
@@ -4386,7 +4379,6 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
 
         auto mVPE2 = std::make_shared<SSTorusMesh>(width[1]*relTorusR[1], width[1]*relTorusr[1], 
                 meshName, joint2, MWMath::Point3D(-jointSize2*1.2, 0., 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPEXTENSOR);
-        mVPE2->bIsViaPoint = true;
         meshes.push_back(mVPE2);
         MeshMap[meshName] = mVPE2.get();
 
@@ -4406,16 +4398,9 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
         meshName = "MeshVPF_MP" + prefN;
         auto mVPF3 = std::make_shared<SSTorusMesh>(width[2]*relTorusR[2], width[2]*relTorusr[2], 
                 meshName, body3, MWMath::Point3D(width[2]*off, -L3*0.5 * relTorusPos[2], 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPFLEXOR);
-        mVPF3->bIsViaPoint = true;
         meshes.push_back(mVPF3);
         MeshMap[meshName] = mVPF3.get();
 
-        /* meshName = "MeshVPE_MP" + prefN;
-        auto mVPE3 = std::make_shared<SSEllipsoidMesh>(viaPointR, viaPointR, viaPointR, 
-                meshName, body3, MWMath::Point3D(-width[2]*off, -L3*0.5 * relTorusPos[2], 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPEXTENSOR);
-        mVPE3->bIsViaPoint = true;
-        meshes.push_back(mVPE3);
-        MeshMap[meshName] = mVPE3.get(); */
 
         MWMath::Point3D jointPosRel3 = MWMath::Point3D(0, -L3*0.5, 0);
         auto joint3 = std::make_shared<SSJoint>("Joint_3", 
@@ -4436,7 +4421,6 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
         meshName = "MeshVPE_MP" + prefN;
         auto mVPE3 = std::make_shared<SSTorusMesh>(width[2]*relTorusR[2], width[2]*relTorusr[2], 
                 meshName, joint3, MWMath::Point3D(-jointSize3*1.2, 0., 0.), MWMath::axisAngle({1,0,0}, 90.0), COLORVPEXTENSOR);
-        mVPE3->bIsViaPoint = true;
         meshes.push_back(mVPE3);
         MeshMap[meshName] = mVPE3.get();
 
@@ -4500,3 +4484,141 @@ inline std::string buildOHandModelOldExpandedTorusX05(std::vector<std::shared_pt
 
     return "buildOHandModelOldExpandedTorusX05";
 }
+
+inline std::string buildViaPointTests( std::vector<std::shared_ptr<SSTissue>>& tissues, std::vector<std::shared_ptr<SSMesh>>& meshes, std::vector<SSMuscle*>& muscles, std::shared_ptr<SSBody>& rootSystem, int numTimeSteps, const SimSettings& cfg, float geometryScaler, const std::vector<double> processParams,  const std::vector<std::vector<double>>& handJointAngles = {}) 
+{
+    // -----------------------------------
+    // Test-Szene: 2 Anker + 1 dynamischer Via-Point in der Mitte.
+    // Der Via-Point fährt an einem Translational Joint nach oben.
+
+    // for parameter study: 
+        // processParams[0] indicates which value is changed -> 0 = muscle length, 1 = numPoints
+        // processParams[1] is the value itself
+    // -----------------------------------
+
+    meshes.clear();
+    muscles.clear();
+    std::unordered_map<std::string, SSMesh*> MeshMap;
+
+    // --- PARSE processParams ---
+    int numPoints = 25;
+    double sphereRadius = 0.2;
+    double maxTranslation = 1.5; // Wie weit der Via-Point auslenkt
+    float muscleLength = 4.0; // [dm]
+
+    if (processParams.size() == 3){
+        if (processParams[1] == 0){
+            muscleLength = processParams[2];
+        }
+        else if (processParams[1] == 1){
+            numPoints = (int)processParams[2];
+        }
+    }
+    /* if (processParams.size() > 0) numPoints = static_cast<int>(processParams[0]);
+    if (processParams.size() > 1) anchorDist = processParams[1];
+    if (processParams.size() > 2) sphereRadius = processParams[2];
+    if (processParams.size() > 3) maxTranslation = processParams[3]; */
+
+    
+    
+    double anchorDist = muscleLength * 0.5 + sphereRadius; // Damit die Anker nicht zu weit außen liegen, sondern genug Platz für den Via-Point in der Mitte bleibt
+    
+
+    qDebug() << "      Running 'buildViaPointTests' with numPoints:" << numPoints 
+             << " anchorDist:" << anchorDist << " maxTranslation:" << maxTranslation;
+
+    // ==============================================================================
+    // 1. ROOT SYSTEM
+    // ==============================================================================
+    rootSystem = std::make_shared<SSBody>("Root", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), nullptr);
+    tissues.push_back(rootSystem);
+
+    // ==============================================================================
+    // 2. LINKER KÖRPER (Ursprung)
+    // ==============================================================================
+    auto bodyLeft = std::make_shared<SSBody>("Body_Left", MWMath::Point3D(-anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+    tissues.push_back(bodyLeft);
+    
+    auto meshLeft = std::make_shared<SSEllipsoidMesh>(sphereRadius, sphereRadius, sphereRadius, 
+        "Mesh_Left", bodyLeft, MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), MWMath::Point3D(0.1, 0.2, 0.8)); // Blau
+    meshes.push_back(meshLeft);
+    MeshMap["Mesh_Left"] = meshLeft.get();
+
+    // ==============================================================================
+    // 3. RECHTER KÖRPER (Ansatz)
+    // ==============================================================================
+    auto bodyRight = std::make_shared<SSBody>("Body_Right", MWMath::Point3D(anchorDist, 0, 0), MWMath::RotMatrix3x3(), rootSystem);
+    tissues.push_back(bodyRight);
+    
+    auto meshRight = std::make_shared<SSEllipsoidMesh>(sphereRadius, sphereRadius, sphereRadius, 
+        "Mesh_Right", bodyRight, MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), MWMath::Point3D(0.1, 0.8, 0.2)); // Grün
+    meshes.push_back(meshRight);
+    MeshMap["Mesh_Right"] = meshRight.get();
+
+    // ==============================================================================
+    // 4. TRANSLATIONAL JOINT & VIA-POINT
+    // ==============================================================================
+    // Das Gelenk startet im Ursprung (0,0,0) und fährt entlang der +Y Achse nach oben
+    auto transJoint = std::make_shared<SSTranslationalJoint>(
+        "Joint_ViaSlider", 
+        MWMath::Point3D(0, 0, 0),    // RelPos zum Parent (Root)
+        MWMath::RotMatrix3x3(),      // RelRot
+        rootSystem,                  // Parent
+        maxTranslation,              // Max Distanz aus processParams
+        MWMath::Point3D(0, 1, 0),    // Entlang Y-Achse
+        numTimeSteps
+    );
+    tissues.push_back(transJoint);
+
+    // Eine kleine "Schiene" zur Visualisierung des Sliders
+    /* auto jointMesh = std::make_shared<SSCylinderMesh>(0.02, maxTranslation, "Mesh_SliderRail", transJoint, MWMath::Point3D(0,0,0), MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(0.5, 0.5, 0.5));
+    jointMesh->bIsJointMesh = true; // Damit nutzt es JointHalfTranslation aus der neuen Klasse!
+    meshes.push_back(jointMesh); */
+
+    // Der Body für den Via-Point, der am Slider dranhängt
+    auto bodyVia = std::make_shared<SSBody>("Body_Via", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), transJoint);
+    tissues.push_back(bodyVia);
+
+    // Das Via-Point Mesh selbst (Ein Torus, der senkrecht steht)
+    double viaR = sphereRadius * 0.5; 
+    auto meshVia = std::make_shared<SSEllipsoidMesh>(viaR, viaR, viaR, "Mesh_ViaPoint", bodyVia, MWMath::Point3D(0, 0, 0), MWMath::axisAngle({1,0,0}, 90.0), MWMath::Point3D(1.0, 0.0, 0.0)); // Rot
+    meshVia->bIsViaPoint = true; // WICHTIG!
+    meshVia->MViaPointTolerance = viaR;
+    meshes.push_back(meshVia);
+    MeshMap["Mesh_ViaPoint"] = meshVia.get();
+
+
+    // ==============================================================================
+    // 5. INITIALES UPDATE
+    // ==============================================================================
+    for (auto& m : meshes) {
+        m->InitializeMesh();
+    }
+    rootSystem->update(0); 
+
+
+    // ==============================================================================
+    // 6. MUSKEL BEFESTIGEN
+    // ==============================================================================
+    MWMath::Point3D startOffset(sphereRadius, 0.0, 0.0);
+    MWMath::Point3D endOffset(-sphereRadius,0.0,  0.0);
+
+    SSMuscle* testMuscle = new SSMuscle("TestMuscle", numPoints, 
+        meshLeft.get(), startOffset, 
+        meshRight.get(), endOffset);
+
+    // HINDERNISSE & VIA-POINTS ÜBERGEBEN
+    // Reihenfolge ist für 'createMusclePointsComplexPath' extrem wichtig!
+    testMuscle->meshPtrs.push_back(meshLeft.get());
+    testMuscle->meshPtrs.push_back(meshVia.get());  // Der Via-Point ist in der Mitte!
+    testMuscle->meshPtrs.push_back(meshRight.get());
+
+    testMuscle->createMusclePointsComplexPath();
+    testMuscle->updateMusclePointsParentsLocal();
+    muscles.push_back(testMuscle);
+
+    return "buildViaPointTests";
+}
+
+
+

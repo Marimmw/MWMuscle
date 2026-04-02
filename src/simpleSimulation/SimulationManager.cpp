@@ -261,6 +261,106 @@ void SimulationManager::runPoseStudy(const std::vector<PoseDef>& poses) {
     std::cout << "\n" << COLOR_GREEN << "Posen-Studie erfolgreich beendet in " << total_min << " Minuten!" << COLOR_RESET << std::endl;
 }
 
+void SimulationManager::runViaPointParamStudy(const std::vector<PoseDef>& poses) {
+    auto startTime = std::chrono::high_resolution_clock::now();
+    int totalRuns = poses.size();
+    
+    std::cout << "Starte ViaPointParam-Studie (" << totalRuns << " Runs, auf mehreren Kernen)..." << std::endl;
+
+    // 1. DATEI VORBEREITEN
+    std::string fpath = "../examples/results/ViaPointParam_Summary.txt";
+    std::ofstream outFile(fpath);
+    
+    // --- NEUER HEADER FÜR DEINE OUTPUT-PARAMETER ---
+    outFile << std::left << std::setw(25) << "Param Name" << "\t" 
+            << std::setw(20) << "Casadi System" << "\t"
+            << std::setw(25) << "Solver Status (Iter)" << "\t" 
+            << std::setw(15) << "In VP (0/1)" << "\t"
+            << std::setw(15) << "Min Dist VP" << "\t"
+            << std::setw(15) << "Rel Dist VP" << "\t";
+            
+    // Parameter-Namen (Alpha, Type, Value) aus der ersten Pose für den Tabellenkopf
+    if (!poses.empty() && !poses[0].JointNames.empty()) {
+        for (const auto& jName : poses[0].JointNames) {
+            outFile << std::setw(10) << jName << "\t";
+        }
+    }
+    outFile << "\n";
+    outFile << std::string(130, '-') << "\n";
+
+    // 2. THREAD-SICHERE VARIABLEN
+    std::mutex fileMutex;
+    std::atomic<int> currentRun{0}; 
+
+    int maxThreads = omp_get_max_threads();
+    int useThreads = 1; // (maxThreads > 2) ? maxThreads - 2 : 1;
+    std::cout << "Nutze " << useThreads << " von " << maxThreads << " verfuegbaren Threads." << std::endl;
+
+    // 3. PARALLELE SCHLEIFE
+    #pragma omp parallel for schedule(dynamic) num_threads(useThreads)
+    for (int i = 0; i < totalRuns; ++i) {
+        
+        // runSingleSimulation MUSS nun diese neuen Daten im String formatieren!
+        std::vector<std::string> resultLines = runSingleSimulationViaPointParam(poses[i].SimulationJointAngles);
+        
+        bool shouldUpload = false; // Verhindert Thread-Stau beim Upload
+
+        // --- KRITISCHER BEREICH ---
+        {
+            std::lock_guard<std::mutex> lock(fileMutex);
+            
+            // Wir schreiben für jeden Muskel eine eigene Zeile
+            for (const auto& line : resultLines) {
+                outFile << std::left << std::setw(25) << poses[i].PoseName << "\t" << line << "\n";
+            }
+            outFile.flush();
+            
+            currentRun++;
+            
+            // Nur EIN Thread darf den Upload auslösen
+            if (currentRun > 0 && currentRun % 25 == 0) {
+                shouldUpload = true;
+            }
+
+            auto now = std::chrono::high_resolution_clock::now();
+            auto elapsed_min = std::chrono::duration_cast<std::chrono::minutes>(now - startTime).count();
+            
+            std::string printColor = COLOR_RESET;
+            bool isSuccess = false; 
+
+            // Erfolgsabfrage anpassen: Sucht nach dem CasADi Success String
+            if (!resultLines.empty()) {
+                isSuccess = (resultLines[0].find("Solve_Succeeded") != std::string::npos || 
+                             resultLines[0].find("SUCCESS") != std::string::npos);
+            }
+
+            if (isSuccess) printColor = COLOR_GREEN;
+            else printColor = COLOR_RED; 
+
+            std::cout << COLOR_CYAN << "[Param Study] " << COLOR_RESET 
+                      << "Finished " << currentRun << " / " << totalRuns 
+                      << " | Param: " << std::setw(15) << std::left << poses[i].PoseName
+                      << " | Status: " << printColor << (isSuccess ? "SUCCESS" : "FAILED/MAX_ITER") << COLOR_RESET
+                      << " | Zeit: " << COLOR_YELLOW << elapsed_min << " min" << COLOR_RESET 
+                      << std::endl;
+        }
+
+        // Sicherer FAUbox Upload (Außerhalb des Mutex!)
+        if (shouldUpload) {
+            std::cout << COLOR_YELLOW << "INFO: Alle 25 Runs wird die bisherige Zusammenfassung in die FAUbox hochgeladen..." << COLOR_RESET << std::endl;
+            uploadPoseStudyToFAUbox(QString::fromStdString(fpath));
+        }
+    }
+    
+    outFile.close(); // Wichtig: Erst schließen, dann letzter Upload!
+    uploadPoseStudyToFAUbox(QString::fromStdString(fpath));
+    
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto total_min = std::chrono::duration_cast<std::chrono::minutes>(endTime - startTime).count();
+    std::cout << "\n" << COLOR_GREEN << "ViaPointParam-Studie erfolgreich beendet in " << total_min << " Minuten!" << COLOR_RESET << std::endl;
+}
+
+
 void SimulationManager::runCombinationsRecursive(const std::vector<ParamDef>& paramDefs, int currentDepth, std::vector<double>& currentValues, std::ofstream& outFile, int& currentRun, int totalRuns, std::chrono::time_point<std::chrono::high_resolution_clock> startTime) 
 {
     // ABBRUCHBEDINGUNG: Wir sind in der innersten Schleife angekommen!
@@ -444,6 +544,121 @@ std::vector<std::string> SimulationManager::runSingleSimulation(const std::vecto
     return resultLines;
 }
 
+std::vector<std::string> SimulationManager::runSingleSimulationViaPointParam(const std::vector<double>& params) {
+    std::vector<std::shared_ptr<SSMesh>> meshes;
+    std::vector<std::shared_ptr<SSTissue>> tissues;
+    std::vector<SSMuscle*> musclePtrs;
+    std::shared_ptr<SSBody> rootSystem;
+    std::vector<CasadiSystem*> systems;
+
+    buildViaPointTests(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    
+    for (auto& m : meshes) m->discretizeMesh(m_cfg.discretization);
+
+    // Solver Setup & Alpha Zuweisung
+    {
+        std::lock_guard<std::mutex> lock(casadiSetupMutex);
+        for (auto* mus : musclePtrs) {
+            auto* sys = new CasadiSystem({mus}, m_cfg.objFunc, m_cfg.solverMethod, m_cfg.casadiParametrization, m_cfg.bUseManualJacobian, m_cfg.bSumPhiEta, m_cfg.bUseWarmstartEtas, false, false);
+            if (!params.empty()) sys->Alpha = params[0]; 
+            systems.push_back(sys);
+            mus->initializeSimulationMuscle(m_cfg.numTimeSteps);
+        }
+    }
+
+    // Daten-Strukturen für das Logging
+    std::vector<int> firstDetachmentStep(musclePtrs.size(), -1);
+    std::vector<std::string> allStepDetails(musclePtrs.size(), "");
+    
+    // Wir speichern hier die finalen Werte des letzten Schritts für die Hauptspalten
+    std::vector<bool> finalInVP(musclePtrs.size(), true);
+    std::vector<double> finalMinDist(musclePtrs.size(), -1.0);
+    std::vector<double> finalRelDist(musclePtrs.size(), -1.0);
+
+    // SIMULATIONS-SCHLEIFE
+    for(int t = 0; t < m_cfg.numTimeSteps; ++t) {
+        if (rootSystem) {
+            rootSystem->update(t); 
+            for (auto& m : meshes) {
+                m->MeshPointsGlobal.push_back(m->PositionGlobal);
+                m->allRMatrixGlobal.push_back(m->OrientationGlobal);
+                m->discretizeMesh(m_cfg.discretization);
+            }
+        }
+
+        // Muskel-Punkte prädizieren
+        for(auto* mus : musclePtrs) {
+            mus->OriginPointGlobal = mus->MNodes[0].predictNewGlobal();
+            mus->InsertionPointGlobal = mus->MNodes.back().predictNewGlobal();
+            mus->MNodes[0].PositionGlobal = mus->OriginPointGlobal;
+            mus->MNodes.back().PositionGlobal = mus->InsertionPointGlobal;
+            std::vector<MWMath::Point3D> guessPath;
+            for(auto& node : mus->MNodes) guessPath.push_back(node.predictNewGlobal());
+            mus->storeMNodesInitialGuess(t, guessPath);
+        }
+
+        // Lösen
+        for (auto* sys : systems) sys->solveStepX(); 
+
+        if (m_cfg.dynamicReparametrization || t < 1) {    
+            for (auto* muscle : musclePtrs) muscle->updateMusclePointsParentsLocal();
+        }
+
+        // PRO SCHRITT AUSWERTEN
+        for (size_t m = 0; m < musclePtrs.size(); ++m) {
+            bool isInside = true;
+            double minDist = -1.0;
+            double relDist = -1.0;
+            musclePtrs[m]->checkViaPoint(isInside, minDist, relDist);
+            
+            int iters = systems[m]->SolverConvergenceSteps.back();
+            std::string msg = systems[m]->SolverConvergenceMessages.back();
+            int code = (msg.find("Succeeded") != std::string::npos) ? 0 : 1;
+
+            // Hier wird die Zeile für die "Details" Spalte gebaut:
+            // Format: Code(Iter)|Abstand|Relativ
+            std::stringstream stepSS;
+            stepSS << code << "(" << iters << ")|" 
+                   << std::fixed << std::setprecision(3) << minDist << "|" 
+                   << std::setprecision(2) << relDist << (isInside ? "[in] " : "[OUT] ");
+            allStepDetails[m] += stepSS.str();
+
+            if (!isInside && firstDetachmentStep[m] == -1) firstDetachmentStep[m] = t;
+
+            // Letzten Schritt für die Übersicht merken
+            if (t == m_cfg.numTimeSteps - 1) {
+                finalInVP[m] = isInside;
+                finalMinDist[m] = minDist;
+                finalRelDist[m] = relDist;
+            }
+            
+            musclePtrs[m]->storeMNodesGlobalPositions();
+            musclePtrs[m]->computeMuscleLength(true);
+        }
+    }
+    
+    // Result-String zusammenbauen
+    std::vector<std::string> resultLines;
+    for (size_t s = 0; s < systems.size(); ++s) {
+        std::stringstream ss;
+        ss << std::left << std::setw(20) << "CasSys_" + musclePtrs[s]->Name << "\t"
+           << std::setw(25) << (systems[s]->SolverConvergenceMessages.back() + " (" + std::to_string(systems[s]->SolverConvergenceSteps.back()) + ")") << "\t"
+           << std::setw(15) << (finalInVP[s] ? "1" : "0") << "\t"
+           << std::setw(15) << std::fixed << std::setprecision(5) << finalMinDist[s] << "\t"
+           << std::setw(15) << finalRelDist[s] << "\t";
+           
+        for (double p : params) ss << std::setw(10) << std::setprecision(2) << p << "\t";
+        
+        ss << "Detach@Step: " << firstDetachmentStep[s] << " | Details: " << allStepDetails[s];
+        resultLines.push_back(ss.str());
+    }
+
+    for (auto* sys : systems) delete sys;
+    for (auto* mus : musclePtrs) delete mus;
+    return resultLines;
+}
+
+
 std::vector<PoseDef> SimulationManager::createPoseDefs()
 {
     // 1. Erweitere die Header-Namen um die neue Spalte für die Knoten
@@ -530,6 +745,72 @@ std::vector<PoseDef> SimulationManager::createPoseDefs()
     
     return variantList;
 }
+
+std::vector<PoseDef> SimulationManager::createParameterViaPointStudy()
+{
+    // 1. Die Header für deine Ausgabe-Tabelle
+    std::vector<std::string> paramNames = {"Alpha", "Type", "Value"};
+    
+    // 2. Basis-Parameter definieren
+    std::vector<double> alphaValues = {100.0}; //{1.0, 5.0, 10.0, 30.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0};
+    std::vector<double> typeValues = {0.0, 1.0}; // 0 = Length, 1 = NumPoints
+    
+    // --- Werte für Type 0 (z.B. Muscle Length) ---
+    // 0.1 bis 5.0 in exakt 25 Schritten (25 Werte)
+    std::vector<double> valuesType0 = {4.0};
+    /* int numDivisions = 25;
+    double startVal = 0.1;
+    double endVal = 5.0;
+    for (int i = 0; i < numDivisions; ++i) {
+        double v = startVal + i * (endVal - startVal) / (numDivisions - 1);
+        valuesType0.push_back(v);
+    } */
+    
+    // --- Werte für Type 1 (z.B. NumPoints) ---
+    // 3.0 bis 100.0 mit +3 Schritten (3, 6, 9... 99)
+    std::vector<double> valuesType1 = {};
+    /* for (double v = 3.0; v <= 100.0; v += 3.0) {
+        valuesType1.push_back(v);
+    }
+    // Sicherstellen, dass die exakte 100.0 am Ende steht, falls sie durch +3 nicht getroffen wurde
+    if (valuesType1.back() != 100.0) {
+        valuesType1.push_back(100.0);
+    } */
+
+    std::vector<PoseDef> studyList;
+
+    // 3. Verschachtelte Schleife zum Kombinieren
+    for (double alpha : alphaValues) {
+        for (double type : typeValues) {
+            
+            // Je nach Type (0 oder 1) weisen wir die physikalisch sinnvolle Liste zu
+            const std::vector<double>& currentValues = (type == 0.0) ? valuesType0 : valuesType1;
+
+            for (double val : currentValues) {
+                PoseDef p;
+                
+                // Sinnvolle, kompakte Namensgebung für die Logs: "A:10.0_T:1_V:50"
+                std::ostringstream nameStream;
+                nameStream << std::fixed 
+                           << "A:" << std::setprecision(1) << alpha 
+                           << "_T:" << static_cast<int>(type) 
+                           << "_V:" << std::setprecision(2) << val;
+                           
+                p.PoseName = nameStream.str();
+                p.JointNames = paramNames;
+                
+                // Packt exakt die 3 Parameter in das Array, 
+                // das später als "processParams" in deinen Builder geht
+                p.SimulationJointAngles = {alpha, type, val};
+                
+                studyList.push_back(p);
+            }
+        }
+    }
+    
+    return studyList;
+}
+
 
 // Rekursive Funktion füllt nur noch die Job-Liste auf
 void SimulationManager::generateCombinations(const std::vector<ParamDef>& paramDefs,int currentDepth,std::vector<double>& currentValues,std::vector<std::vector<double>>& allJobs) 

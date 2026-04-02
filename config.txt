@@ -10,8 +10,8 @@ bCreateJointMeshes 0
 muscleNumPoints 2 2
 
 # Scene & Time
-currentScene VIAPOINT_PLUSMESH #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 2
+currentScene VIAPOINT_PUSH_THROUGH #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
+numTimeSteps 10
 objFunc 0
 discretization 11
 dynamicReparametrization 0

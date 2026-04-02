@@ -93,7 +93,7 @@ void SSMuscle::createMusclePointsComplexPath(){
     for (SSMesh* mesh : meshPtrs) {
         if (auto torus = dynamic_cast<SSTorusMesh*>(mesh)) {
             // add offset to not lie in the middle of the torus (numerics)
-            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{TorusPathDirection*(torus->R-torus->r)*0.1, (torus->R-torus->r)*0.1, 0.});
+            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{TorusPathDirection*(torus->R-torus->r)*0.7, (torus->R-torus->r)*0.1, 0.});
         }
         else if (mesh->bIsViaPoint){
             viaPointsGlobal.push_back(mesh->PositionGlobal);
@@ -561,6 +561,72 @@ int SSMuscle::checkTorusSnapThrough()
         }
     }
     return 0;
+}
+
+void SSMuscle::checkViaPoint(bool& insideVP, double& distanceToVP, double& relDistanceToVP)
+{
+    // Standardwerte für den Fall, dass es keine Via-Points gibt
+    insideVP = true;
+    distanceToVP = -1.0; 
+    relDistanceToVP = -1.0;
+
+    if (bHasViaPoints == false) { return; }
+
+    bool allVPsSatisfied = true;
+    double overallMinDist = 1e10;
+    double worstRelDist = -1.0;
+    bool foundVP = false;
+
+    for (auto* m : meshPtrs) {
+        if (m->bIsViaPoint) {
+            foundVP = true;
+            double minDist = 1e10;
+            int nearestNodeIdx = -1;
+            
+            // Finde den Muskelknoten, der DIESEM Via-Point am nächsten ist
+            for (size_t k = 0; k < MNodes.size(); ++k) {
+                double d = MWMath::distance(MNodes[k].PositionGlobal, m->PositionGlobal);
+                if (d < minDist) {
+                    minDist = d;
+                    qDebug() << "       Via-Point:" << QString::fromStdString(m->Name) 
+                             << m->PositionGlobal.x << "," << m->PositionGlobal.y << "," << m->PositionGlobal.z
+                             << "| Node Index:" << k 
+                             << "| Node Pos:" << MNodes[k].PositionGlobal.x << "," << MNodes[k].PositionGlobal.y << "," << MNodes[k].PositionGlobal.z
+                             << "| Dist:" << d;
+                    nearestNodeIdx = k;
+                }
+            }
+
+            qDebug() << "   -> Via-Point:" << QString::fromStdString(m->Name) 
+                        << "| Nearest Node Index:" << nearestNodeIdx
+                     << "| Min Dist:" << minDist 
+                     << "| Tol:" << m->MViaPointTolerance
+                     << "| Status:" << (minDist <= m->MViaPointTolerance ? "[IN]" : "[OUT]");
+            
+            double currentRelDist = minDist / m->MViaPointTolerance;
+            
+            // Wenn der nächste Knoten weiter weg ist als die Toleranz -> Durchgefallen!
+            if (minDist > m->MViaPointTolerance) {
+                allVPsSatisfied = false;
+            }
+            
+            // Kleinste Distanz aller Via-Points für den Output merken
+            if (minDist < overallMinDist) {
+                overallMinDist = minDist;
+            }
+            // Schlechteste relative Distanz für den Output merken
+            if (currentRelDist > worstRelDist) {
+                worstRelDist = currentRelDist;
+            }
+        }
+    }
+    
+    // Werte über die Referenzen zurückgeben
+    if (foundVP) {
+        insideVP = allVPsSatisfied;
+        distanceToVP = overallMinDist;
+        relDistanceToVP = worstRelDist;
+    }
 }
 
 void SSMuscle::getAttractorNodeInfo()

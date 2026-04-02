@@ -4053,7 +4053,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 2; // 0=normal, 1=Parameterstudie, 2=PoseStudy
+    int bParameterStudy = 3; // 0=normal, 1=Parameterstudie, 2=PoseStudy, 3=viaPoint-Studie
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -4092,6 +4092,17 @@ int main(int argc, char** argv)
         manager.runPoseStudy(myPoses);
         return 0;
     }
+    if (bParameterStudy == 3) {
+        
+        std::vector<PoseDef> myPoses;
+        SimulationManager manager(cfg);
+        myPoses = manager.createParameterViaPointStudy();
+
+        // 3. Die Studie starten
+        manager.runViaPointParamStudy(myPoses);
+        return 0;
+    }
+    
     else {
         // ==========================================
         // MODUS 2: NORMALER EINZEL-LAUF MIT VIEWER
@@ -4220,7 +4231,7 @@ int main(int argc, char** argv)
         } else {
 
             // bool bParameterStudy = true;
-            std::vector<double> params =  { 0.0,  80.0, 90.0,  0.0, 100.0, 80.0}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
+            std::vector<double> params =  {}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
             bool bSetupF = 0;
             if (bSetupF){
             setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
@@ -4228,7 +4239,10 @@ int main(int argc, char** argv)
                 //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
                 //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 std::vector<std::vector<double>> handJointAngles = {}; // Hand::HandJointAngles_Spread;
-                currentScene = buildOHandModelOldExpandedTorusX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
+                //currentScene = buildOHandModelOldExpandedTorusX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
+                currentScene = buildViaPointTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params);
+                
+                //Rest
                 //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 //buildOHandModelTorusAsJointKreuzband(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 //buildOHandModelCylEllHole(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
@@ -4322,6 +4336,7 @@ int main(int argc, char** argv)
                 // --- SCHRITT B & C: ENDPUNKTE & INITIAL GUESS PRO MUSKEL ---
                 for(int m = 0; m < numMuscles; ++m) {
                     auto* mus = musclePtrs[m];
+                    
                     // Fixpunkte prädizieren
                     mus->OriginPointGlobal = mus->MNodes[0].predictNewGlobal();
                     mus->InsertionPointGlobal = mus->MNodes.back().predictNewGlobal();
@@ -4350,6 +4365,8 @@ int main(int argc, char** argv)
                 }
 
                 for (auto muscle : musclePtrs) {
+                    bool b; double dou; double douR;
+                    muscle->checkViaPoint(b,dou,douR);
                     muscle->getViaPointNodeInfo();
                     muscle->checkCollision();
                 }

@@ -37,11 +37,14 @@ public:
     void runParameterStudy(const std::vector<ParamDef>& paramDefs);
 
     void runPoseStudy(const std::vector<PoseDef>& poses);
+    void runViaPointParamStudy(const std::vector<PoseDef>& poses);
 
     // Nimmt den fertigen Vektor mit den aktuellen Werten für diesen EINEN Run auf
     std::vector<std::string> runSingleSimulation(const std::vector<double>& params);
+    std::vector<std::string> runSingleSimulationViaPointParam(const std::vector<double>& params);
 
     std::vector<PoseDef> createPoseDefs();
+    std::vector<PoseDef> createParameterViaPointStudy();
 
 private:
     SimSettings m_cfg;

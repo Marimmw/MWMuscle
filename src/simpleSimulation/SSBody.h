@@ -75,3 +75,52 @@ public:
     virtual int update(int step=0) override;
 private:
 };
+
+
+class SSTranslationalJoint : public SSTissue {
+public:
+    SSTranslationalJoint() = default;
+    SSTranslationalJoint(std::string name, 
+                         MWMath::Point3D relPos, 
+                         MWMath::RotMatrix3x3 relRot,
+                         std::shared_ptr<SSTissue> parent,
+                         double maxTranslation, // Maximale Auslenkungsdistanz (statt Winkel)
+                         MWMath::Point3D axis,  // Richtung (z.B. {1,0,0} für lokale X-Achse)
+                         int totalSteps)
+    {
+        Name = name;
+        Position2ParentRelInParentFrame = relPos;
+        Orientation2ParentRel = relRot;
+        Parent = parent;
+        
+        TotalSteps = totalSteps;
+        
+        TranslationAxis = axis.normed(); // Sicherstellen, dass es ein Einheitsvektor ist
+        MaxTranslation = maxTranslation;
+        CurrentTranslation = 0.0; 
+
+        if (Parent) {
+            Parent->Children.push_back(std::shared_ptr<SSTissue>(this));
+            SystemLayer = Parent->SystemLayer + 1;
+        }
+        else{
+            SystemLayer = 0; 
+        }
+    }
+    ~SSTranslationalJoint() override = default;
+    
+    double CurrentTranslation; 
+    double MaxTranslation; 
+    MWMath::Point3D TranslationAxis;
+    int TotalSteps;
+    
+    std::vector<double> TranslationSteps; // Optional: Vorgegebene Trajektorie (analog zu AngleSteps)
+    std::vector<double> DoneTranslationSteps;
+
+    // Für die Visualisierung: Der halbe Weg, z.B. für einen Teleskop-Zylinder
+    MWMath::Point3D JointHalfTranslation = MWMath::Point3D(0,0,0);
+
+    virtual int update(int step=0) override;
+};
+
+

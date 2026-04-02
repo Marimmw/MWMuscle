@@ -32,6 +32,7 @@ public:
 
     bool bDebug;
     bool bWriteFiles;
+    double Alpha = 100.0;
 
 
     void setupCasadi();
@@ -45,6 +46,9 @@ public:
 
     void solveStepViaSum();
     void setupCasadiViaSum();
+
+    void solveStepViaSum_paramStudy();
+    void setupCasadiViaSum_paramStudy();
 
     void solveStepViaLine();
     void setupCasadiViaLine();
@@ -82,7 +86,7 @@ private:
     bool bSumPhiEta;
     bool bUseWarmstartEtas = true;
     double WarmstartEtaScaling = 1.0;
-    int maxIterations = 1500;
+    int maxIterations = 3000;
     double maxTol = 1e-4; // 0.01mm (dm=-4)
     double ELTolerance = 0.0;
     //std::string hessianApproximation = "limited-memory"; // "limited-memory" or "exact"
