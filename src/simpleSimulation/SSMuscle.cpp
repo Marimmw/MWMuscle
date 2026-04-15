@@ -588,25 +588,24 @@ void SSMuscle::checkViaPoint(bool& insideVP, double& distanceToVP, double& relDi
                 double d = MWMath::distance(MNodes[k].PositionGlobal, m->PositionGlobal);
                 if (d < minDist) {
                     minDist = d;
-                    qDebug() << "       Via-Point:" << QString::fromStdString(m->Name) 
+                   /*  qDebug() << "       Via-Point:" << QString::fromStdString(m->Name) 
                              << m->PositionGlobal.x << "," << m->PositionGlobal.y << "," << m->PositionGlobal.z
                              << "| Node Index:" << k 
                              << "| Node Pos:" << MNodes[k].PositionGlobal.x << "," << MNodes[k].PositionGlobal.y << "," << MNodes[k].PositionGlobal.z
-                             << "| Dist:" << d;
+                             << "| Dist:" << d; */
                     nearestNodeIdx = k;
                 }
             }
 
             qDebug() << "   -> Via-Point:" << QString::fromStdString(m->Name) 
-                        << "| Nearest Node Index:" << nearestNodeIdx
-                     << "| Min Dist:" << minDist 
-                     << "| Tol:" << m->MViaPointTolerance
-                     << "| Status:" << (minDist <= m->MViaPointTolerance ? "[IN]" : "[OUT]");
-            
+                    << "| Nearest Node Index:" << nearestNodeIdx
+                    << "| Min Dist:" << QString::number(minDist, 'f', 8) 
+                    << "| Tol:" << m->MViaPointTolerance
+                    << "| Status:" << (minDist <= m->MViaPointTolerance ? "[IN]" : "[OUT]");
             double currentRelDist = minDist / m->MViaPointTolerance;
             
             // Wenn der nächste Knoten weiter weg ist als die Toleranz -> Durchgefallen!
-            if (minDist > m->MViaPointTolerance) {
+            if (minDist > m->MViaPointTolerance*1.000001) {
                 allVPsSatisfied = false;
             }
             
@@ -627,6 +626,21 @@ void SSMuscle::checkViaPoint(bool& insideVP, double& distanceToVP, double& relDi
         distanceToVP = overallMinDist;
         relDistanceToVP = worstRelDist;
     }
+}
+
+std::vector<double> SSMuscle::getViaPointDistancesForParameterStudy()
+{
+    std::vector<double> distances;
+    if (bHasViaPoints == false) { return distances; }
+    for (auto* m : meshPtrs) {
+        if (m->bIsViaPoint) {
+            for (size_t k = 0; k < MNodes.size(); ++k) {
+                double d = MWMath::distance(MNodes[k].PositionGlobal, m->PositionGlobal);
+                distances.push_back(d);
+            }
+        }
+    }
+    return distances;
 }
 
 void SSMuscle::getAttractorNodeInfo()

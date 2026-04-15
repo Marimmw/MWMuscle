@@ -21,7 +21,8 @@ class CasadiSystem {
 public:
     // Konstruktor setzt jetzt direkt das System auf
     CasadiSystem(std::vector<SSMuscle*> muscles, int objType = 0, std::string version="new", std::string parametrizationType="global",
-                    bool bUseCasGradient = false, bool bSumPhiEta = false, bool bUseWarmstartEtas = true, bool bDebug = true, bool bWriteFiles = true);
+                    bool bUseCasGradient = false, bool bSumPhiEta = false, bool bUseWarmstartEtas = true, bool bDebug = true, 
+                    bool bWriteFiles = true, double alpha = 300.0);
     std::string CasadiSystemName;
     std::vector<std::string> SolverConvergenceMessages;
     std::vector<int> SolverConvergenceSteps;
@@ -30,9 +31,11 @@ public:
     std::vector<std::vector<double>> allParameterInputsAllSteps;
     std::vector<std::vector<std::string>> allParameterInputDescriptionsAllSteps;
 
+    bool bShowInfo = true;
     bool bDebug;
     bool bWriteFiles;
-    double Alpha = 100.0;
+    double Alpha; // 100.0 default
+    bool bMaxLogSumTrick = true;
 
 
     void setupCasadi();
@@ -86,7 +89,7 @@ private:
     bool bSumPhiEta;
     bool bUseWarmstartEtas = true;
     double WarmstartEtaScaling = 1.0;
-    int maxIterations = 3000;
+    int maxIterations = 500;
     double maxTol = 1e-4; // 0.01mm (dm=-4)
     double ELTolerance = 0.0;
     //std::string hessianApproximation = "limited-memory"; // "limited-memory" or "exact"

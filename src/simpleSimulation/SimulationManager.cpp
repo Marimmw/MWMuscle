@@ -551,18 +551,45 @@ std::vector<std::string> SimulationManager::runSingleSimulationViaPointParam(con
     std::shared_ptr<SSBody> rootSystem;
     std::vector<CasadiSystem*> systems;
 
-    buildViaPointTests(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, params);
+    std::vector<double> builderParams; 
+    if (params.size() >= 4) {
+        // Wir schicken NUR {Type, Value, VPRelDist} an den Builder (Größe 3)
+        builderParams = {params[1], params[2], params[3]};
+    }
+    buildViaPointTests(tissues, meshes, musclePtrs, rootSystem, m_cfg.numTimeSteps, m_cfg, 1.0, builderParams);
     
     for (auto& m : meshes) m->discretizeMesh(m_cfg.discretization);
+
+    std::vector<std::vector<double>> allNodeDistancesToVP(m_cfg.numTimeSteps);
+    double vpRadius = -1.0; // init
 
     // Solver Setup & Alpha Zuweisung
     {
         std::lock_guard<std::mutex> lock(casadiSetupMutex);
         for (auto* mus : musclePtrs) {
-            auto* sys = new CasadiSystem({mus}, m_cfg.objFunc, m_cfg.solverMethod, m_cfg.casadiParametrization, m_cfg.bUseManualJacobian, m_cfg.bSumPhiEta, m_cfg.bUseWarmstartEtas, false, false);
+            /* auto* sys = new CasadiSystem({mus}, m_cfg.objFunc, m_cfg.solverMethod, m_cfg.casadiParametrization, m_cfg.bUseManualJacobian, m_cfg.bSumPhiEta, m_cfg.bUseWarmstartEtas, false, false);
             if (!params.empty()) sys->Alpha = params[0]; 
             systems.push_back(sys);
+            mus->initializeSimulationMuscle(m_cfg.numTimeSteps); */
+            // 1. Alpha aus der Parameterstudie auslesen (Standard: 100.0)
+            double currentAlpha;
+            if (!params.empty()) {
+                currentAlpha = params[0]; 
+            }
+            else{
+                qDebug() << "WARNUNG: Kein Alpha-Wert in den Parametern gefunden! Verwende Standard-Alpha = 100.0";
+            }
+            auto* sys = new CasadiSystem({mus}, m_cfg.objFunc, m_cfg.solverMethod, m_cfg.casadiParametrization, m_cfg.bUseManualJacobian, m_cfg.bSumPhiEta, m_cfg.bUseWarmstartEtas, false,false, currentAlpha);
+            systems.push_back(sys);
             mus->initializeSimulationMuscle(m_cfg.numTimeSteps);
+
+            // get via point radius from muscle
+            for (auto* m : mus->meshPtrs) {
+                if (m->bIsViaPoint) {
+                    vpRadius = m->MViaPointTolerance;
+                    break;
+                }
+            }
         }
     }
 
@@ -574,6 +601,8 @@ std::vector<std::string> SimulationManager::runSingleSimulationViaPointParam(con
     std::vector<bool> finalInVP(musclePtrs.size(), true);
     std::vector<double> finalMinDist(musclePtrs.size(), -1.0);
     std::vector<double> finalRelDist(musclePtrs.size(), -1.0);
+
+    
 
     // SIMULATIONS-SCHLEIFE
     for(int t = 0; t < m_cfg.numTimeSteps; ++t) {
@@ -610,6 +639,8 @@ std::vector<std::string> SimulationManager::runSingleSimulationViaPointParam(con
             double minDist = -1.0;
             double relDist = -1.0;
             musclePtrs[m]->checkViaPoint(isInside, minDist, relDist);
+
+            if (bExportLogSumValues) allNodeDistancesToVP[t] = musclePtrs[m]->getViaPointDistancesForParameterStudy();
             
             int iters = systems[m]->SolverConvergenceSteps.back();
             std::string msg = systems[m]->SolverConvergenceMessages.back();
@@ -619,8 +650,8 @@ std::vector<std::string> SimulationManager::runSingleSimulationViaPointParam(con
             // Format: Code(Iter)|Abstand|Relativ
             std::stringstream stepSS;
             stepSS << code << "(" << iters << ")|" 
-                   << std::fixed << std::setprecision(3) << minDist << "|" 
-                   << std::setprecision(2) << relDist << (isInside ? "[in] " : "[OUT] ");
+                   << std::fixed << std::setprecision(6) << minDist << "|" 
+                   << std::setprecision(6) << relDist << (isInside ? "[in] " : "[OUT] ");
             allStepDetails[m] += stepSS.str();
 
             if (!isInside && firstDetachmentStep[m] == -1) firstDetachmentStep[m] = t;
@@ -637,6 +668,8 @@ std::vector<std::string> SimulationManager::runSingleSimulationViaPointParam(con
         }
     }
     
+    if (bExportLogSumValues) exportNodeDistances(allNodeDistancesToVP, params, "TestM", vpRadius);
+
     // Result-String zusammenbauen
     std::vector<std::string> resultLines;
     for (size_t s = 0; s < systems.size(); ++s) {
@@ -752,14 +785,14 @@ std::vector<PoseDef> SimulationManager::createParameterViaPointStudy()
     std::vector<std::string> paramNames = {"Alpha", "Type", "Value"};
     
     // 2. Basis-Parameter definieren
-    std::vector<double> alphaValues = {100.0}; //{1.0, 5.0, 10.0, 30.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0};
+    std::vector<double> alphaValues = {100.0, 300.0}; //{1.0, 5.0, 10.0, 30.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0}; // {100}
     std::vector<double> typeValues = {0.0, 1.0}; // 0 = Length, 1 = NumPoints
-    
+    std::vector<double> vpRelDistValues = {0.0,0.9}; // NEU: Verschiedene relative Distanzen zum Via-Point (0 = direkt drauf, 0.5 = weiter weg)
     // --- Werte für Type 0 (z.B. Muscle Length) ---
     // 0.1 bis 5.0 in exakt 25 Schritten (25 Werte)
-    std::vector<double> valuesType0 = {4.0};
-    /* int numDivisions = 25;
-    double startVal = 0.1;
+    std::vector<double> valuesType0 = {}; // ...4.0
+    /* int numDivisions = 25; // 25
+    double startVal = 0.2;
     double endVal = 5.0;
     for (int i = 0; i < numDivisions; ++i) {
         double v = startVal + i * (endVal - startVal) / (numDivisions - 1);
@@ -768,14 +801,14 @@ std::vector<PoseDef> SimulationManager::createParameterViaPointStudy()
     
     // --- Werte für Type 1 (z.B. NumPoints) ---
     // 3.0 bis 100.0 mit +3 Schritten (3, 6, 9... 99)
-    std::vector<double> valuesType1 = {};
-    /* for (double v = 3.0; v <= 100.0; v += 3.0) {
+    std::vector<double> valuesType1 = {5.0};
+    for (double v = 10.0; v <= 100.0; v += 100.0) { // 100.0
         valuesType1.push_back(v);
     }
     // Sicherstellen, dass die exakte 100.0 am Ende steht, falls sie durch +3 nicht getroffen wurde
     if (valuesType1.back() != 100.0) {
         valuesType1.push_back(100.0);
-    } */
+    }
 
     std::vector<PoseDef> studyList;
 
@@ -787,23 +820,27 @@ std::vector<PoseDef> SimulationManager::createParameterViaPointStudy()
             const std::vector<double>& currentValues = (type == 0.0) ? valuesType0 : valuesType1;
 
             for (double val : currentValues) {
-                PoseDef p;
-                
-                // Sinnvolle, kompakte Namensgebung für die Logs: "A:10.0_T:1_V:50"
-                std::ostringstream nameStream;
-                nameStream << std::fixed 
-                           << "A:" << std::setprecision(1) << alpha 
-                           << "_T:" << static_cast<int>(type) 
-                           << "_V:" << std::setprecision(2) << val;
-                           
-                p.PoseName = nameStream.str();
-                p.JointNames = paramNames;
-                
-                // Packt exakt die 3 Parameter in das Array, 
-                // das später als "processParams" in deinen Builder geht
-                p.SimulationJointAngles = {alpha, type, val};
-                
-                studyList.push_back(p);
+                // <--- NEU: Die Schleife für den Via-Point Offset
+                for (double vpRelDist : vpRelDistValues) { 
+                    
+                    PoseDef p;
+                    
+                    // Sinnvolle Namensgebung für die Logs erweitern
+                    std::ostringstream nameStream;
+                    nameStream << std::fixed 
+                               << "A:" << std::setprecision(1) << alpha 
+                               << "_T:" << static_cast<int>(type) 
+                               << "_V:" << std::setprecision(2) << val
+                               << "_VP:" << std::setprecision(1) << vpRelDist; // <--- NEU
+                               
+                    p.PoseName = nameStream.str();
+                    p.JointNames = paramNames;
+                    
+                    // Packt jetzt 4 Parameter in das Array!
+                    p.SimulationJointAngles = {alpha, type, val, vpRelDist}; // <--- NEU
+                    
+                    studyList.push_back(p);
+                }
             }
         }
     }

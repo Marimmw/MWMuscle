@@ -46,6 +46,8 @@ public:
     std::vector<PoseDef> createPoseDefs();
     std::vector<PoseDef> createParameterViaPointStudy();
 
+    bool bExportLogSumValues = false; 
+
 private:
     SimSettings m_cfg;
 

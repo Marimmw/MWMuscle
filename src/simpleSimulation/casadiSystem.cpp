@@ -3,9 +3,9 @@
 #include <filesystem>
 
 
-CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas, bool bDebug, bool bWriteFiles)
+CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::string version, std::string parametrizationType, bool bUseCasGradient, bool bSumPhiEta, bool bUseWarmstartEtas, bool bDebug, bool bWriteFiles, double alpha)
     : m_muscles(muscles), objType(objType), Version(version), ParametrizationType(parametrizationType),
-        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas), bDebug(bDebug), bWriteFiles(bWriteFiles)
+        bUseOwnGradient(bUseCasGradient), bSumPhiEta(bSumPhiEta), bUseWarmstartEtas(bUseWarmstartEtas), bDebug(bDebug), bWriteFiles(bWriteFiles), Alpha(alpha)
 {
     CasadiSystemName = "CasSys_" + (m_muscles.empty() ? "Empty" : m_muscles[0]->Name);
 
@@ -16,7 +16,16 @@ CasadiSystem::CasadiSystem(std::vector<SSMuscle*> muscles, int objType, std::str
     else {
         setupCasadi();
     } */
-
+    if (bShowInfo) {
+        qDebug() << "Initialized CasadiSystem: " << QString::fromStdString(CasadiSystemName);
+        qDebug() << "  | Version: " << QString::fromStdString(Version);
+        qDebug() << "  | ParamType: " << QString::fromStdString(ParametrizationType);
+        qDebug() << "  | ObjType: " << objType;
+        qDebug() << "  | bUseOwnGradient: " << bUseOwnGradient;
+        qDebug() << "  | bSumPhiEta: " << bSumPhiEta;
+        qDebug() << "  | bUseWarmstartEtas: " << bUseWarmstartEtas;
+        qDebug() << "  | Alpha: " << Alpha;
+    }
     setupCasadiViaSum_paramStudy();
     
     
@@ -630,11 +639,29 @@ void CasadiSystem::setupCasadiVia()
                 MX dist = sqrt(sum1(sq(g_k - v_pos)) + eps);
                 d_vector = MX::vertcat({d_vector, dist});
             }
-            d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
-            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))});
+            // geändert am 10.04.26
+            /* d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
+            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))}); */
+            d_vector = MX::vertcat({d_vector, sqrt(sum1(sq(P_orig - v_pos)) + eps)});
+            d_vector = MX::vertcat({d_vector, sqrt(sum1(sq(P_ins - v_pos)) + eps)});
 
-            MX D_v = -casadi::MX::logsumexp(-Alpha * d_vector) / Alpha;
-            MX h_v = r_sq - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            MX D_v, h_v;
+            if (bMaxLogSumTrick){
+                // --- NUMERISCH STABILES LOGSUMEXP (MAX-TRICK) ---
+                MX x = -Alpha * d_vector;
+                // 1. Finde den größten Wert im Vektor (mmax)
+                MX x_max = casadi::MX::mmax(x); 
+                // 2. Ziehe das Maximum vor dem exp() ab. 
+                MX sum_exp = sum1(exp(x - x_max));
+                // 3. Logarithmus ziehen und das Maximum wieder addieren
+                D_v = -(x_max + log(sum_exp)) / Alpha;
+                h_v = r_tol - D_v; 
+            }
+            else{
+                D_v = -casadi::MX::logsumexp(-Alpha * d_vector) / Alpha;
+                h_v = r_sq - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            }
+            
             h_via_list.push_back(h_v);
 
             // Constraints für Via-Points
@@ -1049,11 +1076,31 @@ void CasadiSystem::setupCasadiViaSum()
                 MX dist = sqrt(sum1(sq(g_k - v_pos)) + eps);
                 d_vector = MX::vertcat({d_vector, dist});
             }
-            d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
-            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))});
+            // geändert am 10.04.26
+            /* d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
+            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))}); */
+            d_vector = MX::vertcat({d_vector, sqrt(sum1(sq(P_orig - v_pos)) + eps)});
+            d_vector = MX::vertcat({d_vector, sqrt(sum1(sq(P_ins - v_pos)) + eps)});
 
-            MX D_v = -casadi::MX::logsumexp(-Alpha * d_vector) / Alpha;
-            MX h_v = r_sq - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            
+            MX D_v, h_v;
+            if (bMaxLogSumTrick){
+                // --- NUMERISCH STABILES LOGSUMEXP (MAX-TRICK) ---
+                MX x = -Alpha * d_vector;
+                // 1. Finde den größten Wert im Vektor (mmax)
+                MX x_max = casadi::MX::mmax(x); 
+                // 2. Ziehe das Maximum vor dem exp() ab. 
+                MX sum_exp = sum1(exp(x - x_max));
+                // 3. Logarithmus ziehen und das Maximum wieder addieren
+                D_v = -(x_max + log(sum_exp)) / Alpha;
+                h_v = r_tol - D_v; 
+            }
+            else{
+                D_v = -casadi::MX::logsumexp(-Alpha * d_vector) / Alpha;
+                h_v = r_sq - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            }
+            
+            
             h_via_list.push_back(h_v);
 
             sum_h_eta_via += h_v * eta_v;
@@ -1153,7 +1200,7 @@ void CasadiSystem::setupCasadiViaSum()
 // VIA POINTS SUM
 void CasadiSystem::solveStepViaSum_paramStudy()
 {
-    qDebug() << "          Solving step with Via Point Sum formulation...";
+    //qDebug() << "          Solving step with Via Point Sum(paramStudy) formulation...";
     using namespace casadi;
 
     std::vector<double> x0_all, p_all, lbg_all, ubg_all, lbx_all, ubx_all;
@@ -1294,7 +1341,7 @@ void CasadiSystem::solveStepViaSum_paramStudy()
     const std::string C_GREEN = "\033[32m";
     const std::string C_RESET = "\033[0m";
     int convSteps = int(solverInfo.at("iter_count"));
-    if (true) { // Dein if(true) oder if(bDebug)
+    if (bDebug) { // Dein if(true) oder if(bDebug)
         std::string stepColor = (status == "Solve_Succeeded") ? C_GREEN : C_RED;
         std::string fullMessage = stepColor + "    Solver finished after " + std::to_string(convSteps) + " iterations" + "(" + status + ")" + C_RESET;
         qDebug().noquote() << QString::fromStdString(fullMessage);
@@ -1387,7 +1434,7 @@ void CasadiSystem::solveStepViaSum_paramStudy()
 
 void CasadiSystem::setupCasadiViaSum_paramStudy()
 {
-    qDebug() << "     Setting up CasadiSystem with Via Point formulation...";
+    qDebug() << "     Setting up CasadiSystem with Via Point(paramStudy) formulation...";
     using namespace casadi;
     MX all_x = MX::vertcat({});
     MX all_g = MX::vertcat({});
@@ -1471,13 +1518,30 @@ void CasadiSystem::setupCasadiViaSum_paramStudy()
                 MX dist = sqrt(sum1(sq(g_k - v_pos)) + eps);
                 d_vector = MX::vertcat({d_vector, dist});
             }
-            d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
-            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))});
+            // geändert am 10.04.26
+            /* d_vector = MX::vertcat({d_vector, sum1(sq(P_orig - v_pos))});
+            d_vector = MX::vertcat({d_vector, sum1(sq(P_ins - v_pos))}); */
+            d_vector = MX::vertcat({d_vector, sqrt(sum1(sq(P_orig - v_pos)) + eps)});
+            d_vector = MX::vertcat({d_vector, sqrt(sum1(sq(P_ins - v_pos)) + eps)});
 
-            MX D_v = -casadi::MX::logsumexp(-Alpha * d_vector) / Alpha;
-            MX h_v = r_tol - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            MX D_v, h_v;
+            if (bMaxLogSumTrick){
+                // --- NUMERISCH STABILES LOGSUMEXP (MAX-TRICK) ---
+                MX x = -Alpha * d_vector;
+                // 1. Finde den größten Wert im Vektor (mmax)
+                MX x_max = casadi::MX::mmax(x); 
+                // 2. Ziehe das Maximum vor dem exp() ab. 
+                MX sum_exp = sum1(exp(x - x_max));
+                // 3. Logarithmus ziehen und das Maximum wieder addieren
+                D_v = -(x_max + log(sum_exp)) / Alpha;
+                h_v = r_tol - D_v; 
+            }
+            else{
+                D_v = -casadi::MX::logsumexp(-Alpha * d_vector) / Alpha;
+                h_v = r_tol - D_v; // hier eventuell linear statt quadratisch abziehen -> (quadratuisch - linear funkioniert aber irgendiwe besser?)
+            }
+        
             h_via_list.push_back(h_v);
-
             sum_h_eta_via += h_v * eta_v;
 
             // Constraints für Via-Points: NUR NOCH DIE DISTANZ EINZELN HINZUFÜGEN

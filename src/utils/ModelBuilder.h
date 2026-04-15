@@ -4503,16 +4503,22 @@ inline std::string buildViaPointTests( std::vector<std::shared_ptr<SSTissue>>& t
     // --- PARSE processParams ---
     int numPoints = 25;
     double sphereRadius = 0.2;
-    double maxTranslation = 1.5; // Wie weit der Via-Point auslenkt
+    double maxTranslation = 10; // Wie weit der Via-Point auslenkt
     float muscleLength = 4.0; // [dm]
+    float relVPPos = 1.0;
 
-    if (processParams.size() == 3){
-        if (processParams[1] == 0){
-            muscleLength = processParams[2];
+    if (processParams.size() >= 3){
+        
+        // Parameter 0 ist jetzt Type
+        if (processParams[0] == 0.0){
+            muscleLength = processParams[1]; // Parameter 1 ist Value
         }
-        else if (processParams[1] == 1){
-            numPoints = (int)processParams[2];
+        else if (processParams[0] == 1.0){
+            numPoints = (int)processParams[1];
         }
+        
+        // Parameter 2 ist VPRelDist
+        relVPPos = processParams[2]; 
     }
     /* if (processParams.size() > 0) numPoints = static_cast<int>(processParams[0]);
     if (processParams.size() > 1) anchorDist = processParams[1];
@@ -4576,7 +4582,8 @@ inline std::string buildViaPointTests( std::vector<std::shared_ptr<SSTissue>>& t
     meshes.push_back(jointMesh); */
 
     // Der Body für den Via-Point, der am Slider dranhängt
-    auto bodyVia = std::make_shared<SSBody>("Body_Via", MWMath::Point3D(0, 0, 0), MWMath::RotMatrix3x3(), transJoint);
+    double xCoordViaP = bodyRight->PositionGlobal.x + muscleLength * 0.5 * relVPPos; 
+    auto bodyVia = std::make_shared<SSBody>("Body_Via", MWMath::Point3D(xCoordViaP, sphereRadius * 0.5, 0), MWMath::RotMatrix3x3(), transJoint);
     tissues.push_back(bodyVia);
 
     // Das Via-Point Mesh selbst (Ein Torus, der senkrecht steht)
@@ -4613,7 +4620,7 @@ inline std::string buildViaPointTests( std::vector<std::shared_ptr<SSTissue>>& t
     testMuscle->meshPtrs.push_back(meshVia.get());  // Der Via-Point ist in der Mitte!
     testMuscle->meshPtrs.push_back(meshRight.get());
 
-    testMuscle->createMusclePointsComplexPath();
+    testMuscle->createMusclePoints();
     testMuscle->updateMusclePointsParentsLocal();
     muscles.push_back(testMuscle);
 

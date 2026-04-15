@@ -11,7 +11,7 @@ muscleNumPoints 2 2
 
 # Scene & Time
 currentScene VIAPOINT_PUSH_THROUGH #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 10
+numTimeSteps 100
 objFunc 0
 discretization 11
 dynamicReparametrization 0

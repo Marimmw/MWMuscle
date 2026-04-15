@@ -4232,6 +4232,7 @@ int main(int argc, char** argv)
 
             // bool bParameterStudy = true;
             std::vector<double> params =  {}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
+            std::vector<double> paramsVP =  {1.0, 100., 0.9}; // {value(0=ML,1=mN), type, relDist}
             bool bSetupF = 0;
             if (bSetupF){
             setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
@@ -4240,7 +4241,7 @@ int main(int argc, char** argv)
                 //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
                 std::vector<std::vector<double>> handJointAngles = {}; // Hand::HandJointAngles_Spread;
                 //currentScene = buildOHandModelOldExpandedTorusX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
-                currentScene = buildViaPointTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params);
+                currentScene = buildViaPointTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, paramsVP);
                 
                 //Rest
                 //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
@@ -4548,3 +4549,5 @@ int main(int argc, char** argv)
     }
 
 }
+
+

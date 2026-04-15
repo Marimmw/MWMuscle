@@ -19,6 +19,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <memory>
+#include <algorithm>
 
 #include "simpleSimulation/SSMuscle.h"
 #include "utils/MWMath.h"
@@ -508,6 +509,57 @@ inline void exportParameterLog(const std::vector<std::vector<double>>& values,
 }
 
 
+inline void exportNodeDistances(const std::vector<std::vector<double>>& allNodeDistancesToVP, 
+                                const std::vector<double>& params, 
+                                const std::string& muscleName,
+                                double viaPointRadius) // <
+{
+    std::ostringstream paramStream;
+    if (params.size() >= 4) {
+        paramStream << std::fixed 
+                 << "_A" << std::setprecision(1) << params[0]
+                 << "_T" << static_cast<int>(params[1])
+                 << "_V" << std::setprecision(2) << params[2]
+                 << "_VP" << std::setprecision(2) << params[3];
+    }
+    
+    std::string paramStr = paramStream.str();
+    paramStr.erase(std::remove(paramStr.begin(), paramStr.end(), '.'), paramStr.end());
+
+    std::ostringstream filename;
+    filename << "../examples/results/NodeDist_" << muscleName << paramStr << ".csv";
+
+    std::ofstream outFile(filename.str());
+    if (!outFile.is_open()) {
+        std::cerr << "Fehler: Konnte Datei nicht oeffnen: " << filename.str() << "\n";
+        return;
+    }
+
+    // --- NEU: Metadaten in den Header schreiben ---
+    double alpha = (params.size() > 0) ? params[0] : 0.0;
+    outFile << "# Alpha=" << alpha << "\n";
+    outFile << "# ViaPointRadius=" << viaPointRadius << "\n";
+
+    // CSV Spaltenköpfe
+    outFile << "Step";
+    if (!allNodeDistancesToVP.empty() && !allNodeDistancesToVP[0].empty()) {
+        for (size_t k = 0; k < allNodeDistancesToVP[0].size(); ++k) {
+            outFile << ",Node_" << k;
+        }
+    }
+    outFile << "\n";
+
+    // Daten eintragen
+    for (size_t t = 0; t < allNodeDistancesToVP.size(); ++t) {
+        outFile << t;
+        for (size_t k = 0; k < allNodeDistancesToVP[t].size(); ++k) {
+            outFile << "," << std::scientific << std::setprecision(6) << allNodeDistancesToVP[t][k];
+        }
+        outFile << "\n";
+    }
+
+    outFile.close();
+}
 
 
 inline void uploadPoseStudyToFAUbox(const QString& txtFilePath) {
