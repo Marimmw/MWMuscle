@@ -1,6 +1,7 @@
 #include "VTKSimViewerSimple.h"
 #include <QKeyEvent>
 #include <vtkPlaneSource.h>
+#include <vtkCamera.h>
 
 VTKSimViewerSimple::VTKSimViewerSimple(const std::vector<std::vector<std::vector<MWMath::Point3D>>>& muscleResults, 
                            const std::vector<std::vector<MWMath::RotMatrix3x3>>& meshResults,
@@ -52,13 +53,22 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     qDebug() << "Setting up VTK pipeline for" << m_muscleResults.size() << "muscles...";
     m_renderer = vtkSmartPointer<vtkRenderer>::New();
     m_vtkWidget->renderWindow()->AddRenderer(m_renderer);
-    m_renderer->SetBackground(0.15, 0.15, 0.15);
+    if (bWhiteBackground) {
+        m_renderer->SetBackground(1.0, 1.0, 1.0);
+    } else {
+        m_renderer->SetBackground(0.15, 0.15, 0.15);
+    }
+    m_renderer->GetActiveCamera()->SetParallelProjection(bOrthographic ? 1 : 0);
 
     // Step-Text Actor (HUD)
     m_stepTextActor = vtkSmartPointer<vtkTextActor>::New();
     m_stepTextActor->SetInput(("Step: 0 / " + std::to_string(m_angles.size() - 1)).c_str()); // Initial
     m_stepTextActor->GetTextProperty()->SetFontSize(24);
-    m_stepTextActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0); // Weiß
+    if (bWhiteBackground) {
+        m_stepTextActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0); // Schwarz
+    } else {
+        m_stepTextActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0); // Weiß
+    }
     m_stepTextActor->SetDisplayPosition(20, 30); // oben links (Pixel)
     m_renderer->AddActor2D(m_stepTextActor);
 
@@ -105,7 +115,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
         }
         
         actor->SetMapper(mapper);
-        actor->GetProperty()->SetOpacity(0.5);
+        actor->GetProperty()->SetOpacity(1.0);
         actor->GetProperty()->SetColor(mesh->MeshColor.x, mesh->MeshColor.y, mesh->MeshColor.z);
         m_renderer->AddActor(actor);
         m_meshActors.push_back(actor);
@@ -270,7 +280,7 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     m_worldAxes->SetTotalLength(1.0 * m_scalerCM, 1.0 * m_scalerCM, 1.0 * m_scalerCM); // Länge der Achsen
     m_worldAxes->SetShaftTypeToCylinder();
     m_worldAxes->SetCylinderRadius(0.02 * m_scalerCM);
-    m_worldAxes->SetAxisLabels(1); // X, Y, Z Labels anzeigen
+    m_worldAxes->SetAxisLabels(bWhiteBackground ? 0 : 1); // X, Y, Z Labels anzeigen
     m_renderer->AddActor(m_worldAxes);
     
     // =========================================================
@@ -296,7 +306,9 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     actorXY->GetProperty()->SetColor(0.25, 0.25, 0.3); // Leicht bläulich (Z-Achse)
     actorXY->GetProperty()->SetOpacity(0.3);
     actorXY->GetProperty()->SetLighting(false);
-    m_renderer->AddActor(actorXY);
+    if (bShowGrid) {
+        m_renderer->AddActor(actorXY);
+    }
 
     // --- 2. X-Z Ebene (Y = 0) - Der "Boden" ---
     vtkNew<vtkPlaneSource> planeXZ;
@@ -343,7 +355,11 @@ void VTKSimViewerSimple::setupVtkPipeline() {
     m_textActor = vtkSmartPointer<vtkTextActor>::New();
     m_textActor->SetInput(combinedText.c_str()); // Text setzen
     m_textActor->GetTextProperty()->SetFontSize(14);
-    m_textActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0); // Weiß
+    if (bWhiteBackground) {
+        m_textActor->GetTextProperty()->SetColor(0.0, 0.0, 0.0); // Schwarz
+    } else {
+        m_textActor->GetTextProperty()->SetColor(1.0, 1.0, 1.0); // Weiß
+    }
     m_textActor->GetTextProperty()->SetFontFamilyToArial();
     m_textActor->GetTextProperty()->SetLineSpacing(1.2); 
     m_textActor->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
@@ -682,6 +698,12 @@ void VTKSimViewerSimple::updateStep(int step) {
                      line.find("Failed") != std::string::npos) {
                 // Leichtes Rot / Pastellrot
                 r = 1.0; g = 0.5; b = 0.5; 
+            }
+            else{
+                // Standardfarbe (Weiß oder Schwarz, je nach Hintergrund)
+                r = bWhiteBackground ? 0.0 : 1.0;
+                g = bWhiteBackground ? 0.0 : 1.0;
+                b = bWhiteBackground ? 0.0 : 1.0;
             }
         }
 

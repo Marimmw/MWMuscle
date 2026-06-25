@@ -22,7 +22,7 @@ public:
     // Konstruktor setzt jetzt direkt das System auf
     CasadiSystem(std::vector<SSMuscle*> muscles, int objType = 0, std::string version="new", std::string parametrizationType="global",
                     bool bUseCasGradient = false, bool bSumPhiEta = false, bool bUseWarmstartEtas = true, bool bDebug = true, 
-                    bool bWriteFiles = true, double alpha = 300.0);
+                    bool bWriteFiles = true, double alpha = 100.0);
     std::string CasadiSystemName;
     std::vector<std::string> SolverConvergenceMessages;
     std::vector<int> SolverConvergenceSteps;
@@ -39,7 +39,7 @@ public:
 
 
     void setupCasadi();
-    void solveStepX();
+    void solveStepX(int step = INT16_MAX);
 
     void solveStepSum();
     void setupCasadiSum();
@@ -50,11 +50,17 @@ public:
     void solveStepViaSum();
     void setupCasadiViaSum();
 
+    void solveStepToria();
+    void setupCasadiToria();
+
     void solveStepViaSum_paramStudy();
     void setupCasadiViaSum_paramStudy();
 
     void solveStepViaLine();
     void setupCasadiViaLine();
+
+    void setupCasadiSumAlt();
+    void solveStepSumAlt();
     
     void solveStep();
 
@@ -67,7 +73,10 @@ private:
     std::string ParametrizationType; // global or local
     bool bUseOwnGradient;
     
-    
+    bool bUseTorusPenalty = false; 
+    double TorusPenaltyWeight = 100.0; // 1000.f
+    int Step = 0;
+
     
     // Wir müssen speichern, welcher Muskel wo im großen x-Vektor steht
     struct MuscleOffsets {
@@ -89,7 +98,7 @@ private:
     bool bSumPhiEta;
     bool bUseWarmstartEtas = true;
     double WarmstartEtaScaling = 1.0;
-    int maxIterations = 500;
+    int maxIterations = 3000;
     double maxTol = 1e-4; // 0.01mm (dm=-4)
     double ELTolerance = 0.0;
     //std::string hessianApproximation = "limited-memory"; // "limited-memory" or "exact"

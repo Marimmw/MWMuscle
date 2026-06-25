@@ -34,6 +34,7 @@ struct SimSettings {
     bool bUseWarmstartEtas = true;
     bool bLoadFromJson = false;
     std::string loadPath = "";
+    int bParameterStudy = 0; // 0=normal, 1=Parameterstudie, 2=PoseStudy, 3=viaPoint-Studie
 };
 
 class ConfigManager {
@@ -82,6 +83,7 @@ public:
             else if (key == "bUseWarmstartEtas") ss >> settings.bUseWarmstartEtas;
             else if (key == "bLoadFromJson") ss >> settings.bLoadFromJson;
             else if (key == "loadPath") ss >> settings.loadPath;
+            else if (key == "bParameterStudy") ss >> settings.bParameterStudy;
         }
 
         qDebug() << "-------------- CONFIG --------------";
@@ -103,6 +105,7 @@ public:
         qDebug() << "   bUseWarmstartEtas:" << settings.bUseWarmstartEtas;
         qDebug() << "   bLoadFromJson:" << settings.bLoadFromJson;
         qDebug() << "   loadPath:" << QString::fromStdString(settings.loadPath);
+        qDebug() << "   bParameterStudy:" << settings.bParameterStudy;
         qDebug() << "------------------------------------";
         return settings;
     }

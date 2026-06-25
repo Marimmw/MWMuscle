@@ -1290,3 +1290,4 @@ inline bool loadSceneFromJson(const QString& filepath,
     
     return true;
 }
+

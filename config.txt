@@ -7,23 +7,27 @@ bFingerIsEllipsoid 1
 bCreateJointMeshes 0
 
 # Muscles (Default points, or list separated by space)
-muscleNumPoints 2 2
+muscleNumPoints 25 2
 
 # Scene & Time
-currentScene VIAPOINT_PUSH_THROUGH #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
-numTimeSteps 100
+currentScene OFINGER_SIMPLE_OnlyTorusSmall #TORUS_PUSH_THROUGH #ELLIPSOID_PUSH_THROUGH
+numTimeSteps 10
 objFunc 0
 discretization 11
 dynamicReparametrization 0
 bShowDiscretization 0
 bShowSolverInVisualization 1
 
-bLoadFromJson 0
-loadPath ../examples/results/SceneExport_20260320_113445.json
+bLoadFromJson 1
+loadPath ../examples/results/SceneExport_20260625_164244.json
 
 # Solver Settingsc
 casadiParametrization global
 solverMethod NONE
-bUseManualJacobian 1
+bUseManualJacobian 0
 bSumPhiEta 1
 bUseWarmstartEtas 1
+
+
+# studies
+bParameterStudy 0

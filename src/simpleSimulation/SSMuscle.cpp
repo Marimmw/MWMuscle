@@ -19,7 +19,7 @@ void SSMuscle::createMusclePoints()
         return;
     }
 
-    if (dynamic_cast<SSMesh*>(parentMeshOrigin)) {
+    /* if (dynamic_cast<SSMesh*>(parentMeshOrigin)) {
         OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
         qDebug() << "     [createMusclePoints] OriginPointGlobal calculated using Parent: " << QString::fromStdString(parentMeshOrigin->Name) << "->" << QString::fromStdString(parentMeshOrigin->Parent ? parentMeshOrigin->Parent->Name : "nullptr") << " as reference.";
     }
@@ -32,7 +32,35 @@ void SSMuscle::createMusclePoints()
     }
     else{
         InsertionPointGlobal = parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
-    }
+    } */
+
+    MWMath::Point3D parentPosGlob;
+    MWMath::RotMatrix3x3 parentRGlob;
+
+    // USING PARENTS OF MESH
+    /* parentPosGlob = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal : parentMeshOrigin->PositionGlobal;
+    parentRGlob   = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->OrientationGlobal : parentMeshOrigin->OrientationGlobal;
+    parentPosGlob = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal : parentMeshInsertion->PositionGlobal;
+    parentRGlob   = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->OrientationGlobal : parentMeshInsertion->OrientationGlobal;
+     */
+    // USING MESH DIRECTLY
+    parentPosGlob = parentMeshOrigin->PositionGlobal;
+    parentRGlob   = parentMeshOrigin->OrientationGlobal;
+    qDebug() << "     [createMusclePoints] parentMeshOrigin PositionGlobal: (" << QString::fromStdString(parentPosGlob.print()) << ")";
+    qDebug() << "     [createMusclePoints] parentMeshOrigin OrientationGlobal: (" << QString::fromStdString(parentRGlob.print()) << ")";
+    parentPosGlob = parentMeshInsertion->PositionGlobal;
+    parentRGlob   = parentMeshInsertion->OrientationGlobal;
+    qDebug() << "     [createMusclePoints] parentMeshInsertion PositionGlobal: (" << QString::fromStdString(parentPosGlob.print()) << ")";
+    qDebug() << "     [createMusclePoints] parentMeshInsertion OrientationGlobal: (" << QString::fromStdString(parentRGlob.print()) << ")";
+
+
+    qDebug() << "     [createMusclePoints] OriginPointGlobal calculated using: " << QString::fromStdString(parentMeshOrigin->Name) << " directly as reference.";
+    OriginPointGlobal = parentPosGlob + parentRGlob.transform(OriginPointLocal);
+    InsertionPointGlobal = parentPosGlob + parentRGlob.transform(InsertionPointLocal);
+    // log parent pos and ori
+    
+
+
     
     MWMath::Point3D direction = (InsertionPointGlobal - OriginPointGlobal) * (1/distance(InsertionPointGlobal, OriginPointGlobal));
     for (int i = 0; i < MNodesCount; ++i) {
@@ -53,14 +81,20 @@ void SSMuscle::createMusclePoints()
             MWMath::Point3D parentPosGlob = MWMath::Point3D(0,0,0);
             MWMath::RotMatrix3x3 parentRGlob = MWMath::RotMatrix3x3();
             if (i==0){
-                parentPosGlob = parentMeshOrigin ? parentMeshOrigin->PositionGlobal : MWMath::Point3D(0,0,0);
-                parentRGlob = parentMeshOrigin ? parentMeshOrigin->OrientationGlobal : MWMath::RotMatrix3x3();
+                //parentPosGlob = parentMeshOrigin ? parentMeshOrigin->PositionGlobal : MWMath::Point3D(0,0,0);
+                //parentRGlob = parentMeshOrigin ? parentMeshOrigin->OrientationGlobal : MWMath::RotMatrix3x3();
+                parentPosGlob = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal : parentMeshOrigin->PositionGlobal;
+                parentRGlob   = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->OrientationGlobal : parentMeshOrigin->OrientationGlobal;
+
                 OriginPointGlobal = parentPosGlob + parentRGlob.transform(OriginPointLocal);
                 node.PositionLocal = OriginPointLocal;
             }
             else{
-                parentPosGlob = parentMeshInsertion ? parentMeshInsertion->PositionGlobal : MWMath::Point3D(0,0,0);
-                parentRGlob = parentMeshInsertion ? parentMeshInsertion->OrientationGlobal : MWMath::RotMatrix3x3();
+                //parentPosGlob = parentMeshInsertion ? parentMeshInsertion->PositionGlobal : MWMath::Point3D(0,0,0);
+                //parentRGlob = parentMeshInsertion ? parentMeshInsertion->OrientationGlobal : MWMath::RotMatrix3x3();
+                parentPosGlob = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal : parentMeshInsertion->PositionGlobal;
+                parentRGlob   = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->OrientationGlobal : parentMeshInsertion->OrientationGlobal;
+                
                 InsertionPointGlobal = parentPosGlob + parentRGlob.transform(InsertionPointLocal);
                 node.PositionLocal = InsertionPointLocal;
             }
@@ -84,6 +118,8 @@ void SSMuscle::createMusclePointsComplexPath(){
         qDebug() << "     [createMusclePointsComplexPath] ERROR: parentMeshOrigin or parentMeshInsertion is nullptr. Cannot create complex muscle points.";
         return;
     }
+
+    //createMusclePoints(); return;
     
     OriginPointGlobal = parentMeshOrigin->Parent ? parentMeshOrigin->Parent->PositionGlobal + (parentMeshOrigin->Parent->OrientationGlobal * OriginPointLocal) : parentMeshOrigin->PositionGlobal + parentMeshOrigin->OrientationGlobal * OriginPointLocal;
     InsertionPointGlobal = parentMeshInsertion->Parent ? parentMeshInsertion->Parent->PositionGlobal + (parentMeshInsertion->Parent->OrientationGlobal * InsertionPointLocal) : parentMeshInsertion->PositionGlobal + parentMeshInsertion->OrientationGlobal * InsertionPointLocal;
@@ -93,19 +129,21 @@ void SSMuscle::createMusclePointsComplexPath(){
     for (SSMesh* mesh : meshPtrs) {
         if (auto torus = dynamic_cast<SSTorusMesh*>(mesh)) {
             // add offset to not lie in the middle of the torus (numerics)
-            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{TorusPathDirection*(torus->R-torus->r)*0.7, (torus->R-torus->r)*0.1, 0.});
+            double offsetX = TorusPathDirection*(torus->R-torus->r)*0.0;
+            double offsetY = (torus->R-torus->r)*0.0;
+            viaPointsGlobal.push_back(torus->PositionGlobal + torus->OrientationGlobal*MWMath::Point3D{offsetX, offsetY, 0.});
         }
         else if (mesh->bIsViaPoint){
             viaPointsGlobal.push_back(mesh->PositionGlobal);
         }
     }
 
-    if (viaPointsGlobal.empty()) {
+    /* if (viaPointsGlobal.empty()) {
         qDebug() << "     [createMusclePointsComplexPath] Keine Torus-Meshes gefunden. Erstelle einfache Muskelpunkte.";
         createMusclePoints();
         qDebug() << "     [createMusclePointsComplexPath] Created Simple MusclePath"; 
         return;
-    }
+    } */
 
 
     // build full path
@@ -197,7 +235,8 @@ void SSMuscle::createMusclePointsComplexPath(){
         }
         
         MNodes.push_back(node);
-    }
+    } 
+   
 }
 
 void SSMuscle::updateMusclePointsParents()
@@ -597,11 +636,11 @@ void SSMuscle::checkViaPoint(bool& insideVP, double& distanceToVP, double& relDi
                 }
             }
 
-            qDebug() << "   -> Via-Point:" << QString::fromStdString(m->Name) 
+            /* qDebug() << "   -> Via-Point:" << QString::fromStdString(m->Name) 
                     << "| Nearest Node Index:" << nearestNodeIdx
                     << "| Min Dist:" << QString::number(minDist, 'f', 8) 
                     << "| Tol:" << m->MViaPointTolerance
-                    << "| Status:" << (minDist <= m->MViaPointTolerance ? "[IN]" : "[OUT]");
+                    << "| Status:" << (minDist <= m->MViaPointTolerance ? "[IN]" : "[OUT]"); */
             double currentRelDist = minDist / m->MViaPointTolerance;
             
             // Wenn der nächste Knoten weiter weg ist als die Toleranz -> Durchgefallen!

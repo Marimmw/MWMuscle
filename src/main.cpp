@@ -34,11 +34,11 @@ std::vector<JoingAngleDef> myMovement = {{5,  60.0},{100, 72.0},{2,  90.0}};
 std::vector<double> MAXJOINTANGLES = {0.0, 0.0, 0.0}; // MCP, PIP, DIP
 MWMath::RotMatrix3x3 FINGERSTARTORIENTATION = MWMath::axisAngle(MWMath::Point3D(0,0,1), 90.0); // Startorientierung des Fingermodells
 MWMath::Point3D ROTAXIS = MWMath::Point3D(0,1,0).normed(); // Rotationsachse für Fingerbeugung
-double ROTENDANBGLE = 90.0; // Endwinkel der Beugung
+double ROTENDANBGLE = 0.0; // Endwinkel der Beugung
 
 double PUSHA = 0.25, PUSHB = 0.4, PUSHC = 0.7; // Halbachsen des Pushers (Kugel)
-MWMath::Point3D MOVEDIR = MWMath::Point3D(1, -1, 0).normed(); // Verschiebung des Fingermodells beim Drücken
-MWMath::Point3D STARTP = MWMath::Point3D(0.0, 0.3, -0.0);//MWMath::Point3D(0.0, 0.5, -0.5); // Startpunkt des Drückers
+MWMath::Point3D MOVEDIR = MWMath::Point3D(0, 1, 0).normed(); // Verschiebung des Fingermodells beim Drücken
+MWMath::Point3D STARTP = MWMath::Point3D(0.0, 0.0, 0.0);//MWMath::Point3D(0.0, 0.5, -0.5); // Startpunkt des Drückers
 double MOVEDIST = 1.0; // Distanz, die der Drücker bewegt wird
 
 MWMath::Point3D COLORF1 = MWMath::Point3D(0.50, 0.00, 1.00); 
@@ -1042,13 +1042,14 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
     else if (currentScene == "TORUS_PUSH_THROUGH" || currentScene == "TORUS_ROTATE_THROUGH") {
         
         // --- PARAMETER ---
+        float muscleLength = 4.0; // [dm]
         double anchorRadius = 0.2;
-        double anchorDist = 2.0; 
+        double anchorDist = muscleLength * 0.5 + anchorRadius; 
         double pushStart = 0.0;  
         
         // Torus Dimensionen
-        double torusMajorR = 0.4; // Radius des Rings
-        double torusMinorR = 0.25; // Dicke des Rohrs
+        double torusMajorR = anchorRadius; // Radius des Rings
+        double torusMinorR = torusMajorR*0.8; // Dicke des Rohrs
         
         // ==============================================================================
         // 1. STRUKTUR (Root & Fixpunkte) - Identisch zum Ellipsoid-Case
@@ -1068,7 +1069,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         tissues.push_back(bodyRight);
 
         // Pusher (Mitte)
-        auto bodyPusher = std::make_shared<SSBody>("Body_Pusher", MWMath::Point3D(0, pushStart, 0), MWMath::axisAngle({0, 1, 0}, 45.0), rootSystem);
+        auto bodyPusher = std::make_shared<SSBody>("Body_Pusher", MWMath::Point3D(0, pushStart, 0), MWMath::axisAngle({0, 1, 0}, 0.0), rootSystem);
         rootSystem->Children.push_back(bodyPusher);
         tissues.push_back(bodyPusher);
 
@@ -1096,9 +1097,9 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         // 0 Grad: Liegt flach wie ein Donut auf dem Tisch (Muskel trifft auf die Seite)
         // 90 Grad um X: Steht wie ein Autoreifen (Muskel läuft über die Lauffläche) [Image of Torus Orientation 90deg]
         // Wir drehen ihn um 90 Grad um die X-Achse:
-        meshTorus->Orientation2ParentRel = MWMath::axisAngle({0, 1, 0}, 0.0);
+        //meshTorus->Orientation2ParentRel = MWMath::axisAngle({1, 0, 0}, 0.0);
         // Oder leicht schräg für Chaos:
-        // meshTorus->Orientation2ParentRel = MWMath::axisAngle({1, 0, 0}, 45.0);
+        meshTorus->Orientation2ParentRel = MWMath::axisAngle({1, 0, 0}, 90.0);
 
         bodyPusher->Meshes.push_back(meshTorus); 
         meshTorus->Parent = bodyPusher; 
@@ -1118,13 +1119,13 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         int numPoints = (!cfg.muscleNumPoints.empty()) ? cfg.muscleNumPoints[0] : 25;
         
         static SSMuscle mus("TorusMuscle", numPoints, 
-            meshLeft.get(), {0.0, anchorRadius*1.1, 0.0}, 
-            meshRight.get(), {0.0, anchorRadius*1.1, 0.0});
+            meshLeft.get(), {anchorRadius,0.0, 0.0}, 
+            meshRight.get(), {-anchorRadius, 0.0, 0.0});
         
         for(auto& m : meshes) mus.meshPtrs.push_back(m.get());
 
-        mus.createMusclePoints();
-        mus.updateMusclePointsParents();
+        mus.createMusclePointsComplexPath();
+        //mus.updateMusclePointsParents();
         muscles.push_back(&mus);
 
         
@@ -1532,7 +1533,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         meshes.push_back(mesh1);
         // Torus 1
         auto mTorus1 = std::make_shared<SSTorusMesh>(mesh1->B * relTorusR[0], mesh1->B * relTorusr[0], 
-             "Torus1", body1, MWMath::Point3D(0, 0, L1 * relTorusPos[0]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(1, 0, 0));
+             "Torus1", body1, MWMath::Point3D(0, -L1 * relTorusPos[0],0), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(1, 0, 0));
         meshes.push_back(mTorus1);
 
         MWMath::Point3D jointPosRel1 = MWMath::Point3D(L1, 0, 0);
@@ -1560,7 +1561,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         meshes.push_back(mesh2);
         // Torus 2
         auto mTorus2 = std::make_shared<SSTorusMesh>(mesh2->B * relTorusR[1], mesh2->B * relTorusr[1], 
-             "Torus2", body2, MWMath::Point3D(0, 0, L2 * relTorusPos[1]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.8, 0.8, 0));
+             "Torus2", body2, MWMath::Point3D(0,  -L2 * relTorusPos[1], 0), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0.8, 0.8, 0));
         meshes.push_back(mTorus2);
 
 
@@ -1587,7 +1588,7 @@ void setupSceneObjectOriented(std::string currentScene, std::vector<std::shared_
         meshes.push_back(mesh3);
         // Torus 3
         auto mTorus3 = std::make_shared<SSTorusMesh>(mesh3->B * relTorusR[2], mesh3->B * relTorusr[2], 
-             "Torus3", body3, MWMath::Point3D(0, 0, L3 * relTorusPos[2]), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0, 0, 0.8));
+             "Torus3", body3, MWMath::Point3D(0, -L3 * relTorusPos[2], 0), MWMath::axisAngle({0,1,0}, 90.0), MWMath::Point3D(0, 0, 0.8));
         meshes.push_back(mTorus3);
 
 
@@ -4053,7 +4054,7 @@ int main(int argc, char** argv)
     MAXJOINTANGLES = cfg.MAXJOINTANGLES; 
     
     // SCHALTER FÜR DEN MODUS
-    int bParameterStudy = 3; // 0=normal, 1=Parameterstudie, 2=PoseStudy, 3=viaPoint-Studie
+    int bParameterStudy = cfg.bParameterStudy; // 0=normal, 1=Parameterstudie, 2=PoseStudy, 3=viaPoint-Studie
 
     if (bParameterStudy == 1) {
         // ==========================================
@@ -4232,16 +4233,26 @@ int main(int argc, char** argv)
 
             // bool bParameterStudy = true;
             std::vector<double> params =  {}; //{0.0, -60.0, 90.0,  0.0, 100.0, 80.0};//  {0.0,  80.0, 90.0,  0.0, 100.0, 80.0};
-            std::vector<double> paramsVP =  {1.0, 100., 0.9}; // {value(0=ML,1=mN), type, relDist}
+            std::vector<double> paramsVP =  {}; // {value(0=ML,1=mN), type, relDist}
             bool bSetupF = 0;
             if (bSetupF){
-            setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);}
+                setupSceneObjectOriented(currentScene, tissue, meshes, musclePtrs, rootSystem, numTimeSteps, cfg);
+                //qDebug() << "Scene setup done. Building scene for simulation...";
+            }
             else{
                 //buildOHandModel(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {0.0, 0.0, 0.5, 0.9});
                 //buildOHandModelCyl(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
-                std::vector<std::vector<double>> handJointAngles = {}; // Hand::HandJointAngles_Spread;
+                std::vector<std::vector<double>> handJointAngles = Hand::HandJointAngles_Spread; // Hand::HandJointAngles_Spread;
+                currentScene = buildOHandModelOldExpandedViaX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
+                
+                //currentScene = buildTorusTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
+                //currentScene = buildTorusRotateTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
+                //currentScene = buildViaPointTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, paramsVP);
+                //currentScene = buildViaPointTestsWithStaticEllipsoids(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, paramsVP);
+
+                //currentScene = buildFingerSimpleOnlyTorusSmall_mod(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
                 //currentScene = buildOHandModelOldExpandedTorusX05(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, params, handJointAngles);
-                currentScene = buildViaPointTests(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, paramsVP);
+                
                 
                 //Rest
                 //buildOHandModelTorusAsJoint(tissue, meshes, musclePtrs, rootSystem, cfg.numTimeSteps, cfg, 1.0, {});
@@ -4289,8 +4300,10 @@ int main(int argc, char** argv)
             }
 
             // --- 4. SIMULATION LOOP ---
+            std::vector<double> computationTimes;
             for(int t = 0; t < numTimeSteps; ++t) {
                 qDebug() << "====================== TIMESTEP " << t << " / " << numTimeSteps-1 << "============================================";
+                auto startTime = std::chrono::high_resolution_clock::now();
                 double progress = (double)t / (double)numTimeSteps;
                 angles.push_back((double)t);
 
@@ -4398,6 +4411,10 @@ int main(int argc, char** argv)
                         }
                     }
                 }
+
+                auto endTime = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> duration = endTime - startTime;
+                computationTimes.push_back(duration.count());
             }
             // ------------------- END OF SIMULATION LOOP -------------------
 
@@ -4461,6 +4478,23 @@ int main(int argc, char** argv)
                     }
                 }
             }
+            
+            // --- COMPUTATION TIME STATISTICS ---
+            std::cout << "\n=========================================\n";
+            std::cout << " STATISTIK: BERECHNUNGSZEITEN \n";
+            std::cout << "=========================================\n";
+            double totalTime = 0.0;
+            for (size_t i = 0; i < computationTimes.size(); ++i) {
+                std::cout << "Schritt " << i << ": " << computationTimes[i] << " s\n";
+                totalTime += computationTimes[i];
+            }
+            std::cout << "-----------------------------------------\n";
+            std::cout << "Gesamtzeit: " << totalTime << " s\n";
+            if (!computationTimes.empty()) {
+                std::cout << "Durchschnitt: " << (totalTime / computationTimes.size()) << " s\n";
+            }
+            std::cout << "=========================================\n";
+            
 
             // --- 5. VIEWER ---
             qDebug() << "======================= LAUNCH VIEWER ========================";

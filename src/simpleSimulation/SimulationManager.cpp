@@ -785,9 +785,9 @@ std::vector<PoseDef> SimulationManager::createParameterViaPointStudy()
     std::vector<std::string> paramNames = {"Alpha", "Type", "Value"};
     
     // 2. Basis-Parameter definieren
-    std::vector<double> alphaValues = {100.0, 300.0}; //{1.0, 5.0, 10.0, 30.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0}; // {100}
+    std::vector<double> alphaValues = {1.0, 10.0, 50.0, 100.0, 200.0, 300.0}; //{1.0, 5.0, 10.0, 30.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 500.0}; // {100}
     std::vector<double> typeValues = {0.0, 1.0}; // 0 = Length, 1 = NumPoints
-    std::vector<double> vpRelDistValues = {0.0,0.9}; // NEU: Verschiedene relative Distanzen zum Via-Point (0 = direkt drauf, 0.5 = weiter weg)
+    std::vector<double> vpRelDistValues = {0.0, 0.2, 0.4, 0.6, 0.8, 0.9}; // NEU: Verschiedene relative Distanzen zum Via-Point (0 = direkt drauf, 0.5 = weiter weg)
     // --- Werte für Type 0 (z.B. Muscle Length) ---
     // 0.1 bis 5.0 in exakt 25 Schritten (25 Werte)
     std::vector<double> valuesType0 = {}; // ...4.0
@@ -798,17 +798,17 @@ std::vector<PoseDef> SimulationManager::createParameterViaPointStudy()
         double v = startVal + i * (endVal - startVal) / (numDivisions - 1);
         valuesType0.push_back(v);
     } */
-    
+
     // --- Werte für Type 1 (z.B. NumPoints) ---
     // 3.0 bis 100.0 mit +3 Schritten (3, 6, 9... 99)
-    std::vector<double> valuesType1 = {5.0};
-    for (double v = 10.0; v <= 100.0; v += 100.0) { // 100.0
+    std::vector<double> valuesType1 = {3.0, 5.0, 10., 15., 20.0, 25., 30., 35., 40., 45., 50., 70., 75., 100.0, 101.0}; // ...100.0
+    /* for (double v = 10.0; v <= 100.0; v += 10.0) { // 100.0
         valuesType1.push_back(v);
     }
     // Sicherstellen, dass die exakte 100.0 am Ende steht, falls sie durch +3 nicht getroffen wurde
     if (valuesType1.back() != 100.0) {
         valuesType1.push_back(100.0);
-    }
+    } */
 
     std::vector<PoseDef> studyList;
 
